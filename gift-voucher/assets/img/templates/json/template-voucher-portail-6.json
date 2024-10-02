@@ -1,0 +1,259 @@
+{
+    "attrs": {
+        "width": 500,
+        "height": 812.2489959839357
+    },
+    "className": "Stage",
+    "children": [
+        {
+            "attrs": {},
+            "className": "Layer",
+            "children": [
+                {
+                    "attrs": {
+                        "name": "giftcard_bg",
+                        "id": "giftcard_bg",
+                        "width": 500,
+                        "height": 812.2489959839357
+                    },
+                    "className": "Image"
+                },
+                {
+                    "attrs": {
+                        "text": "YOUR | LOGO",
+                        "name": "gift_title_company",
+                        "x": 50,
+                        "y": 19.00430627871362,
+                        "fontSize": 20,
+                        "lineHeight": 1.5,
+                        "draggable": false,
+                        "id": "gift_title_company",
+                        "fontFamily": "Poppins",
+                        "fontStyle": 300,
+                        "fill": "#fff",
+                        "width": 400,
+                        "align": "center"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "Gift From",
+                        "name": "giftfrom_label",
+                        "x": 50,
+                        "y": 69.03089811728688,
+                        "fontSize": 18,
+                        "lineHeight": 1.449,
+                        "id": "giftfrom_label",
+                        "draggable": false,
+                        "fontFamily": "Rozha One",
+                        "fill": "rgba(255, 255, 255, 0.9)",
+                        "width": 400,
+                        "align": "center"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "FIRST & LAST NAME",
+                        "name": "giftto_input",
+                        "x": 50,
+                        "y": 140.31267453382594,
+                        "fontSize": 16,
+                        "lineHeight": 1.5,
+                        "draggable": false,
+                        "id": "giftto_input",
+                        "fontFamily": "Poppins",
+                        "fill": "rgba(255, 255, 255, 0.9)",
+                        "width": 400,
+                        "align": "center"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "Gift To",
+                        "name": "giftto_label",
+                        "x": 50,
+                        "y": 118.9558448187853,
+                        "id": "giftto_label",
+                        "fontSize": 18,
+                        "lineHeight": 1.449,
+                        "draggable": false,
+                        "fontFamily": "Rozha One",
+                        "fill": "rgba(255, 255, 255, 0.9)",
+                        "width": 400,
+                        "align": "center"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "FIRST & LAST NAME",
+                        "name": "giftfrom_input",
+                        "x": 50,
+                        "y": 90.47498723838711,
+                        "fontSize": 16,
+                        "lineHeight": 1.5,
+                        "draggable": false,
+                        "id": "giftfrom_input",
+                        "fontFamily": "Poppins",
+                        "fill": "rgba(255, 255, 255, 0.9)",
+                        "width": 400,
+                        "align": "center"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "http://www.wp-giftcard.com",
+                        "name": "giftcard_website",
+                        "x": 27.982872894333855,
+                        "y": 773.1000000000001,
+                        "fontSize": 13,
+                        "draggable": false,
+                        "id": "giftcard_website",
+                        "fontFamily": "Poppins",
+                        "fill": "rgba(255, 255, 255, 0.6)",
+                        "align": "center",
+                        "width": 210
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "someeamilhere@gmail.com",
+                        "name": "giftcard_email",
+                        "x": 238.5771883614089,
+                        "y": 772.104,
+                        "fontSize": 13,
+                        "draggable": false,
+                        "id": "giftcard_email",
+                        "fontFamily": "Poppins",
+                        "fill": "rgba(255, 255, 255, 0.6)",
+                        "align": "center",
+                        "width": 210
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "$250",
+                        "name": "giftcard_monney",
+                        "x": 49.53199999999998,
+                        "y": 670.6049761282767,
+                        "fontSize": 59,
+                        "lineHeight": 1.356,
+                        "draggable": false,
+                        "id": "giftcard_monney",
+                        "fontFamily": "Prata",
+                        "fill": "#F2DDB3",
+                        "width": 400,
+                        "align": "center"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "Date of Expiry",
+                        "name": "giftcard_date_gift_label",
+                        "x": 50,
+                        "y": 538.0319627060627,
+                        "id": "giftcard_date_gift_label",
+                        "fontSize": 18,
+                        "lineHeight": 1.449,
+                        "draggable": false,
+                        "fontFamily": "Rozha One",
+                        "fill": "rgba(255, 255, 255, 0.9)",
+                        "width": 400,
+                        "align": "center"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "11 november, 2019",
+                        "name": "giftcard_date_gift_input",
+                        "x": 50,
+                        "y": 558.9751602558329,
+                        "fontSize": 16,
+                        "lineHeight": 1.5,
+                        "draggable": false,
+                        "id": "giftcard_date_gift_input",
+                        "fontFamily": "Poppins",
+                        "fill": "rgba(255, 255, 255, 0.9)",
+                        "width": 400,
+                        "align": "center"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "Coupon Code",
+                        "name": "giftcard_counpon_label",
+                        "x": 50,
+                        "y": 597.331657748551,
+                        "id": "giftcard_counpon_label",
+                        "fontSize": 18,
+                        "lineHeight": 1.449,
+                        "draggable": false,
+                        "fontFamily": "Rozha One",
+                        "fill": "rgba(255, 255, 255, 0.9)",
+                        "width": 400,
+                        "align": "center"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "4633098436044831",
+                        "name": "giftcard_counpon",
+                        "x": 50,
+                        "y": 619.4535015464074,
+                        "fontSize": 16,
+                        "lineHeight": 1.5,
+                        "draggable": false,
+                        "id": "giftcard_counpon",
+                        "fontFamily": "Poppins",
+                        "fill": "rgba(255, 255, 255, 0.9)",
+                        "width": 400,
+                        "align": "center"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "Hello my friend !",
+                        "name": "giftcard_des",
+                        "x": 128.9631975497703,
+                        "y": 410.02423661532026,
+                        "id": "giftcard_des",
+                        "fontSize": 24,
+                        "draggable": false,
+                        "fontFamily": "Rozha One",
+                        "fill": "#F4F4F4",
+                        "width": 250,
+                        "align": "center"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "Cash payment is not possible. The terms and conditions apply.",
+                        "name": "giftcard_note",
+                        "x": 18.248931087289442,
+                        "y": 735.430645707594,
+                        "id": "giftcard_note",
+                        "draggable": false,
+                        "fontSize": 14,
+                        "lineHeight": 1.5,
+                        "rotation": -90,
+                        "fontFamily": "Poppins",
+                        "fill": "rgba(255, 255, 255, 0.9)"
+                    },
+                    "className": "Text"
+                }
+            ]
+        }
+    ]
+}

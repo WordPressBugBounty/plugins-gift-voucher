@@ -1,0 +1,247 @@
+{
+    "attrs": {
+        "width": 500,
+        "height": 789.0295358649789
+    },
+    "className": "Stage",
+    "children": [
+        {
+            "attrs": {},
+            "className": "Layer",
+            "children": [
+                {
+                    "attrs": {
+                        "name": "giftcard_bg",
+                        "id": "giftcard_bg",
+                        "width": 500,
+                        "height": 789.0295358649789
+                    },
+                    "className": "Image"
+                },
+                {
+                    "attrs": {
+                        "text": "VOUCHER",
+                        "name": "gift_title_first",
+                        "x": 91.99232679738557,
+                        "y": 140.35324183006531,
+                        "draggable": false,
+                        "fontSize": 58,
+                        "id": "gift_title_first",
+                        "fontFamily": "Purple Purse",
+                        "fill": "#fff"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "Gift From",
+                        "name": "giftfrom_label",
+                        "x": 106,
+                        "y": 523.7383529411766,
+                        "fontSize": 18,
+                        "lineHeight": 1.23,
+                        "draggable": false,
+                        "id": "giftfrom_label",
+                        "fontFamily": "GT Sectra Display",
+                        "fill": "#fff"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "FIRST & LAST NAME",
+                        "name": "giftto_input",
+                        "x": 231,
+                        "y": 523.7383529411766,
+                        "fontSize": 16,
+                        "lineHeight": 1.5,
+                        "draggable": false,
+                        "id": "giftfrom_input",
+                        "fontFamily": "Poppins",
+                        "fill": "#E0E8E8",
+                        "width": 160,
+                        "align": "right"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "Gift To",
+                        "name": "giftto_label",
+                        "x": 106,
+                        "y": 492.80933333333354,
+                        "fontSize": 18,
+                        "lineHeight": 1.23,
+                        "draggable": false,
+                        "id": "giftto_label",
+                        "fontFamily": "GT Sectra Display",
+                        "fill": "#fff"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "FIRST & LAST NAME",
+                        "name": "giftto_input",
+                        "x": 231,
+                        "y": 492.80933333333354,
+                        "fontSize": 16,
+                        "lineHeight": 1.5,
+                        "draggable": false,
+                        "id": "giftto_input",
+                        "fontFamily": "Poppins",
+                        "fill": "#E0E8E8",
+                        "width": 160,
+                        "align": "right"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "http://www.wp-giftcard.com",
+                        "name": "giftcard_website",
+                        "x": 52.02558039816232,
+                        "y": 706.4280018016395,
+                        "lineHeight": 1.5,
+                        "draggable": false,
+                        "id": "giftcard_website",
+                        "fontFamily": "Poppins",
+                        "fill": "rgba(255, 255, 255, 0.6)",
+                        "align": "center",
+                        "width": 180
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "someeamilhere@gmail.com",
+                        "name": "giftcard_email",
+                        "x": 258.9482695252681,
+                        "y": 706.4280018016395,
+                        "lineHeight": 1.5,
+                        "draggable": false,
+                        "id": "giftcard_email",
+                        "fontFamily": "Poppins",
+                        "fill": "rgba(255, 255, 255, 0.6)",
+                        "align": "center",
+                        "width": 180
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "$250",
+                        "name": "giftcard_monney",
+                        "x": 44.78,
+                        "y": 243.0630588235293,
+                        "fontSize": 43,
+                        "draggable": false,
+                        "id": "giftcard_monney",
+                        "fontFamily": "Prata",
+                        "fill": "#F2DDB3",
+                        "width": 400,
+                        "align": "center"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "Value",
+                        "name": "giftcard_monney_label",
+                        "x": 44.572,
+                        "y": 285.8920653594771,
+                        "fontSize": 16,
+                        "draggable": false,
+                        "id": "giftcard_monney_label",
+                        "fontFamily": "Poppins",
+                        "fill": "#fff",
+                        "width": 400,
+                        "align": "center"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "Date of Expiry",
+                        "name": "giftcard_date_gift_label",
+                        "x": 106,
+                        "y": 577.7462352941178,
+                        "fontSize": 18,
+                        "lineHeight": 1.23,
+                        "draggable": false,
+                        "id": "giftcard_date_gift_label",
+                        "fontFamily": "GT Sectra Display",
+                        "fill": "#fff"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "20.11.2019",
+                        "name": "giftcard_date_gift_input",
+                        "x": 231,
+                        "y": 577.7462352941178,
+                        "fontSize": 16,
+                        "lineHeight": 1.5,
+                        "draggable": false,
+                        "id": "giftcard_date_gift_input",
+                        "fontFamily": "Poppins",
+                        "fill": "#E0E8E8",
+                        "width": 160,
+                        "align": "right"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "Coupon Code",
+                        "name": "giftcard_counpon_label",
+                        "x": 106,
+                        "y": 609.1665490196077,
+                        "fontSize": 18,
+                        "lineHeight": 1.23,
+                        "draggable": false,
+                        "id": "giftcard_counpon_label",
+                        "fontFamily": "GT Sectra Display",
+                        "fill": "#fff"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "4633098436044831",
+                        "name": "giftcard_counpon",
+                        "x": 231,
+                        "y": 609.1665490196077,
+                        "fontSize": 16,
+                        "lineHeight": 1.5,
+                        "draggable": false,
+                        "id": "giftcard_counpon",
+                        "fontFamily": "Poppins",
+                        "fill": "#E0E8E8",
+                        "width": 160,
+                        "align": "right"
+                    },
+                    "className": "Text"
+                },
+                {
+                    "attrs": {
+                        "text": "Hello my friend!",
+                        "name": "giftcard_des",
+                        "x": 100.45388055130167,
+                        "y": 362.17254901960814,
+                        "id": "giftcard_des",
+                        "fontSize": 20,
+                        "lineHeight": 1.25,
+                        "draggable": false,
+                        "fontFamily": "GT Sectra Display",
+                        "fill": "#F4F4F4",
+                        "width": 299,
+                        "align": "center"
+                    },
+                    "className": "Text"
+                }
+            ]
+        }
+    ]
+}

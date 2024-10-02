@@ -1,0 +1,1680 @@
+# Translation of Plugins - Gift Vouchers (Gift Cards and Packages) (WooCommerce Supported) - Stable (latest release) in Dutch
+# This file is distributed under the same license as the Plugins - Gift Vouchers (Gift Cards and Packages) (WooCommerce Supported) - Stable (latest release) package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Gift Vouchers Pro\n"
+"POT-Creation-Date: 2020-01-11 14:21+0530\n"
+"PO-Revision-Date: 2020-01-11 14:21+0530\n"
+"Last-Translator: \n"
+"Language-Team: Codemenschen <gdpr@codemenschen.at>\n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 2.2.4\n"
+"X-Poedit-KeywordsList: __;_e;esc_html_e;esc_html__;esc_attr_e\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-SearchPath-0: classes\n"
+"X-Poedit-SearchPath-1: include\n"
+"X-Poedit-SearchPath-2: templates\n"
+"X-Poedit-SearchPath-3: admin.php\n"
+"X-Poedit-SearchPath-4: front.php\n"
+"X-Poedit-SearchPath-5: giftitems.php\n"
+"X-Poedit-SearchPath-6: gift-voucher.php\n"
+
+#: admin.php:43 admin.php:210 include/voucher_template.php:9
+msgid "Voucher Templates"
+msgstr "Modellen cadeaubons"
+
+#: admin.php:44 include/new_voucher_template.php:14
+#: include/voucher_template.php:9
+msgid "Add New Template"
+msgstr "Nieuw model toevoegen"
+
+#: admin.php:45
+msgid "View Voucher Details"
+msgstr "Details van cadeaubon bekijken"
+
+#: admin.php:46 gift-voucher.php:102 include/voucher_settings.php:203
+msgid "Settings"
+msgstr "Instellingen"
+
+#: admin.php:47
+msgid "Gift Voucher Orders"
+msgstr "Bestellingen cadeaubons"
+
+#: admin.php:65 include/redeem-voucher.php:52 include/redeem-voucher.php:57
+msgid "Check Voucher Balance"
+msgstr "Controleer resterende waarde cadeaubon"
+
+#: admin.php:174
+msgid "Invalid Request."
+msgstr "Ongeldig verzoek."
+
+#: admin.php:180
+msgid "Export All Orders"
+msgstr "Exporteer alle bestellingen"
+
+#: admin.php:193 include/voucher_posttype.php:11
+msgid "Gift Vouchers"
+msgstr "Cadeaubonnen"
+
+#: classes/EDD_SL_Plugin_Updater.php:228
+#, php-format
+msgid ""
+"There is a new version of %1$s available. %2$sView version %3$s details%4$s."
+msgstr ""
+"Er is een nieuwe versie van %1$s beschikbaar. %2$sBekijk versie %3$s details"
+"%4$s."
+
+#: classes/EDD_SL_Plugin_Updater.php:236
+#, php-format
+msgid ""
+"There is a new version of %1$s available. %2$sView version %3$s details%4$s "
+"or %5$supdate now%6$s."
+msgstr ""
+"Er is een nieuwe versie van %1$s beschikbaar. %2$sBekijk versie %3$s details"
+"%4$s of %5$supdate nu%6$s."
+
+#: classes/EDD_SL_Plugin_Updater.php:474 classes/WPGV_Plugin_Updater.php:466
+msgid "You do not have permission to install plugin updates"
+msgstr "Je hebt geen toelating om updates van plugins te installeren"
+
+#: classes/EDD_SL_Plugin_Updater.php:474 classes/WPGV_Plugin_Updater.php:466
+msgid "Error"
+msgstr "Fout"
+
+#: classes/WPGV_Plugin_Updater.php:225
+#, php-format
+msgid ""
+"There is a new version of %1$s available. %2$s View version %3$s details "
+"%4$s."
+msgstr ""
+"Er is een nieuwe versie van %1$s beschikbaar. %2$s Bekijk versie %3$s "
+"details %4$s."
+
+#: classes/WPGV_Plugin_Updater.php:233
+#, php-format
+msgid ""
+"There is a new version of %1$s available. %2$s View version %3$s details "
+"%4$s or %5$s update now %6$s."
+msgstr ""
+"Er is een nieuwe versie van %1$s beschikbaar. %2$s Bekijk versie %3$s "
+"details %4$s of %5$s update nu %6$s."
+
+#: classes/class-nag.php:116
+#, php-format
+msgid ""
+"You've been using <b>What The File</b> for some time now, could you please "
+"give it a review at wordpress.org? <br /><br /> <a href='%s' "
+"target='_blank'>Yes, take me there!</a> - <a href='%s'>I've already done "
+"this!</a><br/><br/><small><a href='http://www.never5.com/' "
+"target='_blank'>Check out other Never5 plugins</a></small>"
+msgstr ""
+"U gebruikt  <b>What The File</b> nu al enige tijd. Wilt u a.u.b. een "
+"commentaar op wordpress.org zetten? <br /><br /> <a href=‘%s’ "
+"target=‘_blank’>Ja, graag!</a> - <a href=‘%s’>Dat heb ik al gedaan!</a><br/"
+"><br/><small><a href=‘http://www.never5.com/' target=‘_blank’>Bekijk andere  "
+"Never5 plugins</a></small>"
+
+#: classes/page_template.php:72
+msgid "PDF Voucher Viewer"
+msgstr "PDF viewer cadeaubon"
+
+#: classes/page_template.php:73
+msgid "PDF Gift Item Viewer"
+msgstr "PDF viewer geschenkartikel"
+
+#: classes/template.php:16
+msgid "Template"
+msgstr "Model"
+
+#: classes/template.php:17
+msgid "Templates"
+msgstr "Modellen"
+
+#: classes/template.php:78
+msgid "No templates yet."
+msgstr "Er zijn nog geen modellen."
+
+#: classes/template.php:113
+msgid "Template ID"
+msgstr "Model ID"
+
+#: classes/template.php:114 include/new_voucher_template.php:120
+msgid "Title"
+msgstr "Titel"
+
+#: classes/template.php:115 include/new_voucher_template.php:133
+msgid "Image"
+msgstr "Afbeelding"
+
+#: classes/template.php:116 include/new_voucher_template.php:146
+#: include/view_voucher_details.php:36
+msgid "Status"
+msgstr "Status"
+
+#: classes/template.php:117
+msgid "Template Date"
+msgstr "Model datum"
+
+#: classes/template.php:150 include/new_voucher_template.php:21
+#: include/new_voucher_template.php:22
+msgid "Edit Template"
+msgstr "Bewerk model"
+
+#: classes/template.php:151 classes/template.php:198 classes/voucher.php:465
+msgid "Delete"
+msgstr "Verwijderen"
+
+#: classes/voucher.php:16
+msgid "Voucher Order"
+msgstr "Bestelling cadeaubon"
+
+#: classes/voucher.php:17 include/voucher_list.php:12
+msgid "Voucher Orders"
+msgstr "Bestellingen cadeaubons"
+
+#: classes/voucher.php:161
+msgid "No purchased voucher codes yet."
+msgstr "Nog geen cadeaubroncodes gekocht."
+
+#: classes/voucher.php:199
+msgid "Order id"
+msgstr "Bestelling nr"
+
+#: classes/voucher.php:200 include/view_voucher_details.php:34
+msgid "Voucher Code"
+msgstr "Cadeaubon code"
+
+#: classes/voucher.php:201 include/view_voucher_details.php:83
+msgid "Voucher Information"
+msgstr "Informatie over de cadeaubon"
+
+#: classes/voucher.php:202
+msgid "Buyer's Information"
+msgstr "Klantinformatie"
+
+#: classes/voucher.php:203 include/voucher-shortcodes.php:343
+msgid "Action"
+msgstr "Actie"
+
+#: classes/voucher.php:204
+msgid "Voucher"
+msgstr "Cadeaubon"
+
+#: classes/voucher.php:205 include/view_voucher_details.php:35
+#: templates/pdfstyles/receipt.php:51
+msgid "Order Date"
+msgstr "Besteldatum"
+
+#: classes/voucher.php:240
+msgid "View Details"
+msgstr "Bekijk details"
+
+#: classes/voucher.php:241
+msgid "Delete Voucher"
+msgstr "Verwijder cadeaubon"
+
+#: classes/voucher.php:261
+msgid "Remaining Balance:"
+msgstr "Resterend bedrag:"
+
+#: classes/voucher.php:282 front.php:36 giftitems.php:32
+#: include/view_voucher_details.php:87
+msgid "Buying For"
+msgstr "Kopen voor"
+
+#: classes/voucher.php:286
+#, fuzzy
+#| msgid "Your Name"
+msgid "Buyer Name"
+msgstr "Je naam"
+
+#: classes/voucher.php:291 front.php:54 front.php:65 front.php:183
+#: front.php:218 front.php:255 front.php:447 giftitems.php:51 giftitems.php:64
+#: giftitems.php:368 giftitems.php:407 giftitems.php:448
+#: include/view_voucher_details.php:90 templates/pdfstyles/receipt.php:68
+#: templates/pdfstyles/style1.php:56 templates/pdfstyles/style2.php:58
+#: templates/pdfstyles/style3.php:56
+msgid "Recipient Name"
+msgstr "Naam ontvanger"
+
+#: classes/voucher.php:296 front.php:80 front.php:326 front.php:439
+#: giftitems.php:81 templates/pdfstyles/style1.php:70
+#: templates/pdfstyles/style2.php:72 templates/pdfstyles/style3.php:70
+msgid "Voucher Value"
+msgstr "Waarde cadeaubon"
+
+#: classes/voucher.php:300
+msgid "Total Payable Amount"
+msgstr "Totaal te betalen bedrag"
+
+#: classes/voucher.php:304 include/view_voucher_details.php:93
+msgid "Message"
+msgstr "Bericht"
+
+#: classes/voucher.php:323 front.php:347 front.php:416 front.php:457
+#: giftitems.php:237 giftitems.php:283 include/view_voucher_details.php:112
+msgid "Shipping"
+msgstr "Verzending"
+
+#: classes/voucher.php:328
+msgid "Recipient Email"
+msgstr "Email ontvanger"
+
+#: classes/voucher.php:332 classes/voucher.php:341
+msgid "Buyer Email"
+msgstr "Email koper"
+
+#: classes/voucher.php:337 include/view_voucher_details.php:116
+msgid "Name"
+msgstr "Naam"
+
+#: classes/voucher.php:345 front.php:377 front.php:477 giftitems.php:265
+#: include/view_voucher_details.php:118
+msgid "Address"
+msgstr "Adres"
+
+#: classes/voucher.php:349 front.php:381 front.php:481 giftitems.php:266
+#: include/view_voucher_details.php:119
+msgid "Postcode"
+msgstr "Postcode"
+
+#: classes/voucher.php:353 include/view_voucher_details.php:120
+msgid "Shipping Method"
+msgstr "Verzendmethode"
+
+#: classes/voucher.php:358 front.php:149 front.php:403 front.php:489
+#: giftitems.php:117 giftitems.php:299 giftitems.php:338
+#: include/view_voucher_details.php:122 templates/pdfstyles/receipt.php:109
+msgid "Payment Method"
+msgstr "Betaalmethode"
+
+#: classes/voucher.php:363
+msgid "Stripe Session ID"
+msgstr "Stripe sessie ID"
+
+#: classes/voucher.php:367
+msgid "Stripe Publishable Key"
+msgstr "Stripe publiceerbare sleutel"
+
+#: classes/voucher.php:372
+msgid "PayPal PaymentID"
+msgstr "PayPal PaymentID"
+
+#: classes/voucher.php:376
+msgid "PayPal Mode"
+msgstr "PayPal mode"
+
+#: classes/voucher.php:381 templates/pdfstyles/receipt.php:117
+msgid "Payment Status"
+msgstr "Status betaling"
+
+#: classes/voucher.php:385
+msgid "Expiry"
+msgstr "Verloop"
+
+#: classes/voucher.php:404 classes/voucher.php:463
+msgid "Mark as Used"
+msgstr "Markeren als gebruikt"
+
+#: classes/voucher.php:408 include/view_voucher_details.php:43
+msgid "Voucher Used"
+msgstr "Cadeaubon gebruikt"
+
+#: classes/voucher.php:414 classes/voucher.php:464
+msgid "Mark as Paid"
+msgstr "Markeer als betaald"
+
+#: classes/voucher.php:418 include/voucher-shortcodes.php:34
+#: include/voucher-shortcodes.php:233 templates/pdfstyles/receipt.php:120
+msgid "Paid"
+msgstr "Betaald"
+
+#: classes/voucher.php:562
+msgid "Order Details"
+msgstr "Bestelgegevens"
+
+#: classes/wpgv-gift-voucher-activity.php:55
+#, php-format
+msgid "Could not find activity record %d."
+msgstr "Kan activiteit record %d niet vinden."
+
+#: classes/wpgv-gift-voucher-activity.php:67
+msgid "Invalid action value: "
+msgstr "Ongeldige waarde: "
+
+#: classes/wpgv-gift-voucher.php:49
+msgid "Gift Voucher does not exist."
+msgstr "Cadeaubon bestaat niet."
+
+#: classes/wpgv-gift-voucher.php:52
+msgid "Enter a card number."
+msgstr "Voer een kaartnummer in."
+
+#: classes/wpgv-gift-voucher.php:111
+msgid "Amount added should be greater than zero."
+msgstr "Het toegevoegde bedrag moet groter zijn dan nul."
+
+#: classes/wpgv-gift-voucher.php:119
+msgid "Amount deducted should be less than zero."
+msgstr "Het afgetrokken bedrag moet kleiner zijn dan nul."
+
+#: classes/wpgv-gift-voucher.php:128
+msgid "Unable to adjust balance, card is not active."
+msgstr "Niet in staat om de balans aan te passen, kaart is niet actief."
+
+#: classes/wpgv-gift-voucher.php:132
+#, php-format
+msgid "Balance is currently %s, unable to adjust by %s"
+msgstr "Saldo is momenteel %s, kan niet worden aangepast voor %s"
+
+#: classes/wpgv-gift-voucher.php:190
+msgid "Card Number cannot be empty."
+msgstr "Je moet een kaartnummer invullen."
+
+#: classes/wpgv-gift-voucher.php:222
+#, php-format
+msgid "Failed to generate a unique random card number after %d attempts. %s"
+msgstr "Kan geen uniek willekeurig kaartnummer genereren na %d pogingen. %s"
+
+#: classes/wpgv-gift-voucher.php:250
+#, php-format
+msgid "Property %s does not exist on %s"
+msgstr "Eigenschap %s bestaat niet op %s"
+
+#: front.php:40 giftitems.php:36
+msgid "Someone Else"
+msgstr "Iemand anders"
+
+#: front.php:44 giftitems.php:40
+msgid "Yourself"
+msgstr "Jezelf"
+
+#: front.php:50 front.php:61 front.php:71 front.php:179 front.php:214
+#: front.php:251 front.php:410 front.php:443 giftitems.php:46 giftitems.php:59
+#: giftitems.php:71 giftitems.php:277 giftitems.php:329 giftitems.php:364
+#: giftitems.php:403 giftitems.php:444 include/view_voucher_details.php:88
+#: templates/pdfstyles/receipt.php:59 templates/pdfstyles/style1.php:43
+#: templates/pdfstyles/style2.php:45 templates/pdfstyles/style3.php:43
+msgid "Your Name"
+msgstr "Je naam"
+
+#: front.php:89
+#, php-format
+msgid "(Min Voucher Value %s)"
+msgstr "(Minimum waarde %s)"
+
+#: front.php:142
+msgid "Choose Voucher Style"
+msgstr "Kies een stijl"
+
+#: front.php:144 giftitems.php:112
+msgid "Style"
+msgstr "Stijl"
+
+#: front.php:152 giftitems.php:120
+msgid "Paypal"
+msgstr "Paypal"
+
+#: front.php:153 giftitems.php:121
+msgid "Sofort"
+msgstr "Sofort"
+
+#: front.php:155 giftitems.php:123
+msgid "Per Invoice"
+msgstr "Per factuur"
+
+#: front.php:165 giftitems.php:102 include/wpgv_item_pdf.php:54
+#: include/wpgv_voucher_pdf.php:52 templates/wpgv_item_pdf.php:38
+msgid "No Expiry"
+msgstr "Geen vervaldatum"
+
+#: front.php:176 front.php:212 front.php:245
+#: templates/woocommerce/cart/wpgv-gift-vouchers.php:25
+#: templates/woocommerce/checkout/wpgv-gift-vouchers.php:25
+msgid "Gift Voucher"
+msgstr "Cadeaubon"
+
+#: front.php:188 front.php:225 front.php:262 front.php:451 giftitems.php:373
+#: giftitems.php:414 giftitems.php:455 templates/pdfstyles/style1.php:95
+#: templates/pdfstyles/style2.php:85 templates/pdfstyles/style3.php:83
+msgid "Personal Message"
+msgstr "Persoonlijke boodschap"
+
+#: front.php:192 front.php:229 front.php:266 giftitems.php:377
+#: giftitems.php:418 giftitems.php:459 templates/pdfstyles/style1.php:83
+#: templates/pdfstyles/style2.php:99 templates/pdfstyles/style3.php:97
+msgid "Date of Expiry"
+msgstr "Vervaldatum"
+
+#: front.php:196 front.php:233 front.php:270 giftitems.php:381
+#: giftitems.php:422 giftitems.php:463 templates/pdfstyles/receipt.php:93
+#: templates/pdfstyles/style1.php:109 templates/pdfstyles/style2.php:110
+#: templates/pdfstyles/style3.php:108
+msgid "Coupon Code"
+msgstr "Kortingscode"
+
+#: front.php:201 front.php:238 front.php:275 giftitems.php:386
+#: giftitems.php:427 giftitems.php:468 templates/pdfstyles/style1.php:135
+#: templates/pdfstyles/style2.php:135 templates/pdfstyles/style3.php:133
+msgid "Cash payment is not possible. The terms and conditions apply."
+msgstr ""
+"Contante betaling is niet mogelijk. De voorwaarden zijn van toepassing."
+
+#: front.php:306 front.php:308
+msgid "Select Templates"
+msgstr "Kies modellen"
+
+#: front.php:317 front.php:319
+msgid "Personalize"
+msgstr "Personaliseer"
+
+#: front.php:331 giftitems.php:221
+msgid "Personal Message (Optional)"
+msgstr "Persoonlijk bericht (optioneel)"
+
+#: front.php:331 giftitems.php:221
+msgid "Max: 250 Characters"
+msgstr "Max: 250 tekens"
+
+#: front.php:340 front.php:342
+msgid "Payment"
+msgstr "Betaling"
+
+#: front.php:351 giftitems.php:241 include/view_voucher_details.php:114
+#: include/view_voucher_details.php:117 templates/pdfstyles/receipt.php:77
+msgid "Email"
+msgstr "E-mailadres"
+
+#: front.php:355 giftitems.php:245
+msgid "Post"
+msgstr "Post"
+
+#: front.php:361 front.php:392 front.php:461 giftitems.php:251
+#: giftitems.php:315
+msgid "Send the voucher to recipient email here"
+msgstr "Email ontvanger (waarnaar de bon gestuurd wordt)"
+
+#: front.php:365 front.php:396 front.php:465 giftitems.php:256
+#: giftitems.php:320
+msgid "Your email address (for the receipt)"
+msgstr "Je e-mailadres (voor de factuur)"
+
+#: front.php:369 front.php:469 giftitems.php:263
+msgid "First Name"
+msgstr "Voornaam"
+
+#: front.php:373 front.php:473 giftitems.php:264
+msgid "Last Name"
+msgstr "Achternaam"
+
+#: front.php:385 front.php:485 giftitems.php:269
+msgid "Shipping method"
+msgstr "Verzendmethode"
+
+#: front.php:406 giftitems.php:273 giftitems.php:325
+msgid "Your Order"
+msgstr "Je bestelling"
+
+#: front.php:420 giftitems.php:287
+msgid "Website Commission"
+msgstr ""
+
+#: front.php:423 giftitems.php:290
+msgid "Total"
+msgstr "Totaal"
+
+#: front.php:433 front.php:435
+msgid "Overview"
+msgstr "Overzicht"
+
+#: front.php:458 gift-voucher.php:125
+msgid "Shipping via Email"
+msgstr "Verzending via e-mail"
+
+#: front.php:497 giftitems.php:307 giftitems.php:346
+msgid "Pay Now"
+msgstr "Nu betalen"
+
+#: front.php:502 giftitems.php:295 giftitems.php:334
+msgid "Show Preview as PDF"
+msgstr "Voorbeeld weergeven als PDF"
+
+#: gift-voucher.php:103
+msgid "Documentation"
+msgstr "Documentatie"
+
+#: gift-voucher.php:115
+msgid "This email must be different from above email."
+msgstr "Dit email adres moet verschillen van het bovenstaande."
+
+#: gift-voucher.php:116
+msgid "Please select voucher template"
+msgstr "Kies een model voor de cadeaubon"
+
+#: gift-voucher.php:117
+msgid "Please accept the terms and conditions"
+msgstr "Gelieve de algemene voorwaarden te accepteren"
+
+#: gift-voucher.php:118
+msgid "Finish"
+msgstr "Voltooien"
+
+#: gift-voucher.php:119 giftitems.php:227
+msgid "Continue"
+msgstr "Doorgaan"
+
+#: gift-voucher.php:120 giftitems.php:228 giftitems.php:308 giftitems.php:347
+msgid "Back"
+msgstr "Terug"
+
+#: gift-voucher.php:121
+msgid "Submitted!"
+msgstr "Ingediend!"
+
+#: gift-voucher.php:122
+msgid "Error occurred"
+msgstr "Fout opgetreden"
+
+#: gift-voucher.php:123
+msgid "Total Characters"
+msgstr "Totaal aantal tekens"
+
+#: gift-voucher.php:124
+msgid "Shipping via Post"
+msgstr "Verzending via post"
+
+#: gift-voucher.php:126
+msgid "Please check email address."
+msgstr "Controleer e-mailadres."
+
+#: gift-voucher.php:127
+msgid "This field is required."
+msgstr "Dit veld is verplicht."
+
+#: gift-voucher.php:128
+msgid "Please fix this field."
+msgstr "Corrigeer dit veld."
+
+#: gift-voucher.php:129
+msgid "Please enter no more than {0} characters."
+msgstr "Voer niet meer dan {0} tekens in."
+
+#: gift-voucher.php:130
+msgid "Please enter a valid email address."
+msgstr "Voer een geldig e-mailadres in."
+
+#: gift-voucher.php:131
+msgid "Please enter a value less than or equal to {0}."
+msgstr "Vul een waarde kleiner dan of gelijk aan {0} in."
+
+#: gift-voucher.php:132
+msgid "Please enter a value greater than or equal to {0}."
+msgstr "Vul een waarde groter dan of gelijk aan {0} in."
+
+#: giftitems.php:47 giftitems.php:60 giftitems.php:72
+msgid "Your name is required"
+msgstr "Je naam is vereist"
+
+#: giftitems.php:52 giftitems.php:65
+msgid "Recipient name is required"
+msgstr "Naam ontvanger is vereist"
+
+#: giftitems.php:201
+msgid "Buy"
+msgstr "Bestel"
+
+#: giftitems.php:222
+msgid "Please enter no more than 250 characters."
+msgstr "Niet meer dan 250 tekens gebruiken a.u.b."
+
+#: giftitems.php:252 giftitems.php:316
+msgid "Required"
+msgstr "Vereist"
+
+#: giftitems.php:257 giftitems.php:321
+msgid "Your email address is required"
+msgstr "Je e-mailadres is vereist"
+
+#: giftitems.php:258
+msgid "This email must be be different from above email."
+msgstr "Dit email adres moet verschillen van het bovenstaande."
+
+#: giftitems.php:262
+msgid "Shipping address"
+msgstr "Verzendadres"
+
+#: giftitems.php:389 giftitems.php:430 giftitems.php:471
+msgid "Voucher Preview"
+msgstr "Voorbeeldbon"
+
+#: include/new_voucher_template.php:15
+msgid "Add Template"
+msgstr "Model toevoegen"
+
+#: include/new_voucher_template.php:48
+msgid "Template Updated Successfully!"
+msgstr "Model succesvol bijgewerkt!"
+
+#: include/new_voucher_template.php:77
+msgid "Template Added Successfully!"
+msgstr "Model succesvol toegevoegd!"
+
+#: include/new_voucher_template.php:139 include/voucher_metabox.php:212
+msgid "Upload Image"
+msgstr "Afbeelding uploaden"
+
+#: include/new_voucher_template.php:140 include/voucher_metabox.php:45
+#: include/voucher_metabox.php:79 include/voucher_metabox.php:213
+msgid "Remove Image"
+msgstr "Verwijder afbeelding"
+
+#: include/new_voucher_template.php:150
+msgid "Active"
+msgstr "Actief"
+
+#: include/new_voucher_template.php:151
+msgid "Inactive"
+msgstr "Inactief"
+
+#: include/redeem-voucher.php:268
+#, php-format
+msgid "Shipping via %s"
+msgstr "Verzending via %s"
+
+#: include/redeem-voucher.php:284
+msgid "Gift card applied."
+msgstr "Cadeaubon toegepast."
+
+#: include/redeem-voucher.php:298
+msgid "Gift card removed."
+msgstr "Cadeaubon verwijderd."
+
+#: include/redeem-voucher.php:324
+msgid "Your voucher has expired."
+msgstr "Je cadeaubon is vervallen."
+
+#: include/redeem-voucher.php:327
+msgid "This gift voucher has a zero balance."
+msgstr "Deze cadeaubon heeft geen waarde."
+
+#: include/view_voucher_details.php:29
+msgid "Voucher Order ID"
+msgstr "Bestelnummer cadeaubon"
+
+#: include/view_voucher_details.php:30
+msgid "Here you can find detailed information for a voucher code."
+msgstr "Hier vind je gedetailleerde informatie over een cadeaubon code."
+
+#: include/view_voucher_details.php:37
+msgid "See Receipt (PDF)"
+msgstr "Zie ontvangstbewijs (PDF)"
+
+#: include/view_voucher_details.php:43
+msgid "Unused"
+msgstr "Ongebruikt(e)"
+
+#: include/view_voucher_details.php:49
+msgid "Template Information"
+msgstr "Informatie over model"
+
+#: include/view_voucher_details.php:53
+msgid "Template Name"
+msgstr "Naam model"
+
+#: include/view_voucher_details.php:54
+msgid "Template Image"
+msgstr "Afbeelding model"
+
+#: include/view_voucher_details.php:65
+msgid "Item Information"
+msgstr "Artikelinformatie"
+
+#: include/view_voucher_details.php:69
+msgid "Item Name"
+msgstr "Naam artikel"
+
+#: include/view_voucher_details.php:70
+msgid "Item Description"
+msgstr "Omschrijving artikel"
+
+#: include/view_voucher_details.php:71
+msgid "Item Image"
+msgstr "Afbeelding artikel"
+
+#: include/view_voucher_details.php:92 include/voucher-shortcodes.php:345
+#: templates/pdfstyles/receipt.php:85
+msgid "Amount"
+msgstr "Bedrag"
+
+#: include/view_voucher_details.php:108
+msgid "Buyers Information"
+msgstr "Informatie koper"
+
+#: include/view_voucher_details.php:123
+msgid "Transaction ID"
+msgstr "Transactie ID"
+
+#: include/view_voucher_details.php:124
+msgid "Expiry Date"
+msgstr "Vervaldatum"
+
+#: include/view_voucher_details.php:152
+msgid "Back to Vouchers List"
+msgstr "Terug naar lijst cadeaubonnen"
+
+#: include/voucher-shortcodes.php:25 include/voucher-shortcodes.php:148
+#: include/voucher-shortcodes.php:183
+msgid "This URL is invalid. You can not access this page directly."
+msgstr ""
+"Deze URL is ongeldig. Je hebt geen rechtstreekse toegang tot deze pagina."
+
+#: include/voucher-shortcodes.php:145 include/voucher-shortcodes.php:294
+msgid ""
+"Some Error Occurred From Sending this Email! <br>(Reload and Retry Again!) "
+"or Contact Us"
+msgstr ""
+"Er deed zich een fout voor bij het verzenden van deze email. <br>(Herlaad en "
+"probeer het nog eens) of contacteer ons"
+
+#: include/voucher-shortcodes.php:236
+msgid "Stripe"
+msgstr "Stripe"
+
+#: include/voucher-shortcodes.php:297
+msgid "Transaction has been failed"
+msgstr "Transactie is mislukt"
+
+#: include/voucher-shortcodes.php:300
+msgid "Transaction has been failed!"
+msgstr "Transactie is mislukt!"
+
+#: include/voucher-shortcodes.php:316
+msgid "Search by Gift voucher code"
+msgstr "Zoek op cadeaubon code"
+
+#: include/voucher-shortcodes.php:317
+msgid "Check Balance"
+msgstr "Saldo controleren"
+
+#: include/voucher-shortcodes.php:338
+msgid "Current Voucher Balance:"
+msgstr "Huidig cadeaubon saldo:"
+
+#: include/voucher-shortcodes.php:342
+msgid "Date"
+msgstr "Datum"
+
+#: include/voucher-shortcodes.php:344
+msgid "Note"
+msgstr "Opmerking"
+
+#: include/voucher-shortcodes.php:346
+msgid "Balance"
+msgstr "Saldo"
+
+#: include/voucher-shortcodes.php:379
+msgid "This is a invalid voucher code."
+msgstr "Dit is een ongeldige cadeaubon code."
+
+#: include/voucher_list.php:30
+msgid "Unused Gift Vouchers"
+msgstr "Ongebruikte cadeaubonnen"
+
+#: include/voucher_list.php:31
+msgid "Total Unused Voucher Amount"
+msgstr "Totaal bedrag ongebruikte cadeaubonnen"
+
+#: include/voucher_list.php:43
+msgid "Import Vouchers"
+msgstr "Cadeaubonnen importeren"
+
+#: include/voucher_list.php:45
+msgid "Purchased Voucher Codes"
+msgstr "Gekochte cadeaubon codes"
+
+#: include/voucher_list.php:46
+msgid "Purchased Items"
+msgstr "Gekochte artikelen"
+
+#: include/voucher_metabox.php:40 include/voucher_metabox.php:67
+#: include/voucher_posttype.php:27
+msgid "Featured Image"
+msgstr "Uitgelichte afbeelding"
+
+#: include/voucher_metabox.php:44 include/voucher_metabox.php:78
+msgid "Add Image"
+msgstr "Afbeelding toevoegen"
+
+#: include/voucher_metabox.php:106
+msgid "Insert"
+msgstr "Invoegen"
+
+#: include/voucher_metabox.php:154
+msgid "Item Details"
+msgstr "Artikel details"
+
+#: include/voucher_metabox.php:188
+msgid "Description"
+msgstr "Omschrijving"
+
+#: include/voucher_metabox.php:189
+msgid "Item Price"
+msgstr "Prijs"
+
+#: include/voucher_metabox.php:190
+msgid "Item Special Price"
+msgstr "Speciale prijs"
+
+#: include/voucher_posttype.php:9
+msgid "Gift Items"
+msgstr "Cadeauartikelen"
+
+#: include/voucher_posttype.php:10 include/voucher_posttype.php:12
+#: include/voucher_posttype.php:38
+msgid "Item"
+msgstr "Artikel"
+
+#: include/voucher_posttype.php:13
+msgid "Item Archives"
+msgstr "Artikel archieven"
+
+#: include/voucher_posttype.php:14
+msgid "Item Attributes"
+msgstr "Kenmerken artikel"
+
+#: include/voucher_posttype.php:15
+msgid "Parent Item:"
+msgstr "Hoofd iartikel:"
+
+#: include/voucher_posttype.php:16
+msgid "All Gift Items"
+msgstr "Alle cadeauartikelen"
+
+#: include/voucher_posttype.php:17 include/voucher_posttype.php:18
+msgid "Add New Item"
+msgstr "Voeg nieuw artikel toe"
+
+#: include/voucher_posttype.php:19
+msgid "New Item"
+msgstr "Nieuw artikel"
+
+#: include/voucher_posttype.php:20
+msgid "Edit Item"
+msgstr "Bewerk artikel"
+
+#: include/voucher_posttype.php:21
+msgid "Update Item"
+msgstr "Artikel aanpassen"
+
+#: include/voucher_posttype.php:22
+msgid "View Item"
+msgstr "Bekijk artikel"
+
+#: include/voucher_posttype.php:23
+msgid "View Items"
+msgstr "Bekijk artikels"
+
+#: include/voucher_posttype.php:24
+msgid "Search Item"
+msgstr "Zoek artikel"
+
+#: include/voucher_posttype.php:25
+msgid "Not found"
+msgstr "Niet gevonden"
+
+#: include/voucher_posttype.php:26
+msgid "Not found in Trash"
+msgstr "Niet gevonden in prullenbak"
+
+#: include/voucher_posttype.php:28
+msgid "Set Item image"
+msgstr "Beeld artikel instellen"
+
+#: include/voucher_posttype.php:29
+msgid "Remove featured image"
+msgstr "Verwijder uitgelichte afbeelding"
+
+#: include/voucher_posttype.php:30
+msgid "Use as featured image"
+msgstr "Gebruik als uitgelichte afbeelding"
+
+#: include/voucher_posttype.php:31
+msgid "Insert into Item"
+msgstr "Invoegen in artikel"
+
+#: include/voucher_posttype.php:32
+msgid "Uploaded to this Item"
+msgstr "Geüpload naar dit artikel"
+
+#: include/voucher_posttype.php:33
+msgid "Items list"
+msgstr "Lijst artikels"
+
+#: include/voucher_posttype.php:34
+msgid "Items list navigation"
+msgstr "Navigatie lijst artikels"
+
+#: include/voucher_posttype.php:35
+msgid "Filter Items list"
+msgstr "Lijst met gefilterde artikels"
+
+#: include/voucher_posttype.php:39
+msgid "Create your store Items as a product"
+msgstr "Je winkelartikelen als product maken"
+
+#: include/voucher_posttype.php:67
+msgid "Item Categories"
+msgstr "Artikel categorieën"
+
+#: include/voucher_posttype.php:68 include/voucher_posttype.php:69
+msgid "Item Category"
+msgstr "Artikelcategorie"
+
+#: include/voucher_posttype.php:70
+msgid "All Item Categories"
+msgstr "Alle artikel categorieën"
+
+#: include/voucher_posttype.php:71
+msgid "Parent Category"
+msgstr "Hoofdcategorie"
+
+#: include/voucher_posttype.php:72
+msgid "Parent Category:"
+msgstr "Hoofdcategorie:"
+
+#: include/voucher_posttype.php:73
+msgid "New Category Name"
+msgstr "Nieuwe categorie naam"
+
+#: include/voucher_posttype.php:74
+msgid "Add New Category"
+msgstr "Voeg nieuwe categorie toe"
+
+#: include/voucher_posttype.php:75
+msgid "Edit Category"
+msgstr "Categorie bewerken"
+
+#: include/voucher_posttype.php:76
+msgid "Update Category"
+msgstr "Categorie bijwerken"
+
+#: include/voucher_posttype.php:77
+msgid "View Category"
+msgstr "Bekijk categorie"
+
+#: include/voucher_posttype.php:78
+msgid "Separate Categories with commas"
+msgstr "Categorieën scheiden met komma's"
+
+#: include/voucher_posttype.php:79
+msgid "Add or remove Categories"
+msgstr "Toevoegen of verwijderen categorieën"
+
+#: include/voucher_posttype.php:80
+msgid "Choose from the most used"
+msgstr "Kies uit de meest gebruikte"
+
+#: include/voucher_posttype.php:81
+msgid "Popular Categories"
+msgstr "Populaire categorieën"
+
+#: include/voucher_posttype.php:82
+msgid "Search Categories"
+msgstr "Zoek categorieën"
+
+#: include/voucher_posttype.php:83
+msgid "Not Found"
+msgstr "Niet gevonden"
+
+#: include/voucher_posttype.php:84
+msgid "No Categories"
+msgstr "Geen categorieën"
+
+#: include/voucher_posttype.php:85
+msgid "Categories list"
+msgstr "Lijst categorieën"
+
+#: include/voucher_posttype.php:86
+msgid "Categories list navigation"
+msgstr "Navigatie lijst categorieën"
+
+#: include/voucher_settings.php:152
+msgid "Your Settings Saved Successfully."
+msgstr "Je instellingen zijn opgeslagen."
+
+#: include/voucher_settings.php:189
+msgid "Pages Created"
+msgstr "Pagina’s gecreëerd"
+
+#: include/voucher_settings.php:190
+msgid "Created total 6 plugin pages. These pages can be viewed in Pages Menu:"
+msgstr ""
+"6 plugin pagina’s werden aangemaakt. Ze kunnen bekeken worden in het Pagina "
+"Menu:"
+
+#: include/voucher_settings.php:214 include/voucher_settings.php:225
+msgid "General Settings"
+msgstr "Algemene instellingen"
+
+#: include/voucher_settings.php:215 include/voucher_settings.php:527
+msgid "Payment Settings"
+msgstr "Betaal instellingen"
+
+#: include/voucher_settings.php:216 include/voucher_settings.php:690
+msgid "Email Settings"
+msgstr "E-mail instellingen"
+
+#: include/voucher_settings.php:217 include/voucher_settings.php:794
+msgid "Custom CSS"
+msgstr "Aangepaste CSS"
+
+#: include/voucher_settings.php:228
+msgid "WooCommerce"
+msgstr "WooCommerce"
+
+#: include/voucher_settings.php:240
+msgid "Can customers choose voucher styles?"
+msgstr "Kunnen klanten cadeaubon stijlen kiezen?"
+
+#: include/voucher_settings.php:252
+msgid "Voucher Style"
+msgstr "Cadeaubon stijl"
+
+#: include/voucher_settings.php:265 templates/pdfstyles/receipt.php:19
+msgid "Company Name"
+msgstr "Bedrijfsnaam"
+
+#: include/voucher_settings.php:273
+msgid "Currency Code"
+msgstr "Valuta code"
+
+#: include/voucher_settings.php:282
+msgid "Currency Symbol"
+msgstr "Valutasymbool"
+
+#: include/voucher_settings.php:290
+msgid "Currency Position"
+msgstr "Positie van valutasymbool"
+
+#: include/voucher_settings.php:301
+msgid "Voucher Background Color"
+msgstr "Achtergrondkleur cadeaubon"
+
+#: include/voucher_settings.php:309
+msgid "Voucher Text Color"
+msgstr "Tekstkleur van cadeaubon"
+
+#: include/voucher_settings.php:317
+msgid "Templates Columns"
+msgstr "Kolommen modellen"
+
+#: include/voucher_settings.php:318
+msgid "How many templates show in a row. (Gift Voucher Shortcode)"
+msgstr "Hoeveel modellen worden weergegeven in een rij. (Cadeaubon shortcode)"
+
+#: include/voucher_settings.php:329
+msgid "Minimum Voucher Value"
+msgstr "Minimum waarde cadeaubon"
+
+#: include/voucher_settings.php:330
+msgid "Leave 0 if no minimum value"
+msgstr "Vul 0 in als er geen minimumwaarde is"
+
+#: include/voucher_settings.php:338
+msgid "Maximum Voucher Value"
+msgstr "Maximale cadeaubon waarde"
+
+#: include/voucher_settings.php:346
+msgid "Add expiry in voucher"
+msgstr "Zet een vervaldatum op de cadeaubon"
+
+#: include/voucher_settings.php:357
+msgid "Voucher Expiry Type"
+msgstr "Verval type cadeaubon"
+
+#: include/voucher_settings.php:358
+msgid "Select the type of voucher expiration?"
+msgstr "Kiezen hoe een bon moet vervallen?"
+
+#: include/voucher_settings.php:369
+msgid "Voucher Expiry Value"
+msgstr "Verval waarde cadeaubon"
+
+#: include/voucher_settings.php:370
+msgid "Example: (Days: 60, Fixed Date: 20.05.2018)"
+msgstr "Voorbeeld: (Dagen: 60, Vaste datum: 20.05.2018)"
+
+#: include/voucher_settings.php:378
+msgid "Expiry date format"
+msgstr "Formaat vervaldatum"
+
+#: include/voucher_settings.php:387
+msgid "Terms and Condition Checkbox Text"
+msgstr "Tekst van het selectievakje algemene voorwaarden"
+
+#: include/voucher_settings.php:395
+msgid "Voucher Terms Note"
+msgstr "Tekst voorwaarden cadeaubon"
+
+#: include/voucher_settings.php:396
+msgid "Terms note in voucher order page"
+msgstr "Tekst voorwaarden cadeaubon voor bestelpagina"
+
+#: include/voucher_settings.php:404
+msgid "Buying for"
+msgstr "Ik koop de bon voor"
+
+#: include/voucher_settings.php:416
+msgid "Hide price from voucher"
+msgstr "Prijs niet op bon zetten"
+
+#: include/voucher_settings.php:427
+msgid "Post Shipping"
+msgstr "Verzending per post"
+
+#: include/voucher_settings.php:438
+msgid "Shipping Method for Post Shipping"
+msgstr "Verzendmethode voor verzending per post"
+
+#: include/voucher_settings.php:443
+msgid "Multiple methods seperate by comma(,)"
+msgstr "Meerdere methoden gescheiden door een komma (,)"
+
+#: include/voucher_settings.php:448
+msgid "Voucher preview Button"
+msgstr "Knop Voorbeeld van cadeaubon"
+
+#: include/voucher_settings.php:460
+msgid "Change PDF Save Option"
+msgstr "Wijzig PDF opslag optie"
+
+#: include/voucher_settings.php:472
+msgid "Add Your Custom Demo Image"
+msgstr "Uw aangepaste demo afbeelding toevoegen"
+
+#: include/voucher_settings.php:481
+msgid "Add Your Custom Loader URL"
+msgstr "Uw aangepaste loader-URL toevoegen"
+
+#: include/voucher_settings.php:490
+msgid "Successful Page Message"
+msgstr "Geslaagd pagina bericht"
+
+#: include/voucher_settings.php:491
+msgid "Message appear after payment successful."
+msgstr "Bericht weergegeven na succesvolle betaling."
+
+#: include/voucher_settings.php:495
+msgid "Display the email address of the customer"
+msgstr "Toon het e-mailadres van de klant"
+
+#: include/voucher_settings.php:500
+msgid "Order Cancellation Message"
+msgstr "Bericht annulering bestelling"
+
+#: include/voucher_settings.php:501
+msgid "Message appear after order cancelled"
+msgstr "Bericht weergegeven nadat bestelling geannuleerd werd"
+
+#: include/voucher_settings.php:509
+msgid "Website URL on PDF in Footer"
+msgstr "Website URL op PDF in voettekst"
+
+#: include/voucher_settings.php:517
+msgid "Email on PDF in Footer"
+msgstr "E-mail op PDF in voettekst"
+
+#: include/voucher_settings.php:530
+msgid "Paypal Enable"
+msgstr "PayPal inschakelen"
+
+#: include/voucher_settings.php:541
+msgid "Paypal Testmode"
+msgstr "PayPal Testmode"
+
+#: include/voucher_settings.php:552
+msgid "PayPal Client ID"
+msgstr "PayPal Klant ID"
+
+#: include/voucher_settings.php:553
+msgid "Read the documentation of how to create PayPal live client ID."
+msgstr "Lees de documentatie over het aanmaken van een PayPal live client ID."
+
+#: include/voucher_settings.php:561
+msgid "PayPal Secret Key"
+msgstr "Geheime sleutel PayPal"
+
+#: include/voucher_settings.php:570
+msgid "Stripe Enable"
+msgstr "Stripe status"
+
+#: include/voucher_settings.php:581
+msgid "Stripe Text"
+msgstr "Stripe tekst"
+
+#: include/voucher_settings.php:582
+msgid "This will show on frontend Form"
+msgstr "Dit wordt getoond in frontend formulier"
+
+#: include/voucher_settings.php:590
+msgid "Stripe Publishable key"
+msgstr "Stripe publiceerbare sleutel"
+
+#: include/voucher_settings.php:591
+msgid "Collect the Publishable API key from below link."
+msgstr "Verkrijg de publiceerbare API sleutel via onderstaande link."
+
+#: include/voucher_settings.php:599
+msgid "Stripe Secret Key"
+msgstr "Stripe geheime sleutel"
+
+#: include/voucher_settings.php:600
+msgid "Collect the Secret API key from below link."
+msgstr "Verkrijg de geheime API sleutel via onderstaande link."
+
+#: include/voucher_settings.php:608
+msgid "Stripe Webhook URL"
+msgstr "Stripe Webhook URL"
+
+#: include/voucher_settings.php:612
+msgid "Copy this url and paste in Stripe Webhook Endpoint URL."
+msgstr "Kopieer deze URL en plak hem als Stripe Webhook Endpoint URL."
+
+#: include/voucher_settings.php:617
+msgid "Stripe Webhook Signing secret key"
+msgstr "Stripe Webhook Signing geheime sleutel"
+
+#: include/voucher_settings.php:618
+msgid "Collect the Webhook Signing secret key from below link."
+msgstr "Verkrijg de Webhook Signing geheime sleutel via onderstaande link."
+
+#: include/voucher_settings.php:626
+msgid "Stripe Checkout Page"
+msgstr "Stripe betaalpagina"
+
+#: include/voucher_settings.php:630
+msgid ""
+"This page is automatically created for you when you enable stripe payment "
+"method."
+msgstr ""
+"Deze pagina wordt automatisch voor je gemaakt wanneer je de Stripe "
+"betaalmethode inschakelt."
+
+#: include/voucher_settings.php:636
+msgid "Sofort Enable"
+msgstr "Sofort inschakelen"
+
+#: include/voucher_settings.php:647
+msgid "Sofort Configuration Key"
+msgstr "Sofort configuratie sleutel"
+
+#: include/voucher_settings.php:648
+msgid ""
+"Enter your configuration key. you only can create a new configuration key by "
+"creating a new Gateway project in your account at sofort.com."
+msgstr ""
+"Voer je configuratie sleutel in. Je kan alleen een nieuwe configuratie "
+"sleutel maken door een nieuw Gateway project te maken via je account op "
+"sofort.com."
+
+#: include/voucher_settings.php:652
+msgid "This key is used for Sofort Payment."
+msgstr "Deze sleutel wordt gebruikt voor Sofort Payment."
+
+#: include/voucher_settings.php:657
+msgid "Reason for Payment"
+msgstr "Reden voor betaling"
+
+#: include/voucher_settings.php:658
+msgid "Reason for payment from Sofort."
+msgstr "Reden voor betaling van Sofort."
+
+#: include/voucher_settings.php:667
+msgid "Bank Transfer Enable"
+msgstr "Inschakelen bankoverschrijving"
+
+#: include/voucher_settings.php:668
+msgid ""
+"With this payment method user don't have to pay immediately, They can "
+"directly transfer amount to your bank."
+msgstr ""
+"Met deze betaalmethode hoeft de klant niet onmiddellijk te betalen, maar kan "
+"hij het bedrag overschrijven via zijn bank."
+
+#: include/voucher_settings.php:679
+msgid "Bank Details"
+msgstr "Bankgegevens"
+
+#: include/voucher_settings.php:680
+msgid "This details will show to user who would pay as per invoice."
+msgstr ""
+"Deze gegevens worden weergegeven aan de gebruiker die per factuur zou "
+"betalen."
+
+#: include/voucher_settings.php:693
+msgid "Sender Name"
+msgstr "Naam afzender"
+
+#: include/voucher_settings.php:694 include/voucher_settings.php:703
+msgid "For emails send by this plugin."
+msgstr "Voor e-mails verzonden door deze plugin."
+
+#: include/voucher_settings.php:702
+msgid "Sender Email"
+msgstr "E-mailadres afzender"
+
+#: include/voucher_settings.php:711
+msgid "Send Customer Receipt"
+msgstr "Ontvangstbewijs naar klant sturen"
+
+#: include/voucher_settings.php:722
+msgid "Buyer Email Subject"
+msgstr "Onderwerp voor email die naar koper verstuurd wordt"
+
+#: include/voucher_settings.php:723 include/voucher_settings.php:773
+msgid "Subject for emails send to customers."
+msgstr "Onderwerp voor e-mails die verstuurd worden naar klanten."
+
+#: include/voucher_settings.php:732
+msgid "Buyer Email Body"
+msgstr "Inhoud email die naar koper verstuurd wordt"
+
+#: include/voucher_settings.php:733 include/voucher_settings.php:783
+msgid "Body message for emails send to customers."
+msgstr "Inhoud email die naar klanten verstuurd worden."
+
+#: include/voucher_settings.php:742
+msgid "Buyer Email Body for Bank Transfer"
+msgstr "Inhoud email die naar koper verstuurd wordt bij bankoverschrijving"
+
+#: include/voucher_settings.php:743
+msgid ""
+"This email body is used when customer select payment as per bank transfer."
+msgstr ""
+"Deze email inhoud wordt gebruikt wanneer de klant voor bankoverschrijving "
+"kiest."
+
+#: include/voucher_settings.php:752
+msgid "Recipient Email Subject"
+msgstr "Onderwerp voor email die naar ontvanger gestuurd wordt"
+
+#: include/voucher_settings.php:753
+msgid "Subject for emails send to recipient."
+msgstr "Onderwerp voor emails die naar de ontvanger gestuurd worden."
+
+#: include/voucher_settings.php:762
+msgid "Recipient Email Body"
+msgstr "Inhoud email die naar ontvanger gestuurd wordt"
+
+#: include/voucher_settings.php:763
+msgid "Body message for emails send to recipient."
+msgstr "Inhoud emails die naar ontvanger gestuurd worden."
+
+#: include/voucher_settings.php:772
+msgid "Admin Email Subject"
+msgstr "Onderwerp voor email die naar Admin gestuurd wordt"
+
+#: include/voucher_settings.php:782
+msgid "Admin Email Body"
+msgstr "Inhoud email die naar Admin gestuurd wordt"
+
+#: include/voucher_settings.php:802
+msgid "Save Settings"
+msgstr "Bewaar instellingen"
+
+#: include/wpgv_license_page.php:7
+msgid "Plugin License Options"
+msgstr "Opties plugin licentie"
+
+#: include/wpgv_license_page.php:16
+msgid "License Key"
+msgstr "Licentiesleutel"
+
+#: include/wpgv_license_page.php:20
+msgid "Enter your license key"
+msgstr "Voer je licentiesleutel in"
+
+#: include/wpgv_license_page.php:26 include/wpgv_license_page.php:35
+msgid "Activate License"
+msgstr "Activeer licentie"
+
+#: include/wpgv_license_page.php:30
+msgid "active"
+msgstr "actief"
+
+#: include/wpgv_license_page.php:32
+msgid "Deactivate License"
+msgstr "Licentie deactiveren"
+
+#: templates/pdfstyles/receipt.php:12
+msgid "Customer Receipt"
+msgstr "Ontvangstbewijs klant"
+
+#: templates/pdfstyles/receipt.php:27
+msgid "Company Email"
+msgstr "Email bedrijf"
+
+#: templates/pdfstyles/receipt.php:35
+msgid "Company Website"
+msgstr "Website bedrijf"
+
+#: templates/pdfstyles/receipt.php:43
+msgid "Order Number"
+msgstr "Bestelnummer"
+
+#: templates/pdfstyles/receipt.php:46
+msgid " #"
+msgstr " #"
+
+#: templates/pdfstyles/receipt.php:101
+msgid "Coupon Expiry date"
+msgstr "Vervaldatum cadeaubon"
+
+#: templates/woocommerce/cart/wpgv-gift-voucher-form.php:14
+msgid "Gift Card:"
+msgstr "Cadeaubon:"
+
+#: templates/woocommerce/cart/wpgv-gift-voucher-form.php:15
+#: templates/woocommerce/checkout/wpgv-gift-voucher-form.php:15
+msgid "Gift voucher code"
+msgstr "Cadeaubon code"
+
+#: templates/woocommerce/cart/wpgv-gift-voucher-form.php:16
+#: templates/woocommerce/checkout/wpgv-gift-voucher-form.php:19
+msgid "Apply gift card"
+msgstr "Cadeaubon toepassen"
+
+#: templates/woocommerce/cart/wpgv-gift-voucher-form.php:16
+#: templates/woocommerce/checkout/wpgv-gift-voucher-form.php:19
+msgid "Please wait..."
+msgstr "Wachten aub..."
+
+#: templates/woocommerce/cart/wpgv-gift-vouchers.php:27
+#: templates/woocommerce/checkout/wpgv-gift-vouchers.php:27
+msgid "Code"
+msgstr "Code"
+
+#: templates/woocommerce/cart/wpgv-gift-vouchers.php:28
+#: templates/woocommerce/checkout/wpgv-gift-vouchers.php:28
+#, php-format
+msgid "Remaining balance is %s"
+msgstr "Openstaand saldo is %s"
+
+#: templates/woocommerce/cart/wpgv-gift-vouchers.php:34
+#: templates/woocommerce/checkout/wpgv-gift-vouchers.php:34
+msgid "Expired"
+msgstr "Vervallen"
+
+#: templates/woocommerce/cart/wpgv-gift-vouchers.php:43
+#: templates/woocommerce/checkout/wpgv-gift-vouchers.php:43
+msgid "[Remove]"
+msgstr "[Verwijder]"
+
+#: templates/woocommerce/checkout/wpgv-gift-voucher-form.php:7
+msgid "Have a gift voucher?"
+msgstr "Heb je een cadeaubon?"
+
+#: templates/woocommerce/checkout/wpgv-gift-voucher-form.php:7
+msgid "Click here to enter your gift voucher code"
+msgstr "Klik hier om je cadeaubon code in te vullen"
+
+#: templates/woocommerce/checkout/wpgv-gift-voucher-form.php:12
+msgid "If you have a gift card number, please apply it below."
+msgstr "Als je een cadeaubon nummer hebt, vul het dan hieronder in."
+
+#: templates/wpgv_item_pdf.php:11 templates/wpgv_item_pdf.php:13
+#: templates/wpgv_voucher_pdf.php:11 templates/wpgv_voucher_pdf.php:13
+msgid "This is a preview voucher."
+msgstr "Dit is een voorbeeld cadeaubon."
+
+#~ msgid "Add Gift Voucher Order"
+#~ msgstr "Bestelling cadeaubon toevoegen"
+
+#~ msgid "Plugin License"
+#~ msgstr "Plugin licentie"
+
+#~ msgid "Export Order"
+#~ msgstr "Bestellingen exporteren"
+
+#~ msgid "Import Order"
+#~ msgstr "Bestellingen importeren"
+
+#~ msgid "Redeem Partial Amount"
+#~ msgstr "Gedeelte van bedrag gebruiken"
+
+#~ msgid "Add"
+#~ msgstr "Toevoegen"
+
+#~ msgid "Voucher Send Time"
+#~ msgstr "Moment van versturen"
+
+#~ msgid "When do you want to send a gift voucher?"
+#~ msgstr "Wanneer wil je de bon versturen?"
+
+#~ msgid "Select date and time"
+#~ msgstr "Kies datum en tijd"
+
+#~ msgid "Gift Voucher Order Successfully Added..."
+#~ msgstr "Bestelling cadeaubon geregistreerd."
+
+#~ msgid "What email address should we send it to?"
+#~ msgstr "Naar welk e-mailadres moeten we sturen?"
+
+#~ msgid "Confirm Order"
+#~ msgstr "Bevestig bestelling"
+
+#~ msgid "Add New Gift Voucher Order"
+#~ msgstr "Bestelling cadeaubon toevoegen"
+
+#~ msgid "Export Vouchers"
+#~ msgstr "Cadeaubonnen exporteren"
+
+#~ msgid "Additional Charges Text"
+#~ msgstr "Tekst bijkomende kosten"
+
+#~ msgid "Add extra charges on every voucher"
+#~ msgstr "Voeg extra kosten toe aan elke cadeaubon"
+
+#~ msgid "Leave 0 to disable this"
+#~ msgstr "Laat op nul om uit te schakelen"
+
+#~ msgid "Enable Barcode on PDF Voucher"
+#~ msgstr "Barcode op DF cadeaubon inschakelen"
+
+#~ msgid "PayPal Text"
+#~ msgstr "PayPal tekst"
+
+#~ msgid "MultiSafepay Enable"
+#~ msgstr "MultiSafepay inschakelen"
+
+#~ msgid "MultiSafepay Text"
+#~ msgstr "MultiSagepay tekst"
+
+#~ msgid "MultiSafepay Testmode"
+#~ msgstr "MultiSafepay testmodus"
+
+#~ msgid "MultiSafepay API"
+#~ msgstr "MultiSafepay API"
+
+#~ msgid "This details will show to user who would pay as Bank Transfer."
+#~ msgstr "Dit detail toont de gebruiker wie via overschrijving betaalt."
+
+#~ msgid "Error Occurred - Please check the amount and try again."
+#~ msgstr ""
+#~ "Er deed zich een fout voor - Controleer a.u.b. het bedrag en probeer "
+#~ "opnieuw."
+
+#~ msgid "Load Page Again"
+#~ msgstr "Herlaad de pagina"
+
+#~ msgid "An error occurred, please try again."
+#~ msgstr "Er deed zich een fout voor. Probeer het nog eens a.u.b."
+
+#, php-format
+#~ msgid "Your license key expired on %s."
+#~ msgstr "Je licentiesleutel is vervallen op %s."
+
+#~ msgid "Your license key has been disabled."
+#~ msgstr "Je licentiesleutel is uitgeschakeld."
+
+#~ msgid "Invalid license."
+#~ msgstr "Ongeldige licentie."
+
+#~ msgid "Your license is not active for this URL."
+#~ msgstr "Je licentie is niet actief voor deze URL."
+
+#, php-format
+#~ msgid "This appears to be an invalid license key for %s."
+#~ msgstr "Er lijkt een ongeldige licentie te zijn voor %s."
+
+#~ msgid "Your license key has reached its activation limit."
+#~ msgstr "De licentiesleutel heeft zijn activeringslimiet bereikt."
+
+#~ msgid "Paypal Email"
+#~ msgstr "PayPal e-mail"
+
+#~ msgid "This address is used for paypal payment."
+#~ msgstr "Dit adres wordt gebruikt voor PayPal-betaling."
+
+#~ msgid "This email body is used when customer select payment as per invoice."
+#~ msgstr ""
+#~ "Deze e-mail instantie wordt gebruikt wanneer de klant de betaling per "
+#~ "factuur selecteert."
+
+#~ msgid "Selection Per Invoice"
+#~ msgstr "Selectie op factuur"
+
+#~ msgid ""
+#~ "Some Error Occurred From Sending this Email! <br>(Reload and Retry Again!)"
+#~ msgstr ""
+#~ "Er is een fout opgetreden bij het verzenden van deze e-mail! <br>(opnieuw "
+#~ "laden en probeer opnieuw!)"
+
+#~ msgid "Please pay before use this voucher."
+#~ msgstr "Gelieve te betalen voor het gebruik van deze cadeaubon."
+
+#~ msgid "Characters"
+#~ msgstr "Tekens"
+
+#~ msgid "Gift Vouchers (Gift Cards and Packages) (WooCommerce Supported)"
+#~ msgstr "Cadeaubonnen (cadeaubonnen en pakketten) (WooCommerce ondersteund)"
+
+#~ msgid ""
+#~ "Let your customers buy gift cards/certificates for your services & "
+#~ "products directly on your website."
+#~ msgstr ""
+#~ "Laat uw klanten cadeaubonnen kopen/certificaten voor uw diensten & "
+#~ "producten direct op uw website."
+
+#~ msgid "http://www.codemenschen.at/"
+#~ msgstr "http://www.codemenschen.at/"
+
+#~ msgid "codemenschen"
+#~ msgstr "codemenschen"
+
+#~ msgid "http://www.telberia.com/"
+#~ msgstr "http://www.telberia.com/"

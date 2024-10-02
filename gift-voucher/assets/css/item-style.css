@@ -1,0 +1,804 @@
+.clearfix {
+    zoom: 1
+}
+
+.clearfix:before,
+.clearfix:after {
+    display: table;
+    content: "";
+}
+
+.clearfix:after {
+    clear: both;
+}
+
+.wpgv-giftitem-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    position: relative;
+    clear: both;
+}
+
+.wpgv-giftitem-wrapper:before, .wpgv-giftitem-wrapper:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.wpgv-giftitem-wrapper * {
+    box-sizing: border-box;
+}
+
+.wpgv-giftitem-wrapper .mailhidden {
+    display: none !important;
+}
+
+#wpgv-giftitems {
+    width: 50%;
+    position: relative;
+}
+
+#wpgv-giftitems-step2,
+#wpgv-giftitems-step3,
+#wpgv-giftitems-step4 {
+    display: none;
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+.wpgv-items-wrap {
+    background: #fafafa;
+    border-radius: 0 0 5px 5px;
+    padding: 15px 15px 0;
+    margin-top: -15px;
+    box-shadow: 0 2px 2px 0 rgba(0, 0, 0, .14), 0 1px 5px 0 rgba(0, 0, 0, .12), 0 3px 1px -2px rgba(0, 0, 0, .2);
+}
+
+.wpgv-giftitemimage img {
+    -webkit-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, .1), 0 1px 16px 0 rgba(0, 0, 0, .1), 0 2px 4px 0 rgba(0, 0, 0, .1);
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, .1), 0 1px 16px 0 rgba(0, 0, 0, .1), 0 2px 4px 0 rgba(0, 0, 0, .1);
+    border-radius: 5px 5px 0 0;
+    position: relative;
+    z-index: 111;
+    width: 100%;
+}
+
+.wpgv-according-title {
+    padding: 20px;
+    background: #f2f2f2;
+    margin: 0 -15px;
+    cursor: pointer;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    position: relative;
+}
+
+.wpgv-according-title h2 {
+    width: 90%;
+    font-size: 20px;
+    color: #000;
+    font-weight: bold;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.wpgv-according-title span {
+    font-size: 0.7em;
+    font-weight: normal;
+    color: #333;
+    display: block;
+}
+
+.wpgv-item {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 20px;
+    margin: 0 -15px;
+}
+
+.wpgv-item .wpgv-content {
+    width: 60%;
+    font-size: 0.85em;
+}
+
+.wpgv-item .wpgv-price {
+    width: 25%;
+    text-align: right;
+    padding-right: 15px;
+    color: #333;
+}
+
+.wpgv-item .wpgv-buy {
+    width: 15%;
+    text-align: right;
+}
+
+.wpgv-item .wpgv-buy button {
+    padding: 10px 18px;
+    border-radius: 5px;
+    color: #fff;
+    background: #81c6a9;
+    line-height: 1;
+    cursor: pointer;
+    outline: 0
+}
+
+.wpgv-item:not(:last-child) {
+    border-bottom: 1px solid #eee;
+}
+
+.wpgv-item .wpgv-content h4 {
+    color: #000;
+    margin-bottom: 0;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+.wpgv-item .wpgv-content p {
+    margin-bottom: 0;
+}
+
+.wpgv-according-title:after {
+    content: '';
+    position: absolute;
+    border: solid black;
+    border-width: 0 3px 3px 0;
+    display: inline-block;
+    padding: 5px;
+    transform: rotate(45deg);
+    right: 25px;
+    top: 50%;
+    margin-top: -10px;
+    transition: transform 0.3s linear;
+}
+
+.wpgv-according-category.catclose .wpgv-according-title:after {
+    transform: rotate(225deg);
+    margin-top: -5px;
+}
+
+#wpgv-giftitems.loading:after {
+    position: absolute;
+    content: url(../img/loader.gif);
+    background-color: #eee;
+    top: 0;
+    left: 0;
+    z-index: 1111;
+    background: rgba(255, 255, 255, 0.8);
+    width: 100%;
+    height: 100%;
+    transform: scale(1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wpgv-gifttitle {
+    padding: 30px 0;
+    text-align: center;
+    font-size: 14px;
+}
+
+.wpgv-gifttitle h3 {
+    font-size: 1.5em;
+    color: #000;
+    font-weight: bold;
+}
+
+.wpgv-buttons {
+    text-align: center;
+    padding-bottom: 20px;
+}
+
+.wpgv-buttons .next-button,
+.wpgv-buttons #paynowbtn {
+    display: block;
+    width: 100%;
+    background: #81c6a9;
+    color: #fff;
+    border-radius: 5px;
+    box-sizing: border-box;
+    line-height: 1;
+    font-size: 20px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    border: 0;
+    padding: 10px;
+    outline: 0;
+    box-shadow: 0 0 2px 0px rgba(0, 0, 0, 0.2);
+}
+
+.wpgv-buttons .next-button:after,
+.wpgv-buttons #paynowbtn:after {
+    content: "";
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    display: inline-block;
+    padding: 3px;
+    transform: rotate(-45deg);
+    vertical-align: middle;
+    margin-left: 3px;
+}
+
+.wpgv-buttons .back-button {
+    cursor: pointer;
+    font-size: 1.2em;
+}
+
+.wpgv-items-wrap label {
+    display: block;
+    color: #000;
+    margin-bottom: 3px;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.buying-options,
+.shipping-options {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.buying-options div,
+.shipping-options div {
+    width: 50%;
+    border: 1px solid #ddd;
+    text-align: center;
+    padding: 10px;
+    background: #fff;
+    border-radius: 5px 0 0 5px;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.buying-options .yourself,
+.shipping-options .shipping_as_post {
+    border-radius: 0 5px 5px 0;
+}
+
+.buying-options div.selected,
+.shipping-options div.selected {
+    background: #81c6a9;
+    color: #fff;
+}
+
+.buying-options div img,
+.shipping-options div img {
+    width: 30px;
+    margin: 0 auto;
+    display: block;
+}
+
+.wpgv-form-fields {
+    margin-bottom: 20px;
+}
+
+.wpgv-form-fields .error,
+.wpgv-form-fields .eqlerror {
+    display: none;
+    color: #f00;
+    font-size: 0.8em;
+}
+
+.wpgv-form-fields .form-field {
+    width: 100%;
+    height: 40px;
+    border-radius: 5px;
+    padding: 0 10px;
+    border: 0;
+    background: #fff;
+    box-shadow: inset 0 0 3px 1px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.wpgv-form-fields .form-field.half-field {
+    width: 49%;
+    float: left;
+}
+
+.wpgv-form-fields .form-field.half-field.first {
+    margin-right: 2%;
+}
+
+.wpgv-form-fields textarea.form-field {
+    height: 100px;
+    padding: 5px 10px;
+}
+
+.wpgv-form-fields .form-field:focus {
+    background: #fff;
+    outline: 0;
+}
+
+.shipping label {
+    font-size: 18px;
+}
+
+#wpgv-giftitems-step3 {
+    padding-top: 50px;
+}
+
+.wpgv-items-wrap label:not(:first-child) {
+    font-weight: normal;
+}
+
+#wpgv-post_name .form-field:not(:last-child) {
+    margin-bottom: 10px;
+}
+
+.order_details_preview {
+    margin: 0 -30px;
+    border-top: 1px dashed #ddd;
+    padding: 30px;
+}
+
+#wpgv_payment_gateway {
+    margin: 0 -30px;
+    padding: 30px;
+    background: #f2f2f2;
+    border-top: 1px solid #ddd;
+}
+
+#wpgv-giftitems-step3 .wpgv-buttons {
+    margin: 0 -30px;
+    padding: 0 30px 30px;
+    background: #f2f2f2;
+}
+
+.order_details_preview h3 {
+    font-weight: bold;
+    font-size: 1.5em;
+    margin-bottom: 20px;
+}
+
+.order_details_preview>div {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.order_details_preview>div:last-child {
+    margin: 0;
+}
+
+.order_details_preview>div> :first-child {
+    width: 80%;
+}
+
+.order_details_preview>div> :last-child {
+    width: 20%;
+    text-align: right;
+    font-size: 16px;
+}
+
+.order_details_preview h4 {
+    font-size: 1.2em;
+    margin: 0;
+    line-height: 1.3;
+    color: #000;
+}
+
+.order_details_preview span {
+    font-size: 0.9em;
+    color: #888;
+}
+
+.order_details_preview>div b,
+.order_details_preview>div b * {
+    color: #000;
+    font-size: 20px;
+}
+
+.preview-box #itempreview {
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+    border-radius: 5px;
+    background: #000;
+    color: #fff;
+    border: 0;
+    outline: 0;
+    font-size: 15px;
+}
+
+#wpgv-post_name,
+#wpgv-shipping_method,
+.order_details_preview .wpgv_shipping_box {
+    display: none;
+}
+
+.wpgv_preview-box {
+    width: 50%;
+    display: flex;
+    align-items: center;
+}
+
+.wpgv_preview-box .cardDiv {
+    max-width: 450px;
+    margin: 0 0 0 auto;
+    background-color: #81c6a9;
+    color: #fff;
+}
+
+.wpgv_preview-box .cardDiv h3 {
+    text-align: center;
+    background: #fff;
+    margin: 0;
+    color: #aaa;
+    font-size: 14px;
+    padding: 10px
+}
+
+.wpgv_preview-box .cardDiv * {
+    font-family: Arial!important;
+}
+
+.wpgv_preview-box .cardDiv .cardImgTop img {
+    width: 100%;
+}
+
+.wpgv_preview-box .cardDiv .voucherBottomDiv {
+    padding: 10px 15px;
+    position: relative;
+}
+
+.wpgv_preview-box .cardDiv .voucherBottomDiv .itemtitle {
+    font-size: 25px;
+    text-align: center;
+    color: #fff;
+    line-height: 1.2;
+    font-weight: bold;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.wpgv_preview-box .cardDiv .voucherBottomDiv .itemdescription {
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.3;
+}
+
+.wpgv_preview-box .cardDiv .voucherBottomDiv .nameFormLeft,
+.wpgv_preview-box .cardDiv .voucherBottomDiv .nameFormRight,
+.wpgv_preview-box .cardDiv .voucherBottomDiv .voucherValueForm,
+.wpgv_preview-box .cardDiv .voucherBottomDiv .messageForm,
+.wpgv_preview-box .cardDiv .voucherBottomDiv .expiryFormLeft,
+.wpgv_preview-box .cardDiv .voucherBottomDiv .codeFormRight {
+    position: relative;
+    width: 50%;
+    float: left;
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+
+.wpgv_preview-box .cardDiv .voucherBottomDiv .messageForm {
+    width: 100%
+}
+
+.voucherBottomDiv .voucherValueForm .currencySymbol {
+    position: absolute;
+    left: 15px;
+    color: #000;
+    line-height: 25px;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.wpgv_preview-box .cardDiv .voucherBottomDiv label {
+    font-size: 12px;
+    line-height: 1.5;
+    display: block;
+    margin-bottom: 3px;
+    color: #555;
+    font-weight: 400;
+}
+
+.wpgv_preview-box .cardDiv .voucherBottomDiv input[type="text"],
+.wpgv_preview-box .cardDiv .voucherBottomDiv input[type="text"]:focus,
+.wpgv_preview-box .cardDiv .voucherBottomDiv input[type="text"]:hover,
+.wpgv_preview-box .cardDiv .voucherBottomDiv textarea,
+.wpgv_preview-box .cardDiv .voucherBottomDiv textarea:hover,
+.wpgv_preview-box .cardDiv .voucherBottomDiv textarea:focus {
+    width: 100%;
+    height: 25px;
+    border: 0;
+    display: block;
+    border-radius: 0;
+    background-color: #fff;
+    font-size: 12px;
+    padding: 0 10px;
+    outline: 0;
+    color: #555;
+    margin: 0;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.wpgv_preview-box .cardDiv .voucherBottomDiv .voucherValueForm .voucherValueCard,
+.wpgv_preview-box .cardDiv .voucherBottomDiv .voucherValueForm .voucherValueCard:focus,
+.wpgv_preview-box .cardDiv .voucherBottomDiv .voucherValueForm .voucherValueCard:hover {
+    padding-left: 20px;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.wpgv_preview-box .cardDiv .voucherBottomDiv textarea,
+.wpgv_preview-box .cardDiv .voucherBottomDiv textarea:hover,
+.wpgv_preview-box .cardDiv .voucherBottomDiv textarea:focus {
+    height: 120px;
+    resize: none;
+    padding: 10px;
+    line-height: 1.6;
+}
+
+.wpgv_preview-box .cardDiv .voucherBottomDiv .voucherSiteInfo {
+    text-align: center;
+    font-size: 11px;
+    color: #fff;
+    margin-bottom: 10px;
+    padding: 0 10px;
+}
+
+.wpgv_preview-box .cardDiv .voucherBottomDiv .voucherSiteInfo a {
+    color: #fff;
+    text-decoration: none;
+    border: 0;
+    outline: 0;
+    box-shadow: none;
+}
+
+.wpgv_preview-box .cardDiv .voucherBottomDiv .termsCard {
+    position: absolute;
+    transform: rotate(270deg);
+    font-size: 9px;
+    left: -188px;
+    width: 400px;
+    bottom: 210px;
+    height: 15px;
+}
+
+.wpgvmodaloverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: rgba(0, 0, 0, .6);
+    display: flex;
+    justify-content: center;
+    z-index: 999999;
+    padding: 30px;
+    align-items: flex-start;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    height:100vh;
+}
+
+.wpgvmodaloverlay .wpgvmodalcontent {
+    width: 320px;
+    background: #eee;
+    padding: 20px;
+    margin-top: 20px !important;
+    border-radius: 5px;
+    overflow-y: scroll;
+    height: 100vh;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 0 13px 2px rgba(0, 0, 0, .6)
+}
+
+.wpgvmodalcontent h4 {
+    text-align: center;
+    font-size: 20px;
+    line-height: 1.4;
+    font-weight: 700;
+    margin-bottom: 20px
+}
+
+.wpgvmodalcontent #stripePaymentForm {
+    margin: 0;
+    padding: 0;
+    border: 0
+}
+
+.wpgvmodalcontent input[type="text"],
+.wpgvmodalcontent input[type="email"] {
+    width: 100%;
+    background: transparent;
+    padding: 0;
+    height: 40px;
+    border: 0;
+    box-shadow: none;
+    outline: 0;
+    padding: 10px;
+    margin: 0 !important;
+    box-sizing: border-box;
+    display: inline-block
+}
+
+.wpgvmodalcontent .payeremail,
+.wpgvmodalcontent .paymentinfo {
+    margin-bottom: 15px;
+    box-sizing: border-box;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    box-shadow: inset 0 0 3px rgba(0, 0, 0, .3)
+}
+
+.wpgvmodalcontent .paymentinfo .wpgv-card-number {
+    border-bottom: 1px solid #ddd
+}
+
+.wpgvmodalcontent .paymentinfo .wpgv-card-cvc {
+    width: 50%;
+    border-right: 1px solid #ddd
+}
+
+.wpgvmodalcontent .paymentinfo .wpgv-card-expiry-month {
+    width: 15%;
+    padding: 5px 5px 5px 10px
+}
+
+.wpgvmodalcontent .paymentinfo .wpgv-card-expiry-year {
+    width: 30%;
+    padding: 5px
+}
+
+.wpgvmodalcontent #wpgvpayBtn {
+    display: block;
+    width: 100%;
+    background: #3ca940;
+    color: #fff;
+    border-radius: 5px;
+    height: 35px;
+    padding: 0;
+    margin-bottom: 10px
+}
+
+.wpgvmodalcontent .wpgv-cancel {
+    text-align: center
+}
+
+@media only screen and (max-width: 1200px) {
+    .wpgv-giftitemimage img {transform: scale(1.01);margin: 0;}  
+}
+@media only screen and (max-width: 991px) {
+    #wpgv-giftitems, .wpgv_preview-box {
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+}
+@media only screen and (max-width: 500px) {
+.wpgv-item {
+    padding: 15px;
+}
+.wpgv-item .wpgv-content {
+    width: 100%;
+}
+.wpgv-item .wpgv-price, .wpgv-item .wpgv-buy {
+    width: 50%;
+    margin-top: 10px;
+    text-align:  left;
+}
+.wpgv-item .wpgv-buy {
+    text-align:  right;
+}
+}
+
+/* Style 2 */
+.wpgvstyle2.wpgv_preview-box .voucherBottomDiv {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+.wpgvstyle2.wpgv_preview-box .cardImgTop,
+.wpgvstyle2.wpgv_preview-box .sidedetails {
+    width: 50%;
+    padding: 10px;
+}
+.wpgvstyle2.wpgv_preview-box .cardDiv .voucherBottomDiv .nameFormLeft,
+.wpgvstyle2.wpgv_preview-box .cardDiv .voucherBottomDiv .nameFormRight,
+.wpgvstyle2.wpgv_preview-box .cardDiv .voucherBottomDiv .voucherValueForm {
+    width: 100%;
+    padding: 0;
+}
+.wpgvstyle2.wpgv_preview-box .cardDiv .voucherBottomDiv .itemtitle,
+.wpgvstyle2.wpgv_preview-box .cardDiv .voucherBottomDiv .itemdescription {
+    text-align: left;
+}
+.wpgvstyle2.wpgv_preview-box .cardDiv .voucherBottomDiv .voucherSiteInfo {
+    margin-top: 20px;
+}
+.wpgvstyle2.wpgv_preview-box .cardDiv .voucherBottomDiv .termsCard {
+    position: static;
+    transform: rotate(0);
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 11px;
+}
+.wpgvstyle2.wpgv_preview-box .cardDiv .voucherBottomDiv textarea,
+.wpgvstyle2.wpgv_preview-box .cardDiv .voucherBottomDiv textarea:hover,
+.wpgvstyle2.wpgv_preview-box .cardDiv .voucherBottomDiv textarea:focus {
+    height: 120px;
+}
+.wpgvstyle2.wpgv_preview-box .voucherBottomDiv .voucherValueForm .currencySymbol {
+    left: 5px;
+}
+.wpgvstyle2.wpgv_preview-box .voucherBottomDiv .sidedetails {
+    align-self: flex-end;
+    padding: 0 10px;
+}
+.wpgvstyle2.wpgv_preview-box .cardDiv .voucherBottomDiv .itemtitle {
+    margin-bottom: 5px;
+}
+.wpgvstyle2.wpgv_preview-box .cardDiv .cardImgTop img {
+    height: 100%;
+}
+
+
+/* Style 3 */
+.wpgvstyle3.wpgv_preview-box .voucherBottomDiv {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+.wpgvstyle3.wpgv_preview-box .cardImgTop,
+.wpgvstyle3.wpgv_preview-box .sidedetails {
+    width: 50%;
+    padding: 0 10px 20px;
+}
+.wpgvstyle3.wpgv_preview-box .cardDiv .voucherBottomDiv .nameFormLeft,
+.wpgvstyle3.wpgv_preview-box .cardDiv .voucherBottomDiv .nameFormRight,
+.wpgvstyle3.wpgv_preview-box .cardDiv .voucherBottomDiv .voucherValueForm {
+    width: 100%;
+    padding: 0;
+}
+.wpgvstyle3.wpgv_preview-box .cardDiv .voucherBottomDiv .itemtitle,
+.wpgvstyle3.wpgv_preview-box .cardDiv .voucherBottomDiv .itemdescription {
+    width: 100%;
+    padding: 0 10px;
+}
+.wpgvstyle3.wpgv_preview-box .cardDiv .voucherBottomDiv .voucherSiteInfo {
+    margin-top: 20px;
+}
+.wpgvstyle3.wpgv_preview-box .cardDiv .voucherBottomDiv .termsCard {
+    position: static;
+    transform: rotate(0);
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 11px;
+}
+.wpgvstyle3.wpgv_preview-box .voucherBottomDiv .voucherValueForm .currencySymbol {
+    left: 5px;
+}
+.wpgvstyle3.wpgv_preview-box .voucherBottomDiv .sidedetails {
+    align-self: flex-end;
+    padding: 0 10px 10px;
+}
+.wpgvstyle3.wpgv_preview-box .cardDiv .voucherBottomDiv .itemtitle {
+    margin-bottom: 5px;
+}
+.wpgvstyle3.wpgv_preview-box .cardDiv .cardImgTop img {
+    height: 100%;
+}
+.wpgv-giftitem-wrapper .acceptVoucherTerms {
+    font-size: 0.9em;
+    background: #f2f2f2;
+    margin: 0 -30px;
+    padding: 0 30px 20px;
+}
+.wpgv-giftitem-wrapper .voucherNote {
+    color: #f00;
+    font-size: 0.9em;
+    background: #f2f2f2;
+    margin: 0 -30px;
+    padding: 0 30px 20px;
+}
