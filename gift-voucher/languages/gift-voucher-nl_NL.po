@@ -1673,7 +1673,7 @@ msgstr "Dit is een voorbeeld cadeaubon."
 #~ msgid "http://www.codemenschen.at/"
 #~ msgstr "http://www.codemenschen.at/"
 
-#~ msgid "codemenschen"
+#~ msgid "Codemenschen GmbH"
 #~ msgstr "codemenschen"
 
 #~ msgid "http://www.telberia.com/"

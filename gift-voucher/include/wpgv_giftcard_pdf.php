@@ -39,11 +39,11 @@ function wpgv__doajax_gift_card_pdf_save_func()
 	$wpgv_expiry_date_format = get_option('wpgv_expiry_date_format') ? get_option('wpgv_expiry_date_format') : 'd.m.Y';
 	$wpgv_add_extra_charges = get_option('wpgv_add_extra_charges_voucher') ? get_option('wpgv_add_extra_charges_voucher') : 0;
 
-	$voucher_expiry_value = !empty(esc_html(get_post_meta($voucher_id, 'wpgv_customize_template_voucher_expiry_value', true))) ? esc_html(get_post_meta($voucher_id, 'wpgv_customize_template_voucher_expiry_value', true)) : $setting_options->voucher_expiry; // format day and number 
+	$voucher_expiry_value = !empty(esc_html(get_post_meta($voucher_id, 'wpgv_customize_template_voucher_expiry_value', true))) ? esc_html(get_post_meta($voucher_id, 'wpgv_customize_template_voucher_expiry_value', true)) : $setting_options->voucher_expiry; // format day and number
 	if ($wpgv_hide_expiry == 'no') {
 		$expiry = __('No Expiry', 'gift-voucher');
 	} else {
-		$expiry = ($setting_options->voucher_expiry_type == 'days') ? date($wpgv_expiry_date_format, strtotime('+' . $voucher_expiry_value . ' days', time())) . PHP_EOL : $voucher_expiry_value;
+		$expiry = ($setting_options->voucher_expiry_type == 'days') ? gmdate($wpgv_expiry_date_format, strtotime('+' . $voucher_expiry_value . ' days', time())) . PHP_EOL : $voucher_expiry_value;
 	}
 	//get image
 	if ($setting_options->is_style_choose_enable) {
@@ -58,16 +58,35 @@ function wpgv__doajax_gift_card_pdf_save_func()
 		$stripeimage = (wp_get_attachment_image_src($images[0])) ? wp_get_attachment_image_src($images[0]) : get_option('wpgv_demoimageurl_voucher');
 	}
 	//updaload image
+	// Khởi tạo WP_Filesystem
+	require_once(ABSPATH . 'wp-admin/includes/file.php');
+	WP_Filesystem();
+
+	global $wp_filesystem;
+
 	$upload = wp_upload_dir();
-	$upload_dir = $upload['basedir'];
-	$upload_dir = $upload_dir . '/voucherpdfuploads/';
+	$upload_dir = $upload['basedir'] . '/voucherpdfuploads/';
+
+	// Kiểm tra xem thư mục có tồn tại không, nếu không thì tạo nó
+	if (!$wp_filesystem->exists($upload_dir)) {
+		$wp_filesystem->mkdir($upload_dir, 0755);
+	}
+
 	$image = sanitize_text_field(base64_decode($_POST["urlImage"]));
 	$image = str_replace('data:image/png;base64,', '', $image);
 	$image = str_replace(' ', '+', $image);
 	$image = base64_decode($image);
-	$image = file_put_contents($upload_dir . "giftcard.png", $image);
-	$sizeimage = getimagesize($upload_dir . "giftcard.png");
+
+	// Ghi nội dung vào file bằng WP_Filesystem
+	$image_path = $upload_dir . "giftcard.png";
+	$wp_filesystem->put_contents($image_path, $image, FS_CHMOD_FILE);
+
+	// Lấy kích thước hình ảnh
+	$sizeimage = getimagesize($image_path);
+
+	// Nếu cần, bạn có thể lưu URL của thư mục
 	$dirUrl = $upload['baseurl'] . '/voucherpdfuploads/';
+
 	$pdf = new PDF();
 	if (!empty($sizeimage)) {
 		if ($typeGiftCard == 'landscape') {
@@ -102,11 +121,11 @@ function wpgv__doajax_gift_card_pdf_save_func()
 			'lastname'			=> $lastname,
 			'email'				=> $email,
 			'address'			=> $address,
-			'postcode'			=> $pincode, // 
+			'postcode'			=> $pincode, //
 			'shipping_method'	=> $shipping_method,
 			'pay_method'		=> $paymentmethod,
 			'expiry'			=> $expiry,
-			'couponcode'		=> $code, // 
+			'couponcode'		=> $code, //
 			'voucherpdf_link'	=> $upload_url,
 			'status'			=> 'unused',
 			'payment_status'	=> 'Not Pay',

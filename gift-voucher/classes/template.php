@@ -32,16 +32,18 @@ if (!class_exists('WPGV_Voucher_Template')) :
 		{
 			global $wpdb;
 
-			$sql = $wpdb->prepare(
-				"SELECT * FROM {$wpdb->prefix}giftvouchers_template ORDER BY id DESC LIMIT %d OFFSET %d",
-				$per_page,
-				($page_number - 1) * $per_page
+			$result = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$wpdb->prefix}giftvouchers_template ORDER BY id DESC LIMIT %d OFFSET %d",
+					$per_page,
+					($page_number - 1) * $per_page
+				),
+				'ARRAY_A'
 			);
-
-			$result = $wpdb->get_results($sql, 'ARRAY_A');
 
 			return $result;
 		}
+
 
 		/**
 		 * Delete a template record.
@@ -68,14 +70,14 @@ if (!class_exists('WPGV_Voucher_Template')) :
 		{
 			global $wpdb;
 
-			$sql = $wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_template");
-			return $wpdb->get_var($sql);
+			return $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_template"));
 		}
+
 
 		/** Text displayed when no template data is available */
 		public function no_items()
 		{
-			_e('No templates yet.', 'gift-voucher');
+			esc_html_e('No templates yet.', 'gift-voucher');
 		}
 
 		/**
@@ -185,7 +187,10 @@ if (!class_exists('WPGV_Voucher_Template')) :
 		function column_templateadd_time($item)
 		{
 			?>
-			<abbr title="<?php echo date('Y/m/d H:i:s a', strtotime($item['templateadd_time'])); ?>"><?php echo date('Y/m/d', strtotime($item['templateadd_time'])); ?></abbr>
+			<abbr title="<?php echo esc_attr(gmdate('Y/m/d H:i:s a', strtotime($item['templateadd_time']))); ?>">
+				<?php echo esc_html(gmdate('Y/m/d', strtotime($item['templateadd_time']))); ?>
+			</abbr>
+
 <?php
 		}
 

@@ -31,34 +31,62 @@ if (!class_exists('WPGV_Voucher_List')) :
 		public static function get_vouchers($per_page = 20, $page_number = 1)
 		{
 			global $wpdb;
+
 			$page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : 'vouchers-lists';
 			$search = isset($_GET['search']) ? '%' . $wpdb->esc_like(sanitize_text_field($_GET['search'])) . '%' : '';
 			$itemorder = isset($_GET['items']) ? sanitize_text_field($_GET['items']) : '';
 			$voucher_code = isset($_GET['voucher_code']) ? sanitize_text_field($_GET['voucher_code']) : '';
 			$search_email = '';
+
 			if ($voucher_code && filter_var($voucher_code, FILTER_VALIDATE_EMAIL)) {
 				$search_email = $voucher_code;
-				$voucher_code = '1'; // Nếu cần kiểm tra mã voucher cụ thể, cần cập nhật logic này.
+				$voucher_code = '1'; // Update logic if you need to check a specific voucher code.
 			}
 
-			$where_clause = $wpdb->prepare(" WHERE `order_type` = %s ", $itemorder ? 'items' : 'vouchers');
+			// Prepare where clause
+			$where_clauses = [];
+			$where_clauses[] = $wpdb->prepare(" `order_type` = %s", $itemorder ? 'items' : 'vouchers');
 
 			if ($page == 'vouchers-lists') {
 				if ($search && $voucher_code) {
-					// Cần cải thiện logic này để đảm bảo an toàn và đúng đắn
-					$where_clause .= $wpdb->prepare(" AND (`couponcode` LIKE %s OR `email` LIKE %s OR `shipping_email` LIKE %s) ", $voucher_code, $search_email, $search_email);
+					// Prepare search clause
+					$where_clauses[] = $wpdb->prepare("(`couponcode` LIKE %s OR `email` LIKE %s OR `shipping_email` LIKE %s)", $voucher_code, $search_email, $search_email);
 				}
 			} elseif ($page == 'redeem-voucher') {
-				$where_clause .= $wpdb->prepare(" AND (`couponcode` = %s OR `email` LIKE %s OR `shipping_email` LIKE %s) ", $voucher_code, $search_email, $search_email);
+				$where_clauses[] = $wpdb->prepare("(`couponcode` = %s OR `email` LIKE %s OR `shipping_email` LIKE %s)", $voucher_code, $search_email, $search_email);
 			}
 
-			$sql = "SELECT * FROM {$wpdb->prefix}giftvouchers_list" . $where_clause . " ORDER BY `id` DESC LIMIT %d OFFSET %d";
-			$sql = $wpdb->prepare($sql, $per_page, ($page_number - 1) * $per_page);
+			// Join all where clauses together
+			$where_clause = 'WHERE ' . implode(' AND ', $where_clauses);
 
-			$result = $wpdb->get_results($sql, 'ARRAY_A');
+			// Cache key can be generated dynamically based on parameters if needed
+			$cache_key = 'wpgv_vouchers_' . md5(serialize([$per_page, $page_number, $itemorder, $search, $voucher_code]));
+
+			// Check the cache first
+			$result = wp_cache_get($cache_key);
+
+			if ($result === false) {
+				// Prepare the SQL query with LIMIT and OFFSET placeholders
+				$result = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT * FROM {$wpdb->prefix}giftvouchers_list $where_clause ORDER BY `id` DESC LIMIT %d OFFSET %d",
+						$per_page,
+						($page_number - 1) * $per_page
+					),
+					'ARRAY_A'
+				);
+
+
+				// Set the results in the cache
+				wp_cache_set($cache_key, $result);
+			}
 
 			return $result;
 		}
+
+
+
+
 
 
 		/**
@@ -204,18 +232,19 @@ if (!class_exists('WPGV_Voucher_List')) :
 				);
 			}
 
-			$sql = $wpdb->prepare(
-				"SELECT {$query_args['select']} FROM {$query_args['from']} WHERE %s ORDER BY {$query_args['orderby']}",
-				$wpdb->prepare('%s', $query_args['where'])
+			$result = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT {$query_args['select']} FROM {$query_args['from']} WHERE {$query_args['where']} ORDER BY {$query_args['orderby']}"
+				)
 			);
-			$result = $wpdb->get_var($sql);
+
 			return $result;
 		}
 
 		/** Text displayed when no voucher data is available */
 		public function no_items()
 		{
-			_e('No purchased voucher codes yet.', 'gift-voucher');
+			esc_html_e('No purchased voucher codes yet.', 'gift-voucher');
 		}
 
 		/**
@@ -252,18 +281,19 @@ if (!class_exists('WPGV_Voucher_List')) :
 		function get_columns()
 		{
 			$columns = array(
-				'cb'      				=> '<input type="checkbox" />',
-				'id'    				=> __('Order id', 'gift-voucher'),
-				'couponcode'    		=> __('Voucher Code', 'gift-voucher'),
-				'voucher_info'			=> __('Voucher Information', 'gift-voucher'),
-				'buyer_info'			=> __('Buyer\'s Information', 'gift-voucher'),
-				'action'				=> __('Action', 'gift-voucher'),
-				'receipt'	 			=> __('Voucher', 'gift-voucher'),
-				'voucheradd_time'	 	=> __('Order Date', 'gift-voucher'),
+				'cb'              => '<input type="checkbox" />',
+				'id'              => esc_html__('Order id', 'gift-voucher'),
+				'couponcode'      => esc_html__('Voucher Code', 'gift-voucher'),
+				'voucher_info'    => esc_html__('Voucher Information', 'gift-voucher'),
+				'buyer_info'      => esc_html__('Buyer\'s Information', 'gift-voucher'),
+				'action'          => esc_html__('Action', 'gift-voucher'),
+				'receipt'         => esc_html__('Voucher', 'gift-voucher'),
+				'voucheradd_time' => esc_html__('Order Date', 'gift-voucher'),
 			);
 
 			return $columns;
 		}
+
 
 		/**
 		 * Render the bulk used checkbox
@@ -346,38 +376,40 @@ if (!class_exists('WPGV_Voucher_List')) :
 		{
 			global $wpdb;
 			$table_name = $wpdb->prefix . 'giftvouchers_setting';
-			$options = $wpdb->get_row("SELECT * FROM $table_name WHERE id = 1");
+			$options = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE id = %d", 1));
 ?>
 			<table style="width: 100%;">
 				<tr>
-					<th width="40%;" style="font-weight:bold;"><?php echo __('Buying For', 'gift-voucher') ?>:</th>
-					<td width="60%;"><?php echo ($item['buying_for'] == 'yourself') ? 'Yourself' : 'Someone Else'; ?></td>
+					<th width="40%;" style="font-weight:bold;"><?php echo esc_html__('Buying For', 'gift-voucher'); ?>:</th>
+					<td width="60%;"><?php echo ($item['buying_for'] == 'yourself') ? esc_html__('Yourself', 'gift-voucher') : esc_html__('Someone Else', 'gift-voucher'); ?></td>
 				</tr>
 				<tr>
-					<th width="40%;" style="font-weight:bold;"><?php echo __('Buyer Name', 'gift-voucher') ?>:</th>
+					<th width="40%;" style="font-weight:bold;"><?php echo esc_html__('Buyer Name', 'gift-voucher'); ?>:</th>
 					<td width="60%;"><?php echo esc_html($item['from_name']); ?></td>
 				</tr>
 				<?php if ($item['buying_for'] != 'yourself') { ?>
 					<tr>
-						<th width="40%;" style="font-weight:bold;"><?php echo __('Recipient Name', 'gift-voucher') ?>:</th>
+						<th width="40%;" style="font-weight:bold;"><?php echo esc_html__('Recipient Name', 'gift-voucher'); ?>:</th>
 						<td width="60%;"><?php echo esc_html($item['to_name']); ?></td>
 					</tr>
 				<?php } ?>
 				<tr>
-					<th width="40%;" style="font-weight:bold;"><?php echo __('Voucher Value', 'gift-voucher') ?>:</th>
+					<th width="22%;" style="font-weight:bold;"><?php echo esc_html__('Voucher Value', 'gift-voucher'); ?>:</th>
 					<td width="60%;"><?php echo esc_html(wpgv_price_format($item['amount'])); ?></td>
 				</tr>
 				<tr>
-					<th width="22%;" style="font-weight:bold;"><?php echo __('Total Payable Amount', 'gift-voucher') ?>:</th>
+					<th width="22%;" style="font-weight:bold;"><?php echo esc_html__('Total Payable Amount', 'gift-voucher'); ?>:</th>
 					<td width="77%;"><?php echo esc_html(get_post_meta($item['id'], 'wpgv_total_payable_amount', true)); ?></td>
 				</tr>
 				<tr>
-					<th width="22%;" style="font-weight:bold;"><?php echo __('Message', 'gift-voucher') ?>:</th>
+					<th width="22%;" style="font-weight:bold;"><?php echo esc_html__('Message', 'gift-voucher'); ?>:</th>
 					<td width="77%;"><?php echo esc_html($item['message']); ?></td>
 				</tr>
 			</table>
 		<?php
 		}
+
+
 
 		/**
 		 * Method for buyer information
@@ -391,74 +423,75 @@ if (!class_exists('WPGV_Voucher_List')) :
 		?>
 			<table style="width: 100%;">
 				<tr>
-					<th width="45%;" style="font-weight:bold;"><?php echo __('Shipping', 'gift-voucher') ?>:</th>
-					<td width="55%;"><?php echo ($item['shipping_type'] == 'shipping_as_email') ? 'Shipping as Email' : 'Shipping as Post'; ?></td>
+					<th width="45%;" style="font-weight:bold;"><?php echo esc_html__('Shipping', 'gift-voucher') ?>:</th>
+					<td width="55%;"><?php echo ($item['shipping_type'] == 'shipping_as_email') ? esc_html__('Shipping as Email', 'gift-voucher') : esc_html__('Shipping as Post', 'gift-voucher'); ?></td>
 				</tr>
 				<?php if ($item['shipping_type'] == 'shipping_as_email') : ?>
 					<tr>
-						<th style="font-weight:bold;"><?php echo __('Recipient Email', 'gift-voucher') ?>:</th>
-						<td><?php echo esc_attr($item['shipping_email']); ?></td>
+						<th style="font-weight:bold;"><?php echo esc_html__('Recipient Email', 'gift-voucher') ?>:</th>
+						<td><?php echo esc_html($item['shipping_email']); ?></td>
 					</tr>
 					<tr>
-						<th style="font-weight:bold;"><?php echo __('Buyer Email', 'gift-voucher') ?>:</th>
-						<td><?php echo esc_attr($item['email']); ?></td>
+						<th style="font-weight:bold;"><?php echo esc_html__('Buyer Email', 'gift-voucher') ?>:</th>
+						<td><?php echo esc_html($item['email']); ?></td>
 					</tr>
 				<?php else : ?>
 					<tr>
-						<th style="font-weight:bold;"><?php echo __('Name', 'gift-voucher') ?>:</th>
-						<td><?php echo esc_attr($item['firstname']) . ' ' . esc_attr($item['lastname']); ?></td>
+						<th style="font-weight:bold;"><?php echo esc_html__('Name', 'gift-voucher') ?>:</th>
+						<td><?php echo esc_html($item['firstname']) . ' ' . esc_html($item['lastname']); ?></td>
 					</tr>
 					<tr>
-						<th style="font-weight:bold;"><?php echo __('Buyer Email', 'gift-voucher') ?>:</th>
-						<td><?php echo esc_attr($item['email']); ?></td>
+						<th style="font-weight:bold;"><?php echo esc_html__('Buyer Email', 'gift-voucher') ?>:</th>
+						<td><?php echo esc_html($item['email']); ?></td>
 					</tr>
 					<tr>
-						<th style="font-weight:bold;"><?php echo __('Address', 'gift-voucher') ?>:</th>
-						<td><?php echo esc_attr($item['address']); ?></td>
+						<th style="font-weight:bold;"><?php echo esc_html__('Address', 'gift-voucher') ?>:</th>
+						<td><?php echo esc_html($item['address']); ?></td>
 					</tr>
 					<tr>
-						<th style="font-weight:bold;"><?php echo __('Postcode', 'gift-voucher') ?>:</th>
-						<td><?php echo esc_attr($item['postcode']); ?></td>
+						<th style="font-weight:bold;"><?php echo esc_html__('Postcode', 'gift-voucher') ?>:</th>
+						<td><?php echo esc_html($item['postcode']); ?></td>
 					</tr>
 					<tr>
-						<th style="font-weight:bold;"><?php echo __('Shipping Method', 'gift-voucher') ?>:</th>
-						<td><?php echo esc_attr($item['shipping_method']); ?></td>
+						<th style="font-weight:bold;"><?php echo esc_html__('Shipping Method', 'gift-voucher') ?>:</th>
+						<td><?php echo esc_html($item['shipping_method']); ?></td>
 					</tr>
 				<?php endif; ?>
 				<tr>
-					<th style="font-weight:bold;"><?php echo __('Payment Method', 'gift-voucher') ?>:</th>
-					<td><?php echo esc_attr($item['pay_method']); ?></td>
+					<th style="font-weight:bold;"><?php echo esc_html__('Payment Method', 'gift-voucher') ?>:</th>
+					<td><?php echo esc_html($item['pay_method']); ?></td>
 				</tr>
 				<?php if ($item['pay_method'] == 'Stripe' && esc_html(get_post_meta($item['id'], 'wpgv_stripe_session_key', true))) { ?>
 					<tr>
-						<th style="font-weight:bold;"><?php echo __('Stripe Session ID', 'gift-voucher') ?>:</th>
+						<th style="font-weight:bold;"><?php echo esc_html__('Stripe Session ID', 'gift-voucher') ?>:</th>
 						<td><span style="width: 150px; display: block; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="<?php echo esc_html(get_post_meta($item['id'], 'wpgv_stripe_session_key', true)) ?>"><?php echo esc_html(get_post_meta($item['id'], 'wpgv_stripe_session_key', true)) ?></span></td>
 					</tr>
 					<tr>
-						<th style="font-weight:bold;"><?php echo __('Stripe Publishable Key', 'gift-voucher') ?>:</th>
+						<th style="font-weight:bold;"><?php echo esc_html__('Stripe Publishable Key', 'gift-voucher') ?>:</th>
 						<td><span style="width: 150px; display: block; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="<?php echo esc_html(get_post_meta($item['id'], 'wpgv_stripe_mode_for_transaction', true)) ?>"><?php echo esc_html(get_post_meta($item['id'], 'wpgv_stripe_mode_for_transaction', true)) ?></span></td>
 					</tr>
 				<?php } elseif ($item['pay_method'] == 'Paypal' && esc_html(get_post_meta($item['id'], 'wpgv_paypal_payment_key', true))) { ?>
 					<tr>
-						<th style="font-weight:bold;"><?php echo __('PayPal PaymentID', 'gift-voucher') ?>:</th>
+						<th style="font-weight:bold;"><?php echo esc_html__('PayPal PaymentID', 'gift-voucher') ?>:</th>
 						<td><span style="width: 150px; display: block; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="<?php echo esc_html(get_post_meta($item['id'], 'wpgv_paypal_payment_key', true)) ?>"><?php echo esc_html(get_post_meta($item['id'], 'wpgv_paypal_payment_key', true)) ?></span></td>
 					</tr>
 					<tr>
-						<th style="font-weight:bold;"><?php echo __('PayPal Mode', 'gift-voucher') ?>:</th>
+						<th style="font-weight:bold;"><?php echo esc_html__('PayPal Mode', 'gift-voucher') ?>:</th>
 						<td><span style="width: 150px; display: block; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="<?php echo esc_html(get_post_meta($item['id'], 'wpgv_paypal_mode_for_transaction', true)) ?>"><?php echo esc_html(get_post_meta($item['id'], 'wpgv_paypal_mode_for_transaction', true)) ?></span></td>
 					</tr>
 				<?php } ?>
 				<tr>
-					<th style="font-weight:bold;"><?php echo __('Payment Status', 'gift-voucher') ?>:</th>
-					<td><?php echo esc_attr($item['payment_status']); ?></td>
+					<th style="font-weight:bold;"><?php echo esc_html__('Payment Status', 'gift-voucher') ?>:</th>
+					<td><?php echo esc_html($item['payment_status']); ?></td>
 				</tr>
 				<tr>
-					<th style="font-weight:bold;"><?php echo __('Expiry', 'gift-voucher') ?>:</th>
-					<td><abbr title="<?php echo esc_attr($item['expiry']); ?>"><?php echo esc_attr($item['expiry']); ?></abbr></td>
+					<th style="font-weight:bold;"><?php echo esc_html__('Expiry', 'gift-voucher') ?>:</th>
+					<td><abbr title="<?php echo esc_attr($item['expiry']); ?>"><?php echo esc_html($item['expiry']); ?></abbr></td>
 				</tr>
 			</table>
 		<?php
 		}
+
 
 		/**
 		 * Method for mark as used link
@@ -519,9 +552,13 @@ if (!class_exists('WPGV_Voucher_List')) :
 		function column_voucheradd_time($item)
 		{
 		?>
-			<abbr title="<?php echo date('Y/m/d H:i:s a', strtotime($item['voucheradd_time'])); ?>"><?php echo date('Y/m/d', strtotime($item['voucheradd_time'])); ?></abbr>
+			<abbr title="<?php echo esc_attr(gmdate('Y/m/d H:i:s a', strtotime($item['voucheradd_time']))); ?>">
+				<?php echo esc_html(gmdate('Y/m/d', strtotime($item['voucheradd_time']))); ?>
+			</abbr>
+
 			<?php
 		}
+
 
 		/**
 		 * Method for create receipt
@@ -684,12 +721,14 @@ if (!class_exists('WPGV_Voucher_List')) :
 				<div class="admin-modal">
 					<div class="admin-custom-modal add-new">
 						<span class="close dashicons dashicons-no-alt"></span>
-						<h3><?php echo __('Order Details', 'gift-voucher') ?> (Order ID: <?php echo esc_attr($order_id); ?>) <?php
-																																if ($order_detail->status == "unused") {
-																																	echo "<strong style='color:#fff;font-size:14px;background:#ddd;padding:2px 5px;'>Unused</strong>";
-																																} else if ($order_detail->status == "used") {
-																																	echo "<strong style='color:#fff;font-size:14px;display: inline-block;background:#233dcc;padding:2px 5px;'>Used</strong>";
-																																} ?></h3>
+						<h3><?php echo esc_html__('Order Details', 'gift-voucher'); ?> (Order ID: <?php echo esc_attr($order_id); ?>)
+							<?php
+							if ($order_detail->status == "unused") {
+								echo "<strong style='color:#fff;font-size:14px;background:#ddd;padding:2px 5px;'>Unused</strong>";
+							} else if ($order_detail->status == "used") {
+								echo "<strong style='color:#fff;font-size:14px;display: inline-block;background:#233dcc;padding:2px 5px;'>Used</strong>";
+							} ?>
+						</h3>
 					</div>
 				</div>
 

@@ -2,8 +2,8 @@
 Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
-Tested up to: 6.5.5
-Stable tag: 4.4.4
+Tested up to: 6.6.2
+Stable tag: 4.4.5
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -218,26 +218,29 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 
 == Changelog ==
 
-= Version 4.4.4 - Released: July 26, 2023 =
+= Version 4.4.5 - Released: November 1 2024
+* Fixed a security vulnerability related to Stored Cross-Site Scripting via SVG file uploads.
+
+= Version 4.4.4 - Released: July 26, 2024 =
 * Fix: PDF preview display issue.
 * Fix: Improved code security enforcement in link URL
 
-= Version 4.4.3 - Released: July 17, 2023 =
+= Version 4.4.3 - Released: July 17, 2024 =
 * Fix plugin issue generating unexpected output of 2 characters.
 
-= Version 4.4.2 - Released: July 12, 2023 =
+= Version 4.4.2 - Released: July 12, 2024 =
 * Fix for data sanitization.
 
-= Version 4.4.1 - Released: March 11, 2023 =
+= Version 4.4.1 - Released: March 11, 2024 =
 * Fix for CSRF Vulnerability and Data Sanitization.
 
-= Version 4.4.0 - Released: February 28, 2023 =
+= Version 4.4.0 - Released: February 28, 2024 =
 * Fix HTML content saving issue in success page message and  order cancellation message page.
 
-= Version 4.3.9 - Released: January 26, 2023 =
+= Version 4.3.9 - Released: January 26, 2024 =
 * Fix redirect bug on Bank Transfer payment method.
 
-= Version 4.3.8 - Released: January 12, 2023 =
+= Version 4.3.8 - Released: January 12, 2024 =
 * Optimize the notification when users enter incorrect payment information (PayPal, Stripe).
 
 = Version 4.3.7 - Released: December 19, 2023 =

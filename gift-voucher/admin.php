@@ -69,7 +69,7 @@ class WPGiftVoucherAdminPages
 	 */
 	public function check_voucher_balance()
 	{
-		echo '<h3>' . __('Check Voucher Balance', 'gift-voucher') . '</h3>';
+		echo '<h3>' . esc_html(__('Check Voucher Balance', 'gift-voucher')) . '</h3>';
 		echo do_shortcode(' [wpgv-check-voucher-balance] ');
 	}
 
@@ -128,23 +128,33 @@ class WPGiftVoucherAdminPages
 	{
 		if (is_admin()) {
 			global $wpdb;
+
+			// Check if the POST variable is set
 			if (isset($_POST["tbl_name"])) {
 				$tablename = sanitize_text_field($_POST["tbl_name"]);
-				
+
+				// Check if the table exists safely
 				$safe_tablename = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $wpdb->esc_like($tablename)));
+
 				if ($safe_tablename) {
 					$filename = "export-orders";
-					$sql = $wpdb->prepare("SELECT * FROM $safe_tablename");
-					$rows = $wpdb->get_results($sql, ARRAY_A);
+					$rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$safe_tablename}"), ARRAY_A);
+
 					if ($rows) {
+						// Clear output buffer
 						ob_clean();
+
+						// Set headers for Excel download
 						header("Content-Type: application/vnd.ms-excel; charset=utf-8");
-						header("Content-Disposition: attachment; filename=" . $filename . "-" . date('d-m-y') . ".xls");
+						header("Content-Disposition: attachment; filename=" . esc_attr($filename) . "-" . gmdate('d-m-y') . ".xls");
 						header("Expires: 0");
 						header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 						header("Cache-Control: private", false);
+
+						// Start outputting HTML for the Excel file
 						echo "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=Windows-1252\"><body><table>";
 
+						// Output the header row
 						if (!empty($rows)) {
 							echo "<tr>";
 							foreach (array_keys($rows[0]) as $col) {
@@ -152,6 +162,8 @@ class WPGiftVoucherAdminPages
 							}
 							echo "</tr>";
 						}
+
+						// Output the data rows
 						foreach ($rows as $row) {
 							echo "<tr>";
 							foreach ($row as $cell) {
@@ -162,10 +174,10 @@ class WPGiftVoucherAdminPages
 
 						echo "</table></body></html>";
 					} else {
-						echo __('Invalid Request.', 'gift-voucher');
+						echo esc_html(__('Invalid Request.', 'gift-voucher'));
 					}
 				} else {
-					echo __('Invalid table name provided.', 'gift-voucher');
+					echo esc_html(__('Invalid table name provided.', 'gift-voucher'));
 				}
 			}
 		}

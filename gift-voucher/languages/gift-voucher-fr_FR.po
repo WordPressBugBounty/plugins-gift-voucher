@@ -302,7 +302,7 @@ msgid "Code"
 msgstr ""
 
 #. Author of the plugin
-msgid "codemenschen"
+msgid "Codemenschen GmbH"
 msgstr ""
 
 #: include/voucher_settings.php:663

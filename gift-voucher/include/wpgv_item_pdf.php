@@ -48,7 +48,7 @@ function wpgv__doajax_item_pdf_save_func()
 	if ($wpgv_hide_expiry == 'no') {
 		$expiry = __('No Expiry', 'gift-voucher');
 	} else {
-		$expiry = ($setting_options->voucher_expiry_type == 'days') ? date($wpgv_expiry_date_format, strtotime('+' . $setting_options->voucher_expiry . ' days', time())) . PHP_EOL : $setting_options->voucher_expiry;
+		$expiry = ($setting_options->voucher_expiry_type == 'days') ? gmdate($wpgv_expiry_date_format, strtotime('+' . $setting_options->voucher_expiry . ' days', time())) . PHP_EOL : $setting_options->voucher_expiry;
 	}
 
 	$upload = wp_upload_dir();

@@ -110,7 +110,7 @@ if (function_exists('wp_enqueue_media')) {
 			<button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button>
 		</div>
 	<?php } ?>
-	<form method="post" name="new-template" id="new-template" action="<?php echo admin_url('admin.php'); ?>?page=new-voucher-template">
+	<form method="post" name="new-template" id="new-template" action="<?php echo esc_url(admin_url('admin.php?page=new-voucher-template')); ?>">
 		<input type="hidden" name="action" value="<?php echo esc_attr("save_voucher_settings_option") ?>" />
 		<?php $nonce = wp_create_nonce('new_template_verify'); ?>
 		<input type="hidden" name="new_template_verify" value="<?php echo esc_html($nonce); ?>">
@@ -120,7 +120,7 @@ if (function_exists('wp_enqueue_media')) {
 			<tbody>
 				<tr>
 					<th scope="row">
-						<label for="title"><?php echo __('Title', 'gift-voucher') ?> <span class="description">(required)</span></label>
+						<label for="title"><?php echo esc_html__('Title', 'gift-voucher'); ?> <span class="description">(required)</span></label>
 					</th>
 					<td>
 						<input name="title" type="text" id="title" value="<?php echo esc_attr($options->title); ?>" class="regular-text" aria-required="true" required="required">
@@ -133,25 +133,25 @@ if (function_exists('wp_enqueue_media')) {
 				?>
 					<tr>
 						<th scope="row">
-							<label for="image"><?php echo __('Image', 'gift-voucher') ?> - Style <?php echo esc_html($i + 1); ?></label>
+							<label for="image"><?php echo esc_html__('Image', 'gift-voucher') ?> - Style <?php echo esc_html($i + 1); ?></label>
 							<p class="description">(Recommended: <?php echo esc_html($sizearr[$i]); ?>)</p>
 						</th>
 						<td>
 							<img class="image_src<?php echo esc_html($i); ?>" src="" width="100" style="display: none;" /><br>
 							<input class="image_url<?php echo esc_html($i); ?>" type="hidden" name="image<?php echo esc_html($i); ?>" size="60" value="<?php echo esc_attr($value); ?>">
-							<button type="button" class="upload_image<?php echo esc_html($i); ?> button"><?php echo __('Upload Image', 'gift-voucher') ?></button>
-							<button type="button" class="button button-primary remove_image<?php echo esc_attr($i); ?>" style="display: none;"><?php echo __('Remove Image', 'gift-voucher') ?></button>
+							<button type="button" class="upload_image<?php echo esc_html($i); ?> button"><?php echo esc_html('Upload Image', 'gift-voucher') ?></button>
+							<button type="button" class="button button-primary remove_image<?php echo esc_attr($i); ?>" style="display: none;"><?php echo esc_html('Remove Image', 'gift-voucher') ?></button>
 						</td>
 					</tr>
 				<?php } ?>
 				<tr>
 					<th scope="row">
-						<label for="active"><?php echo __('Status', 'gift-voucher') ?></label>
+						<label for="active"><?php echo esc_html__('Status', 'gift-voucher') ?></label>
 					</th>
 					<td>
 						<select name="active" id="active">
-							<option value="<?php echo esc_html("1"); ?>" <?php echo ($options->active == 1) ? esc_html('selected') : ''; ?>><?php echo __('Active', 'gift-voucher') ?></option>
-							<option class="0" <?php echo ($options->active == 0) ? esc_html('selected') : ''; ?>><?php echo __('Inactive', 'gift-voucher') ?></option>
+							<option value="<?php echo esc_html("1"); ?>" <?php echo ($options->active == 1) ? esc_html('selected') : ''; ?>><?php echo esc_html('Active', 'gift-voucher') ?></option>
+							<option class="0" <?php echo ($options->active == 0) ? esc_html('selected') : ''; ?>><?php echo esc_html('Inactive', 'gift-voucher') ?></option>
 						</select>
 					</td>
 				</tr>

@@ -165,6 +165,7 @@ jQuery(document).ready(function ($) {
                 notice = data.leftside_notice;
                 counpon_label = data.counpon;
                 json = data.json;
+                console.log(json);
                 changeStepVoucher(step_voucher + 1);
                 var couponcode = Math.floor(1000000000000000 + Math.random() * 9000000000000000);
                 voucherTemplate.find('#voucher-id').val(voucher_id);
@@ -231,15 +232,15 @@ jQuery(document).ready(function ($) {
         voucherTemplate.find('.giftvoucher-step').removeClass('active').removeClass('passed'); // remove active in step
         voucherTemplate.find('.giftvoucher-step .step-group').removeClass('enable_click').addClass('disable_click');
         voucherTemplate.find('.wrapper-infomation-voucher-template').hide();
-        //show slider       
+        //show slider
         if (step == 1) {
             voucherTemplate.find('.voucher-content-step').addClass('loading');
-            voucherTemplate.find('.voucher-content-step').hide(); //hide slider; 
+            voucherTemplate.find('.voucher-content-step').hide(); //hide slider;
             voucherTemplate.find('#select-temp').parent('.giftvoucher-step').addClass('active');
             voucherTemplate.find('#select-temp').removeClass('disable_click').addClass('enable_click');
             voucherTemplate.find('.wrap-format-category-voucher').css('display', 'flex');; //hide format slider;
             voucherTemplate.find('#slider-giftvoucher').show();
-            voucherTemplate.find('#voucher-continue-step').removeClass('show'); //hide prev-next-step ;  
+            voucherTemplate.find('#voucher-continue-step').removeClass('show'); //hide prev-next-step ;
             voucherTemplate.find('.progress .progress-bar').css('width', '25%'); //add width progress
             sliderVoucherTemplate(number_slider);
             //remove canvas
@@ -254,18 +255,18 @@ jQuery(document).ready(function ($) {
             voucherTemplate.find('#select-per').parent('.giftvoucher-step').addClass('active');
             voucherTemplate.find('#select-per').removeClass('disable_click').addClass('enable_click');
             voucherTemplate.find('.wrap-setup-voucher-template').addClass('template-voucher-' + dataType);
-            voucherTemplate.find('.wrap-format-category-voucher').hide(); //hide format slider;  
-            voucherTemplate.find('.voucher-content-step').hide(); //hide slider; 
-            voucherTemplate.find('#setup-voucher-template').show(); //show step 2;   
-            voucherTemplate.find('#voucher-continue-step').addClass('show'); //show prev-next-step ; 
-            voucherTemplate.find('.progress .progress-bar').css('width', '50%'); //add width progress    
-            voucherTemplate.find('#content-setup-voucher-template').show(); //show Setup your gift card 
+            voucherTemplate.find('.wrap-format-category-voucher').hide(); //hide format slider;
+            voucherTemplate.find('.voucher-content-step').hide(); //hide slider;
+            voucherTemplate.find('#setup-voucher-template').show(); //show step 2;
+            voucherTemplate.find('#voucher-continue-step').addClass('show'); //show prev-next-step ;
+            voucherTemplate.find('.progress .progress-bar').css('width', '50%'); //add width progress
+            voucherTemplate.find('#content-setup-voucher-template').show(); //show Setup your gift card
             // add count step
             voucherTemplate.find('#voucher-continue-step').find('.voucher-prev-step').data('prev-step', parseInt(step - 1));
             voucherTemplate.find('#voucher-continue-step').find('.voucher-next-step').data('next-step', parseInt(step + 1));
             voucherTemplate.find('.voucher-preview-pdf').hide(); // hide button preview
             voucherTemplate.find('#payment-voucher-template').hide(); // hide button payment
-            voucherTemplate.find('.voucher-next-step').show(); // show button payment 
+            voucherTemplate.find('.voucher-next-step').show(); // show button payment
             voucherTemplate.find('#dataVoucher').val('');
         } else if (step == 3) {
             //show step set up gift voucher
@@ -277,7 +278,7 @@ jQuery(document).ready(function ($) {
             voucherTemplate.find('#select-per').removeClass('disable_click').addClass('enable_click');
             voucherTemplate.find('#select-payment').parent('.giftvoucher-step').addClass('active');
             voucherTemplate.find('#select-payment').removeClass('disable_click').addClass('enable_click');
-            voucherTemplate.find('.progress .progress-bar').css('width', '75%'); //add width progressvar             
+            voucherTemplate.find('.progress .progress-bar').css('width', '75%'); //add width progressvar
             // add count step
             voucherTemplate.find('#voucher-continue-step').find('.voucher-prev-step').data('prev-step', parseInt(step - 1));
             voucherTemplate.find('#voucher-continue-step').find('.voucher-next-step').data('next-step', parseInt(step + 1));
@@ -301,7 +302,7 @@ jQuery(document).ready(function ($) {
         } else if (step == 4) {
             // show step overview and payment
             var orderDetails = voucherTemplate.find('.order-voucher-details');
-            voucherTemplate.find('#order-voucher-details-overview').show().append(orderDetails); //add show section overview 
+            voucherTemplate.find('#order-voucher-details-overview').show().append(orderDetails); //add show section overview
             voucherTemplate.find('#select-temp').parent('.giftvoucher-step').addClass('passed');
             voucherTemplate.find('#select-temp').removeClass('disable_click').addClass('enable_click');
             voucherTemplate.find('#select-per').parent('.giftvoucher-step').addClass('passed');
@@ -310,7 +311,7 @@ jQuery(document).ready(function ($) {
             voucherTemplate.find('#select-payment').removeClass('disable_click').addClass('enable_click');
             voucherTemplate.find('#select-overview').parent('.giftvoucher-step').addClass('active');
             voucherTemplate.find('#select-overview').removeClass('disable_click').addClass('enable_click');
-            voucherTemplate.find('.progress .progress-bar').css('width', '100%'); //add width progress            
+            voucherTemplate.find('.progress .progress-bar').css('width', '100%'); //add width progress
             voucherTemplate.find('#voucher-continue-step').find('.voucher-prev-step').data('prev-step', parseInt(step - 1));
             voucherTemplate.find('.voucher-preview-pdf').show(); // show button preview
             voucherTemplate.find('#payment-voucher-template').show(); // show button payment
@@ -347,7 +348,7 @@ jQuery(document).ready(function ($) {
                 voucherTemplate.find('.value-shipping-voucher').html(frontend_ajax_object.via_post);
                 dataString = dataString + '&type_shipping=' + wpgv_b64EncodeUnicode(typeShipping) + '&nameShipping=' + wpgv_b64EncodeUnicode(frontend_ajax_object.via_post) + '&pay_method=' + wpgv_b64EncodeUnicode(payment_gateway.val()) + '&fisrtName=' + wpgv_b64EncodeUnicode(voucher_shipping_first.val()) + '&lastName=' + wpgv_b64EncodeUnicode(voucher_shipping_last.val()) + '&address=' + wpgv_b64EncodeUnicode(voucher_shipping_address.val()) + '&city=' + wpgv_b64EncodeUnicode(voucher_shipping_city.val()) + '&postcode=' + wpgv_b64EncodeUnicode(voucher_shipping_postcode.val()) + '&shippingMethod=' + wpgv_b64EncodeUnicode(voucherTemplate.find('input[name=shipping_method]:checked').val())
             }
-            voucherTemplate.find('#dataVoucher').val(dataString); // get data voucher setup                  
+            voucherTemplate.find('#dataVoucher').val(dataString); // get data voucher setup
         }
         jQuery('#voucher-template-name-step').find('.choose-show-title').html(voucherTemplate.find('.giftvoucher-step.active .step-label').text());
         jQuery('#voucher-template-name-step').find('.number-step').html(step);
@@ -393,7 +394,7 @@ jQuery(document).ready(function ($) {
                 voucher_gift_from.closest('.voucher-template-input').find('.error-input').show();
             }
         } else if ($step == '4') {
-            //check validate 
+            //check validate
             var typeShipping = voucherTemplate.find('.choose-shipping-template .shipping-type.active').data('type');
             if (typeof typeShipping == 'undefined') {
                 typeShipping = 'shipping_as_email';
@@ -511,7 +512,7 @@ jQuery(document).ready(function ($) {
         var step = $(this).find('.step-group').data('step');
         changeStepVoucher(step);
     });
-    // payment 
+    // payment
     jQuery(document).on('click', '#payment-voucher-template', function (event) {
         var data = voucherTemplate.find('#dataVoucher').val();
         var dataURL = voucherTemplate.find('#show-preview-gift-card').attr('href');
@@ -546,6 +547,7 @@ jQuery(document).ready(function ($) {
     var containerWidth = 0;
     //function canvas
     function showTemplateGiftCard(json, urlImage, currency, giftto, giftfrom, date_label, email, website, company_name, expiryDate, notice, counpon, step) {
+        console.log(json);
         if (step != 1) {
             if (json != null || urlImage != null || currency != null || giftto != null || email != null || date_label != null || website != null || company_name != null || expiryDate != null || notice != null || counpon != null) {
                 stage = Konva.Node.create(json, 'template_giftcard_container');
@@ -862,7 +864,7 @@ jQuery(document).ready(function ($) {
             false
         );
     }
-    // funtion resize giftcard    
+    // funtion resize giftcard
     function scrollTopGiftCard() {
         document.getElementById('giftvoucher-template').scrollIntoView();
     }

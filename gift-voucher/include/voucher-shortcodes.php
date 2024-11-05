@@ -12,7 +12,7 @@ function wpgv_voucher_successful_shortcode()
 
 	$voucher_table 	= $wpdb->prefix . 'giftvouchers_list';
 	$setting_table 	= $wpdb->prefix . 'giftvouchers_setting';
-	$setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
+	$setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM $setting_table WHERE id = %d", 1));
 	if (isset($_GET['voucheritem'])) {
 		$voucheritem = absint($_GET['voucheritem']);
 		$voucher_options = $wpdb->get_row(
@@ -37,7 +37,7 @@ function wpgv_voucher_successful_shortcode()
 				$wpdb->update(
 					$voucher_table,
 					array(
-						'payment_status' 	=> __('Paid'),
+						'payment_status' 	=> 'Paid',
 						'voucheradd_time'	=> current_time('mysql')
 					),
 					array('id' => $voucheritem),
@@ -78,7 +78,7 @@ function wpgv_voucher_successful_shortcode()
 		$customer_receipt = (get_option('wpgv_customer_receipt') != '') ? get_option('wpgv_customer_receipt') : 0;
 
 		if (isset($_GET['per_invoice']) && absint($_GET['per_invoice']) == 1 && $customer_receipt == 0) {
-			// Mail not send 
+			// Mail not send
 
 			$upload = wp_upload_dir();
 			$upload_dir = $upload['basedir'];
@@ -150,7 +150,7 @@ function wpgv_voucher_successful_shortcode()
 				$mail_sent = wp_mail($buyerto, $buyersub, $buyermsg, $headers, $attachments);
 			}
 			$successpagemessage = get_option('wpgv_successpagemessage') ? get_option('wpgv_successpagemessage') : 'We have got your order! <br>E-Mail Sent Successfully to %s';
-			
+
 
 			if (isset($_GET['per_invoice']) && absint($_GET['per_invoice']) == 1) {
 				$return .= $setting_options->bank_info;
@@ -170,7 +170,7 @@ function wpgv_voucher_successful_shortcode()
 			} else {
 				if ($check_send_mail === 'unsent') {
 					$return .= '<div class="error"><p>' . __('Some Error Occurred From Sending this Email! <br>(Reload and Retry Again!) or Contact Us', 'gift-voucher') . '</p></div>';
-				}elseif ($check_send_mail === 'sent'){
+				} elseif ($check_send_mail === 'sent') {
 					$return .= '<div class="success">' . sprintf(stripslashes($successpagemessage), $voucher_options->email) . '</div>';
 				}
 			}
@@ -255,7 +255,7 @@ function wpgv_stripe_success_page_shortcode()
 				$wpdb->update(
 					$voucher_table,
 					array(
-						'payment_status' 	=> __('Paid'),
+						'payment_status' 	=> 'Paid',
 						'voucheradd_time'	=> current_time('mysql')
 					),
 					array('id' => $orderid, 'pay_method' => 'Stripe'),
@@ -332,7 +332,7 @@ function wpgv_stripe_success_page_shortcode()
 				} else {
 					if ($check_send_mail === 'unsent') {
 						$statusMsg = '<div class="error"><p>' . esc_html_e('Some Error Occurred From Sending this Email! <br>(Reload and Retry Again!) or Contact Us', 'gift-voucher') . '</p></div>';
-					}elseif ($check_send_mail === 'sent'){
+					} elseif ($check_send_mail === 'sent') {
 						$statusMsg = '<div class="success">' . sprintf(stripslashes($successpagemessage), $voucher_options->email) . '</div>';
 					}
 				}
@@ -351,15 +351,14 @@ function wpgv_stripe_success_page_shortcode()
 add_shortcode('wpgv_stripesuccesspage', 'wpgv_stripe_success_page_shortcode');
 
 
-function update_check_send_mail($new_status) {
-    global $wpdb;
+function update_check_send_mail($new_status)
+{
+	global $wpdb;
 
-    $voucher_table = $wpdb->prefix . 'giftvouchers_list';
-
-    $sql = $wpdb->prepare("UPDATE $voucher_table SET check_send_mail = %s", $new_status);
-
-    $wpdb->query($sql);
+	$voucher_table = $wpdb->prefix . 'giftvouchers_list';
+	$wpdb->query($wpdb->prepare("UPDATE $voucher_table SET check_send_mail = %s", $new_status));
 }
+
 
 function wpgv_check_voucher_balance_shortcode()
 {
@@ -396,11 +395,11 @@ function wpgv_check_voucher_balance_shortcode()
 			</h4>
 			<table class="wpgv-balance-activity-table">
 				<tr>
-					<th><?php _e('Date', 'gift-voucher'); ?></th>
-					<th><?php _e('Action', 'gift-voucher'); ?></th>
-					<th><?php _e('Note', 'gift-voucher'); ?></th>
-					<th><?php _e('Amount', 'gift-voucher'); ?></th>
-					<th><?php _e('Balance', 'gift-voucher'); ?></th>
+					<th><?php esc_html('Date', 'gift-voucher'); ?></th>
+					<th><?php esc_html('Action', 'gift-voucher'); ?></th>
+					<th><?php esc_html('Note', 'gift-voucher'); ?></th>
+					<th><?php esc_html('Amount', 'gift-voucher'); ?></th>
+					<th><?php esc_html('Balance', 'gift-voucher'); ?></th>
 				</tr>
 				<?php
 				$running_balance = $gift_voucher->get_balance();
@@ -419,12 +418,13 @@ function wpgv_check_voucher_balance_shortcode()
 						<td class="wpgv-balance-activity <?php echo ($activity->amount < 0) ? esc_html('wpgv-balance-activity-negative') : ''; ?>">
 							<?php
 							if ($activity->amount != 0) {
-								echo wpgv_price_format(esc_attr($activity->amount));
+								echo esc_html(wpgv_price_format($activity->amount));
 							}
 							?>
+
 						</td>
 						<td class="wpgv-balance-activity">
-							<?php echo wpgv_price_format(esc_attr($running_balance)); ?>
+							<?php echo esc_html(wpgv_price_format($running_balance)); ?>
 						</td>
 					</tr>
 				<?php
