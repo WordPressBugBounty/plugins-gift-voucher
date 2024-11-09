@@ -1,4 +1,3 @@
-
 <?php
 add_action('wp_ajax_update_voucher_date', 'update_voucher_date');
 add_action('wp_ajax_nopriv_update_voucher_date', 'update_voucher_date');
@@ -56,13 +55,15 @@ add_action('wp_ajax_nopriv_update_voucher_price', 'update_voucher_price');
 
 function update_voucher_price()
 {
-    if (isset($_POST['activity_id']) && isset($_POST['data_price'])) {
+    if (isset($_POST['activity_id']) && isset($_POST['data_price']) && isset($_POST['voucher_id'])) {
         $activity_id = sanitize_text_field($_POST['activity_id']);
-        $data_price = sanitize_text_field($_POST['data_price']);
+        $data_price = floatval($_POST['data_price']);
         $voucher_id = sanitize_text_field($_POST['voucher_id']);
+
         global $wpdb;
         $giftvouchers_activity = $wpdb->prefix . 'giftvouchers_activity';
         $giftvouchers_list = $wpdb->prefix . 'giftvouchers_list';
+
         $wpdb->update(
             $giftvouchers_activity,
             array('amount' => number_format($data_price, 5)),
@@ -70,6 +71,7 @@ function update_voucher_price()
             array('%s'),
             array('%d')
         );
+
         $wpdb->update(
             $giftvouchers_list,
             array('amount' => $data_price),
@@ -77,7 +79,7 @@ function update_voucher_price()
             array('%s'),
             array('%d')
         );
-        wp_send_json_success('Date updated successfully');
+        wp_send_json_success('Price updated successfully');
     } else {
         wp_send_json_error('Invalid data');
     }
@@ -95,6 +97,4 @@ function check_and_add_custom_column_on_plugin_activation()
     }
 }
 
-add_action('activated_plugin', 'check_and_add_custom_column_on_plugin_activation');
-
-?>
+register_activation_hook(__FILE__, 'check_and_add_custom_column_on_plugin_activation');
