@@ -367,7 +367,7 @@ function wpgv_check_voucher_balance_shortcode()
 		$voucher_code = sanitize_text_field($_REQUEST['voucher_code']);
 	} ?>
 	<form action="" method="post">
-		<input type="text" name="voucher_code" autocomplete="off" placeholder="<?php esc_html_e('Search by Gift voucher code', 'gift-voucher'); ?>" value="<?php esc_attr($voucher_code) ?>" style="width: 400px;" required>
+		<input type="text" name="voucher_code" autocomplete="off" placeholder="<?php esc_html_e('Search by Gift voucher code', 'gift-voucher'); ?>" value="<?php echo esc_attr($voucher_code) ?>" style="width: 400px;" required>
 		<input type="submit" class="button button-primary" value="<?php esc_html_e('Check Balance', 'gift-voucher'); ?>">
 	</form>
 	<?php
@@ -395,11 +395,11 @@ function wpgv_check_voucher_balance_shortcode()
 			</h4>
 			<table class="wpgv-balance-activity-table">
 				<tr>
-					<th><?php esc_html('Date', 'gift-voucher'); ?></th>
-					<th><?php esc_html('Action', 'gift-voucher'); ?></th>
-					<th><?php esc_html('Note', 'gift-voucher'); ?></th>
-					<th><?php esc_html('Amount', 'gift-voucher'); ?></th>
-					<th><?php esc_html('Balance', 'gift-voucher'); ?></th>
+					<th><?php echo esc_html('Date', 'gift-voucher'); ?></th>
+					<th><?php echo esc_html('Action', 'gift-voucher'); ?></th>
+					<th><?php echo esc_html('Note', 'gift-voucher'); ?></th>
+					<th><?php echo esc_html('Amount', 'gift-voucher'); ?></th>
+					<th><?php echo esc_html('Balance', 'gift-voucher'); ?></th>
 				</tr>
 				<?php
 				$running_balance = $gift_voucher->get_balance();
@@ -410,10 +410,10 @@ function wpgv_check_voucher_balance_shortcode()
 							<?php date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($activity->activity_date)); ?>
 						</td>
 						<td>
-							<?php esc_html(ucwords($activity->action)); ?>
+							<?php echo esc_html(ucwords($activity->action)); ?>
 						</td>
 						<td>
-							<?php esc_html($activity->note); ?>
+							<?php echo esc_html($activity->note); ?>
 						</td>
 						<td class="wpgv-balance-activity <?php echo ($activity->amount < 0) ? esc_html('wpgv-balance-activity-negative') : ''; ?>">
 							<?php

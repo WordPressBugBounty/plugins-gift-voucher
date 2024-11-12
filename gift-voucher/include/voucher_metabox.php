@@ -42,7 +42,7 @@ if (! class_exists('WPGV_Voucher_Taxonomy_Image')) {
     public function add_category_image($taxonomy)
     { ?>
       <div class="form-field term-group">
-        <label for="wpgv-voucher-category-image-id"><?php esc_html(__('Featured Image', 'gift-voucher')); ?></label>
+        <label for="wpgv-voucher-category-image-id"><?php echo esc_html(__('Featured Image', 'gift-voucher')); ?></label>
         <input type="hidden" id="wpgv-voucher-category-image-id" name="wpgv-voucher-category-image-id" class="custom_media_url" value="">
         <div id="category-image-wrapper"></div>
         <p>
@@ -71,7 +71,7 @@ if (! class_exists('WPGV_Voucher_Taxonomy_Image')) {
     { ?>
       <tr class="form-field term-group-wrap">
         <th scope="row">
-          <label for="wpgv-voucher-category-image-id"><?php esc_html(__('Featured Image', 'gift-voucher')); ?></label>
+          <label for="wpgv-voucher-category-image-id"><?php echo esc_html(__('Featured Image', 'gift-voucher')); ?></label>
         </th>
         <td>
           <?php $image_id = get_term_meta($term->term_id, 'wpgv-voucher-category-image-id', true); ?>
@@ -113,7 +113,7 @@ if (! class_exists('WPGV_Voucher_Taxonomy_Image')) {
       } ?>
       <script>
         jQuery(document).ready(function($) {
-          _wpMediaViewsL10n.insertIntoPost = '<?php esc_html(__("Insert", "gift-voucher")); ?>';
+          _wpMediaViewsL10n.insertIntoPost = '<?php echo esc_html(__("Insert", "gift-voucher")); ?>';
 
           function ct_media_upload(button_class) {
             var _custom_media = true,

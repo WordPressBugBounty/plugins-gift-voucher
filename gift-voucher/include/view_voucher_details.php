@@ -184,17 +184,26 @@ if ($voucher_options->order_type == 'vouchers') {
 	<div class="wp-core-ui-modal-dialog modal-dialog">
 		<div class="wp-core-ui-modal-content modal-content">
 			<div class="wp-core-ui-modal-header modal-header close-modal-button">
-				<h1 class="wp-core-ui-modal-title" id="myModalLabel">Edit date</h1>
+				<h1 class="wp-core-ui-modal-title" id="myModalLabel">
+					<?php esc_html_e('Edit date', 'gift-voucher'); ?>
+				</h1>
+
 			</div>
 			<div class="wp-core-ui-modal-body modal-body">
 				<div class="form-group">
-					<label for="datepicker" class="voucher-label">Select Date:</label>
+					<label for="datepicker" class="voucher-label">
+						<?php esc_html_e('Select Date:', 'gift-voucher'); ?>
+					</label>
 					<input type="text" id="datepicker" class="form-control" value="<?php echo esc_html(gmdate('d.m.Y', strtotime($voucher_options->expiry))); ?>">
 				</div>
 			</div>
 			<div class="wp-core-ui-modal-footer modal-footer">
-				<button type="button" class="button" id="close-modal-button">Close</button>
-				<button type="button" class="button button-primary btn-update-date" data-voucher-id="<?php echo esc_attr($voucher_id); ?>">Update Date</button>
+				<button type="button" class="button" id="close-modal-button">
+					<?php esc_html_e('Close', 'gift-voucher'); ?>
+				</button>
+				<button type="button" class="button button-primary btn-update-date" data-voucher-id="<?php echo esc_attr($voucher_id); ?>">
+					<?php esc_html_e('Update Date', 'gift-voucher'); ?>
+				</button>
 			</div>
 		</div>
 	</div>
@@ -203,17 +212,26 @@ if ($voucher_options->order_type == 'vouchers') {
 	<div class="wp-core-ui-modal-dialog modal-dialog">
 		<div class="wp-core-ui-modal-content modal-content">
 			<div class="wp-core-ui-modal-header modal-header close-modal-button">
-				<h1 class="wp-core-ui-modal-title" id="myModalLabel">Edit note</h1>
+				<h1 class="wp-core-ui-modal-title" id="myModalLabel">
+					<?php esc_html_e('Edit note', 'gift-voucher'); ?>
+				</h1>
 			</div>
 			<div class="wp-core-ui-modal-body modal-body">
 				<div class="form-group">
-					<label class="voucher-label">Note:</label>
+					<label class="voucher-label">
+						<?php esc_html_e('Note:', 'gift-voucher'); ?>
+					</label>
 					<textarea id="data-note"><?php echo esc_attr($voucher_options->note_order); ?></textarea>
 				</div>
 			</div>
 			<div class="wp-core-ui-modal-footer modal-footer">
-				<button type="button" class="button" id="close-modal-button">Close</button>
-				<button type="button" class="button button-primary btn-update-note" data-voucher-id="<?php echo esc_attr($voucher_id); ?>">Update note</button>
+				<button type="button" class="button" id="close-modal-button">
+					<?php esc_html_e('Close', 'gift-voucher'); ?>
+				</button>
+				<button type="button" class="button button-primary btn-update-note" data-voucher-id="<?php echo esc_attr($voucher_id); ?>">
+					<?php esc_html_e('Update note', 'gift-voucher'); ?>
+				</button>
+
 			</div>
 		</div>
 	</div>
@@ -222,17 +240,25 @@ if ($voucher_options->order_type == 'vouchers') {
 	<div class="wp-core-ui-modal-dialog modal-dialog">
 		<div class="wp-core-ui-modal-content modal-content">
 			<div class="wp-core-ui-modal-header modal-header close-modal-button">
-				<h1 class="wp-core-ui-modal-title" id="myModalLabel">Edit price</h1>
+				<h1 class="wp-core-ui-modal-title" id="myModalLabel">
+					<?php esc_html_e('Edit price', 'gift-voucher'); ?>
+				</h1>
 			</div>
 			<div class="wp-core-ui-modal-body modal-body">
 				<div class="form-group">
-					<label class="voucher-label">Price:</label>
+					<label class="voucher-label">
+						<?php esc_html_e('Price:', 'gift-voucher'); ?>
+					</label>
 					<input type="number" id="data-price" value="<?php echo esc_attr(intval($activity->amount)); ?>" />
 				</div>
 			</div>
 			<div class="wp-core-ui-modal-footer modal-footer">
-				<button type="button" class="button" id="close-modal-button">Close</button>
-				<button type="button" class="button button-primary btn-update-price" data-activity-id="<?php echo esc_attr($activity->id); ?>" data-voucher-id="<?php echo esc_attr($voucher_id); ?>">Update price</button>
+				<button type="button" class="button" id="close-modal-button">
+					<?php esc_html_e('Close', 'gift-voucher'); ?>
+				</button>
+				<button type="button" class="button button-primary btn-update-price" data-activity-id="<?php echo esc_attr($activity->id); ?>" data-voucher-id="<?php echo esc_attr($voucher_id); ?>">
+					<?php esc_html_e('Update price', 'gift-voucher'); ?>
+				</button>
 			</div>
 		</div>
 	</div>

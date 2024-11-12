@@ -22,13 +22,13 @@ if (isset($session_data['gift_voucher'])) {
 ?>
             <tr class="cart-discount coupon-<?php echo esc_attr(sanitize_title($voucher_code)); ?>">
                 <th>
-                    <?php esc_html(__('Gift Voucher', 'gift-voucher')); ?>
+                    <?php echo esc_html(__('Gift Voucher', 'gift-voucher')); ?>
                     <div class="wpgv-checkout-subtitle">
-                        <?php esc_html(__('Code', 'gift-voucher')); ?>: <b><?php echo esc_attr($gift_voucher->get_number()); ?></b><br />
+                        <?php echo esc_html(__('Code', 'gift-voucher')); ?>: <b><?php echo esc_attr($gift_voucher->get_number()); ?></b><br />
 
                         <?php
                         // translators: %s: remaining balance
-                        echo sprintf(esc_html__('Remaining balance is %s', 'gift-voucher'), esc_html($balance));
+                        echo sprintf(esc_html__('Remaining balance is %s', 'gift-voucher'), $balance);
 
                         ?>
 
@@ -37,7 +37,7 @@ if (isset($session_data['gift_voucher'])) {
                         ?>
                             <br />
                             <span style="color: red; font-weight: 600;">
-                                <?php esc_html(__('Expired', 'gift-voucher')); ?>
+                                <?php echo esc_html(__('Expired', 'gift-voucher')); ?>
                             </span>
                         <?php
                         }
@@ -45,8 +45,8 @@ if (isset($session_data['gift_voucher'])) {
                     </div>
                 </th>
                 <td>
-                    <?php echo esc_html(wc_price($discount_amount * -1)); ?>
-                    <a href="#" class="wpgv-remove-voucher" data-gift-voucher="<?php esc_attr($voucher_code); ?>"><?php esc_html(__('[Remove]', 'gift-voucher')); ?></a>
+                    <?php echo wc_price($discount_amount * -1); ?>
+                    <a href="#" class="wpgv-remove-voucher" data-gift-voucher="<?php echo esc_attr($voucher_code); ?>"><?php echo esc_html(__('[Remove]', 'gift-voucher')); ?></a>
                 </td>
             </tr>
 <?php

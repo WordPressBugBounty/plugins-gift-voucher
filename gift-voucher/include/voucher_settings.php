@@ -228,8 +228,8 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 			}
 
 			?>
-			<p><a href="<?php echo esc_url(admin_url('admin.php?page=voucher-setting')); ?>" class="button button-primary">Back to plugin settings</a></p>
-			<p>If you read about those pages, click on the <a href="<?php echo esc_url('https://www.wp-giftcard.com/docs/documentation/plugin-pages/'); ?>" target="_blank">link</a> for documentation.</p>
+			<p><a href="<?php echo esc_url(admin_url('admin.php?page=voucher-setting')); ?>" class="button button-primary"><?php echo esc_html__('Back to plugin settings', 'gift-voucher') ?></a></p>
+			<p><?php echo esc_html__('If you read about those pages, click on the', 'gift-voucher'); ?> <a href="<?php echo esc_url('https://www.wp-giftcard.com/docs/documentation/plugin-pages/'); ?>" target="_blank"><?php echo esc_html__('link', 'gift-voucher'); ?></a> <?php echo esc_html__('for documentation.', 'gift-voucher'); ?></p>
 		</div>
 	<?php } else {
 		wp_die('Security check failed');
@@ -245,7 +245,9 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 		<div class="wpgiftv-row">
 			<div class="wpgiftv-col75">
 				<div class="white-box">
-					<a class="button button-large button-primary alignright" href="<?php echo esc_attr($url); ?>">Create Plugin's Default Pages</a>
+					<a class="button button-large button-primary alignright" href="<?php echo esc_url($url); ?>">
+						<?php echo esc_html__('Create Plugin\'s Default Pages', 'gift-voucher'); ?>
+					</a>
 					<div class="nav-tab-wrapper">
 						<a class="nav-tab nav-tab-active" href="#general"><?php echo esc_html_e('General Settings', 'gift-voucher') ?></a>
 						<a class="nav-tab" href="#payment"><?php echo esc_html_e('Payment Settings', 'gift-voucher') ?></a>
@@ -265,44 +267,69 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 								<tr>
 									<th scope="row">
 										<label for="is_woocommerce_enable"><?php echo esc_html_e('WooCommerce', 'gift-voucher'); ?></label>
-										<p class="description">If enable then customers can redeem their vouchers on WooCommerce checkout</p>
+										<p class="description"><?php echo esc_html__('If enable then customers can redeem their vouchers on WooCommerce checkout', 'gift-voucher') ?></p>
 									</th>
 									<td>
 										<select name="is_woocommerce_enable" id="is_woocommerce_enable" class="regular-text">
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo ($options->is_woocommerce_enable == 1) ? esc_attr('selected') : ''; ?>>Enable</option>
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo (!$options->is_woocommerce_enable) ? esc_attr('selected') : ''; ?>>Disable</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($options->is_woocommerce_enable, 1); ?>>
+												<?php echo esc_html__('Enable', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($options->is_woocommerce_enable, 0); ?>>
+												<?php echo esc_html__('Disable', 'gift-voucher'); ?>
+											</option>
 										</select>
+
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">
 										<label for="is_style_choose_enable"><?php echo esc_html_e('Can customers choose voucher styles?', 'gift-voucher'); ?></label>
-										<p class="description">If enable then customers can choose the voucher styles from bottom styles you enabled</p>
+										<p class="description"><?php echo esc_html__('If enable then customers can choose the voucher styles from bottom styles you enabled', 'gift-voucher') ?></p>
 									</th>
 									<td>
 										<select name="is_style_choose_enable" id="is_style_choose_enable" class="regular-text">
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo ($options->is_style_choose_enable == 1) ? esc_attr('selected') : ''; ?>>Yes</option>
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo (!$options->is_style_choose_enable) ? esc_attr('selected') : ''; ?>>No</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($options->is_style_choose_enable, 1); ?>>
+												<?php echo esc_html__('Yes', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($options->is_style_choose_enable, 0); ?>>
+												<?php echo esc_html__('No', 'gift-voucher'); ?>
+											</option>
 										</select>
+
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">
-										<label for="voucher_style"><?php echo esc_html_e('Voucher Style', 'gift-voucher'); ?> (Can select multiple)</label>
-										<p class="description">Demo: <a href="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/style1.png') ?>" target="_blank">Style 1</a>, <a href="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/style2.png') ?>" target="_blank">Style 2</a>, <a href="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/style3.png') ?>" target="_blank">Style 3</a></p>
+										<label for="voucher_style"><?php esc_html_e('Voucher Style', 'gift-voucher'); ?> (<?php esc_html_e('Can select multiple', 'gift-voucher'); ?>)</label>
+										<p class="description">
+											<?php esc_html_e('Demo:', 'gift-voucher'); ?>
+											<a href="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/style1.png'); ?>" target="_blank"><?php esc_html_e('Style 1', 'gift-voucher'); ?></a>,
+											<a href="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/style2.png'); ?>" target="_blank"><?php esc_html_e('Style 2', 'gift-voucher'); ?></a>,
+											<a href="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/style3.png'); ?>" target="_blank"><?php esc_html_e('Style 3', 'gift-voucher'); ?></a>
+										</p>
 									</th>
 									<td>
 										<select name="voucher_style[]" id="voucher_style" multiple="multiple" class="regular-text">
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo in_array(0, $voucher_styles) ? esc_attr('selected') : ''; ?>>Style 1</option>
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo in_array(1, $voucher_styles) ? esc_attr('selected') : ''; ?>>Style 2</option>
-											<option value="<?php echo esc_attr('2'); ?>" <?php echo in_array(2, $voucher_styles) ? esc_attr('selected') : ''; ?>>Style 3</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php echo in_array(0, $voucher_styles) ? 'selected' : ''; ?>>
+												<?php esc_html_e('Style 1', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php echo in_array(1, $voucher_styles) ? 'selected' : ''; ?>>
+												<?php esc_html_e('Style 2', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('2'); ?>" <?php echo in_array(2, $voucher_styles) ? 'selected' : ''; ?>>
+												<?php esc_html_e('Style 3', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
+
 								</tr>
 
 								<tr>
 									<th scope="row">
-										<label for="company_name"><?php echo esc_html_e('Company Name', 'gift-voucher'); ?> <span class="description">(required)</span></label>
+										<label for="company_name">
+											<?php esc_html_e('Company Name', 'gift-voucher'); ?>
+											<span class="description">(<?php esc_html_e('required', 'gift-voucher'); ?>)</span>
+										</label>
 									</th>
 									<td>
 										<input name="company_name" type="text" id="company_name" value="<?php echo esc_html(stripslashes($options->company_name)); ?>" class="regular-text" aria-required="true" required="required">
@@ -310,16 +337,29 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 								</tr>
 								<tr>
 									<th scope="row">
-										<label for="currency_code"><?php echo esc_html_e('Currency Code', 'gift-voucher'); ?> <span class="description">(required)</span></label>
-										<p class="description"><a href="<?php echo esc_url('https://developer.paypal.com/docs/integration/direct/rest/currency-codes/') ?>" target="_blank">Click Here</a> to check valid currency codes</p>
+										<label for="currency_code">
+											<?php esc_html_e('Currency Code', 'gift-voucher'); ?>
+											<span class="description">(<?php esc_html_e('required', 'gift-voucher'); ?>)</span>
+										</label>
+										<p class="description">
+											<a href="<?php echo esc_url('https://developer.paypal.com/docs/integration/direct/rest/currency-codes/'); ?>" target="_blank">
+												<?php esc_html_e('Click Here', 'gift-voucher'); ?>
+											</a>
+											<?php esc_html_e('to check valid currency codes', 'gift-voucher'); ?>
+										</p>
 									</th>
+
 									<td>
 										<input name="currency_code" type="text" id="currency_code" value="<?php echo esc_html($options->currency_code); ?>" class="regular-text" aria-required="true" required="required">
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">
-										<label for="currency"><?php echo esc_html_e('Currency Symbol', 'gift-voucher'); ?> <span class="description">(required)</span></label>
+										<label for="currency">
+											<?php esc_html_e('Currency Symbol', 'gift-voucher'); ?>
+											<span class="description">(<?php esc_html_e('required', 'gift-voucher'); ?>)</span>
+										</label>
+
 									</th>
 									<td>
 										<input name="currency" type="text" id="currency" value="<?php echo esc_html($options->currency); ?>" class="regular-text" aria-required="true" required="required">
@@ -331,29 +371,41 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<select name="currency_position" class="regular-text" id="currency_position">
-											<option value="<?php echo esc_attr('Left'); ?>" <?php echo ($options->currency_position == 'Left') ? esc_attr('selected') : ''; ?>>Left</option>
-											<option value="<?php echo esc_attr('Right'); ?>" <?php echo ($options->currency_position == 'Right') ? esc_attr('selected') : ''; ?>>Right</option>
+											<option value="<?php echo esc_attr('Left'); ?>" <?php selected($options->currency_position, 'Left'); ?>>
+												<?php esc_html_e('Left', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('Right'); ?>" <?php selected($options->currency_position, 'Right'); ?>>
+												<?php esc_html_e('Right', 'gift-voucher'); ?>
+											</option>
 										</select>
+
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">
-										<label for="voucher_bgcolor"><?php echo esc_html_e('Voucher Background Color', 'gift-voucher'); ?> <span class="description">(required)</span></label>
+										<label for="voucher_bgcolor">
+											<?php esc_html_e('Voucher Background Color', 'gift-voucher'); ?>
+											<span class="description">(<?php esc_html_e('required', 'gift-voucher'); ?>)</span>
+										</label>
 									</th>
 									<td>
 										<div>
 											<input name="voucher_bgcolor" type="text" id="voucher_bgcolor" value="#<?php echo esc_html($options->voucher_bgcolor); ?>" class="regular-text" aria-required="true">
-											<span class="description"> <?php echo esc_html_e('Background Color', 'gift-voucher'); ?></span>
+											<span class="description"> <?php esc_html_e('Background Color', 'gift-voucher'); ?></span>
 										</div>
 										<div>
 											<input name="voucher_brcolor" type="text" id="voucher_bgcolor" value="#<?php echo esc_html($voucher_brcolor); ?>" class="regular-text" aria-required="true">
-											<span class="description"> <?php echo esc_html_e('Border & Button Color', 'gift-voucher'); ?></span>
+											<span class="description"> <?php esc_html_e('Border & Button Color', 'gift-voucher'); ?></span>
 										</div>
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">
-										<label for="voucher_color"><?php echo esc_html_e('Voucher Text Color', 'gift-voucher'); ?> <span class="description">(required)</span></label>
+										<label for="voucher_color">
+											<?php esc_html_e('Voucher Text Color', 'gift-voucher'); ?>
+											<span class="description">(<?php esc_html_e('required', 'gift-voucher'); ?>)</span>
+										</label>
+
 									</th>
 									<td>
 										<input name="voucher_color" type="text" id="voucher_color" value="#<?php echo esc_html($options->voucher_color); ?>" class="regular-text" aria-required="true">
@@ -394,8 +446,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<select name="hide_expiry" id="hide_expiry" class="regular-text">
-											<option value="<?php echo esc_attr('yes'); ?>" <?php echo ($wpgv_hide_expiry == 'yes') ? esc_attr('selected') : ''; ?>>Yes</option>
-											<option value="<?php echo esc_attr('no'); ?>" <?php echo ($wpgv_hide_expiry == 'no') ? esc_attr('selected') : ''; ?>>No</option>
+											<option value="<?php echo esc_attr('yes'); ?>" <?php selected($wpgv_hide_expiry, 'yes'); ?>>
+												<?php esc_html_e('Yes', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('no'); ?>" <?php selected($wpgv_hide_expiry, 'no'); ?>>
+												<?php esc_html_e('No', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
@@ -406,8 +462,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<select name="voucher_expiry_type" class="regular-text" id="template_col">
-											<option value="<?php echo esc_attr('days'); ?>" <?php echo ($options->voucher_expiry_type == 'days') ? esc_attr('selected') : ''; ?>>Days</option>
-											<option value="<?php echo esc_attr('fixed'); ?>" <?php echo ($options->voucher_expiry_type == 'fixed') ? esc_attr('selected') : ''; ?>>Fixed Date</option>
+											<option value="<?php echo esc_attr('days'); ?>" <?php selected($options->voucher_expiry_type, 'days'); ?>>
+												<?php esc_html_e('Days', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('fixed'); ?>" <?php selected($options->voucher_expiry_type, 'fixed'); ?>>
+												<?php esc_html_e('Fixed Date', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
@@ -426,7 +486,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<input name="expiry_date_format" type="text" id="expiry_date_format" value="<?php echo esc_html($wpgv_expiry_date_format); ?>" class="regular-text" aria-required="true">
-										<p class="description"><a href="<?php echo esc_url('http://php.net/manual/en/function.date.php#refsect1-function.date-parameters') ?>" target="_blank">Click Here</a> to check valid date formats</p>
+										<p class="description">
+											<a href="<?php echo esc_url('http://php.net/manual/en/function.date.php#refsect1-function.date-parameters'); ?>" target="_blank">
+												<?php esc_html_e('Click Here', 'gift-voucher'); ?>
+											</a>
+											<?php esc_html_e('to check valid date formats', 'gift-voucher'); ?>
+										</p>
 									</td>
 								</tr>
 
@@ -437,7 +502,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 								</tr>
 								<tr>
 									<td style="padding: 0px;">
-										<h3>Gift Voucher</h3>
+										<h3><?php esc_html_e('Gift Voucher', 'gift-voucher'); ?></h3>
 									</td>
 								</tr>
 
@@ -447,16 +512,27 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<select name="hide_price_voucher" class="regular-text" id="hide_price_voucher">
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo ($wpgv_hide_price_voucher == 1) ? esc_attr('selected') : ''; ?>>Yes</option>
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo ($wpgv_hide_price_voucher == 0) ? esc_attr('selected') : ''; ?>>No</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($wpgv_hide_price_voucher, 1); ?>>
+												<?php esc_html_e('Yes', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($wpgv_hide_price_voucher, 0); ?>>
+												<?php esc_html_e('No', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
 
 								<tr>
 									<th scope="row">
-										<label for="demo_image_voucher"><?php echo esc_html_e('Add Your Custom Demo Image', 'gift-voucher'); ?></label>
-										<p class="description">Default Image - check <a href="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/demo.png') ?>" target="_blank">here</a></p>
+										<label for="demo_image_voucher">
+											<?php esc_html_e('Add Your Custom Demo Image', 'gift-voucher'); ?>
+										</label>
+										<p class="description">
+											<?php esc_html_e('Default Image - check', 'gift-voucher'); ?>
+											<a href="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/demo.png'); ?>" target="_blank">
+												<?php esc_html_e('here', 'gift-voucher'); ?>
+											</a>
+										</p>
 									</th>
 									<td>
 										<input name="demo_image_voucher" type="text" id="demo_image_voucher" value="<?php echo esc_html($demoimageurl_voucher); ?>" class="regular-text">
@@ -470,7 +546,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 								</tr>
 								<tr>
 									<td style="padding: 0px;">
-										<h3>Gift Items</h3>
+										<h3><?php esc_html_e('Gift Items', 'gift-voucher'); ?></h3>
 									</td>
 								</tr>
 								<tr>
@@ -479,16 +555,27 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<select name="hide_price_item" class="regular-text" id="hide_price_item">
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo ($wpgv_hide_price_item == 1) ? esc_attr('selected') : ''; ?>>Yes</option>
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo ($wpgv_hide_price_item == 0) ? esc_attr('selected') : ''; ?>>No</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($wpgv_hide_price_item, 1); ?>>
+												<?php esc_html_e('Yes', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($wpgv_hide_price_item, 0); ?>>
+												<?php esc_html_e('No', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
 
 								<tr>
 									<th scope="row">
-										<label for="demo_image_item"><?php echo esc_html_e('Add Your Custom Demo Image', 'gift-voucher'); ?></label>
-										<p class="description">Default Image - check <a href="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/demo.png') ?>" target="_blank">here</a></p>
+										<label for="demo_image_item">
+											<?php esc_html_e('Add Your Custom Demo Image', 'gift-voucher'); ?>
+										</label>
+										<p class="description">
+											<?php esc_html_e('Default Image - check', 'gift-voucher'); ?>
+											<a href="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/demo.png'); ?>" target="_blank">
+												<?php esc_html_e('here', 'gift-voucher'); ?>
+											</a>
+										</p>
 									</th>
 									<td>
 										<input name="demo_image_item" type="text" id="demo_image_item" value="<?php echo esc_html($demoimageurl_item); ?>" class="regular-text">
@@ -524,9 +611,15 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<select name="buying_for" class="regular-text" id="buying_for">
-											<option value="<?php echo esc_attr('both'); ?>" <?php echo ($wpgv_buying_for == 'both') ? esc_attr('selected') : ''; ?>>Both</option>
-											<option value="<?php echo esc_attr('someone_else'); ?>" <?php echo ($wpgv_buying_for == 'someone_else') ? esc_attr('selected') : ''; ?>>Someone Else</option>
-											<option value="<?php echo esc_attr('yourself'); ?>" <?php echo ($wpgv_buying_for == 'yourself') ? esc_attr('selected') : ''; ?>>Yourself</option>
+											<option value="<?php echo esc_attr('both'); ?>" <?php selected($wpgv_buying_for, 'both'); ?>>
+												<?php esc_html_e('Both', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('someone_else'); ?>" <?php selected($wpgv_buying_for, 'someone_else'); ?>>
+												<?php esc_html_e('Someone Else', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('yourself'); ?>" <?php selected($wpgv_buying_for, 'yourself'); ?>>
+												<?php esc_html_e('Yourself', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
@@ -536,15 +629,21 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<select name="post_shipping" class="regular-text" id="post_shipping">
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo ($options->post_shipping == 1) ? esc_attr('selected') : ''; ?>>Yes</option>
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo ($options->post_shipping == 0) ? esc_attr('selected') : ''; ?>>No</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($options->post_shipping, 1); ?>>
+												<?php esc_html_e('Yes', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($options->post_shipping, 0); ?>>
+												<?php esc_html_e('No', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">
 										<label for="shipping_method"><?php echo esc_html_e('Shipping Method for Post Shipping', 'gift-voucher'); ?></label>
-										<p class="description">Method Format -> value : name </p>
+										<p class="description">
+											<?php esc_html_e('Method Format -> value : name', 'gift-voucher'); ?>
+										</p>
 									</th>
 									<td>
 										<textarea name="shipping_method" type="text" id="shipping_method" class="regular-text" rows="4"><?php echo esc_html(stripslashes($options->shipping_method)); ?></textarea>
@@ -554,31 +653,53 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 								<tr>
 									<th scope="row">
 										<label for="preview_button"><?php echo esc_html_e('Voucher preview Button', 'gift-voucher'); ?></label>
-										<p class="description">If enable then preview button will show in the voucher booking forms</p>
+										<p class="description">
+											<?php esc_html_e('If enabled, the preview button will show in the voucher booking forms', 'gift-voucher'); ?>
+										</p>
+
 									</th>
 									<td>
 										<select name="preview_button" class="regular-text" id="preview_button">
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo ($options->preview_button == 1) ? esc_attr('selected') : ''; ?>>Enable</option>
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo ($options->preview_button == 0) ? 'selected' : ''; ?>>Disable</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($options->preview_button, 1); ?>>
+												<?php esc_html_e('Enable', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($options->preview_button, 0); ?>>
+												<?php esc_html_e('Disable', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">
-										<label for="enable_pdf_saving"><?php echo esc_html_e('Change PDF Save Option', 'gift-voucher'); ?></label>
-										<p class="description">If you are getting an error on checkout then enable this pdf saving option.</p>
+										<label for="enable_pdf_saving">
+											<?php esc_html_e('Change PDF Save Option', 'gift-voucher'); ?>
+										</label>
+										<p class="description">
+											<?php esc_html_e('If you are getting an error on checkout, then enable this PDF saving option.', 'gift-voucher'); ?>
+										</p>
 									</th>
 									<td>
 										<select name="enable_pdf_saving" class="regular-text" id="enable_pdf_saving">
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo ($wpgv_enable_pdf_saving == 1) ? esc_attr('selected') : ''; ?>>Enable</option>
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo ($wpgv_enable_pdf_saving == 0) ? esc_attr('selected') : ''; ?>>Disable</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($wpgv_enable_pdf_saving, 1); ?>>
+												<?php esc_html_e('Enable', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($wpgv_enable_pdf_saving, 0); ?>>
+												<?php esc_html_e('Disable', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">
-										<label for="custom_loader"><?php echo esc_html_e('Add Your Custom Loader URL', 'gift-voucher'); ?></label>
-										<p class="description">Default - check <a href="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/loader.gif') ?>" target="_blank">here</a></p>
+										<label for="custom_loader">
+											<?php esc_html_e('Add Your Custom Loader URL', 'gift-voucher'); ?>
+										</label>
+										<p class="description">
+											<?php esc_html_e('Default - check', 'gift-voucher'); ?>
+											<a href="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/loader.gif'); ?>" target="_blank">
+												<?php esc_html_e('here', 'gift-voucher'); ?>
+											</a>
+										</p>
 									</th>
 									<td>
 										<input name="custom_loader" type="text" id="custom_loader" value="<?php echo esc_html($options->custom_loader); ?>" class="regular-text">
@@ -642,8 +763,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<select name="paypal" class="regular-text" id="paypal">
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo ($options->paypal == 1) ? esc_attr('selected') : ''; ?>>Yes</option>
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo ($options->paypal == 0) ? esc_attr('selected') : ''; ?>>No</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($options->paypal, 1); ?>>
+												<?php esc_html_e('Yes', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($options->paypal, 0); ?>>
+												<?php esc_html_e('No', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
@@ -653,8 +778,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<select name="test_mode" class="regular-text" id="test_mode">
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo ($options->test_mode == 1) ? esc_attr('selected') : ''; ?>>Yes</option>
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo ($options->test_mode == 0) ? esc_attr('selected') : ''; ?>>No</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($options->test_mode, 1); ?>>
+												<?php esc_html_e('Yes', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($options->test_mode, 0); ?>>
+												<?php esc_html_e('No', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
@@ -663,7 +792,9 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 										<label for="paypal_client_id" style="float: left;"><?php echo esc_html_e('PayPal Client ID', 'gift-voucher'); ?></label>
 										<div class="wpgv_tooltip">
 											<img src="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/info-icon.png'); ?>" class="wpgv_info">
-											<span class="wpgv_tooltiptext">Credentials will be different for both Test mode and Live mode.</span>
+											<span class="wpgv_tooltiptext">
+												<?php esc_html_e('Credentials will be different for both Test mode and Live mode.', 'gift-voucher'); ?>
+											</span>
 										</div>
 										<p class="description" style="width: 100%; float: left;"><?php echo esc_html_e('Read the documentation of how to create PayPal live client ID.', 'gift-voucher'); ?>
 											<br><a href="<?php echo esc_url('https://www.wp-giftcard.com/docs/documentation/plugin-settings/payment-settings/') ?>" target="_blank">Click Here</a>
@@ -692,8 +823,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<select name="stripe" class="regular-text" id="stripe">
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo ($options->stripe == 1) ? esc_attr('selected') : ''; ?>>Yes</option>
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo ($options->stripe == 0) ? esc_attr('selected') : ''; ?>>No</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($options->stripe, 1); ?>>
+												<?php esc_html_e('Yes', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($options->stripe, 0); ?>>
+												<?php esc_html_e('No', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
@@ -709,7 +844,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 								<tr>
 									<th scope="row">
 										<label for="stripe_publishable_key"><?php echo esc_html_e('Stripe Publishable key', 'gift-voucher'); ?></label>
-										<p class="description"><?php echo esc_html_e('Collect the Publishable API key from below link.', 'gift-voucher'); ?><br><a href="<?php echo esc_url('https://dashboard.stripe.com/account/apikeys') ?>" target="_blank">Click Here</a></p>
+										<p class="description">
+											<?php esc_html_e('Collect the Publishable API key from the link below.', 'gift-voucher'); ?><br>
+											<a href="<?php echo esc_url('https://dashboard.stripe.com/account/apikeys'); ?>" target="_blank">
+												<?php esc_html_e('Click Here', 'gift-voucher'); ?>
+											</a>
+										</p>
 									</th>
 									<td>
 										<input name="stripe_publishable_key" type="text" id="stripe_publishable_key" value="<?php echo esc_html($options->stripe_publishable_key); ?>" class="regular-text">
@@ -718,7 +858,13 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 								<tr>
 									<th scope="row">
 										<label for="stripe_secret_key"><?php echo esc_html_e('Stripe Secret Key', 'gift-voucher'); ?></label>
-										<p class="description"><?php echo esc_html_e('Collect the Secret API key from below link.', 'gift-voucher'); ?><br><a href="<?php echo esc_url('https://dashboard.stripe.com/account/apikeys') ?>" target="_blank">Click Here</a></p>
+										<p class="description">
+											<?php esc_html_e('Collect the Secret API key from the link below.', 'gift-voucher'); ?><br>
+											<a href="<?php echo esc_url('https://dashboard.stripe.com/account/apikeys'); ?>" target="_blank">
+												<?php esc_html_e('Click Here', 'gift-voucher'); ?>
+											</a>
+										</p>
+
 									</th>
 									<td>
 										<input name="stripe_secret_key" type="text" id="stripe_secret_key" value="<?php echo esc_html($options->stripe_secret_key); ?>" class="regular-text">
@@ -730,13 +876,18 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<input name="stripe_webhook_url" type="text" id="stripe_webhook_url" value="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/include/stripewebhook.php'); ?>" class="regular-text" readonly>
-										<p class="description"><?php echo esc_html_e('Copy this url and paste in Stripe Webhook Endpoint URL.', 'gift-voucher'); ?></p>
+										<p class="description"><?php esc_html_e('Copy this url and paste in Stripe Webhook Endpoint URL.', 'gift-voucher'); ?></p>
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">
 										<label for="stripe_webhook_key"><?php echo esc_html_e('Stripe Webhook Signing secret key', 'gift-voucher'); ?></label>
-										<p class="description"><?php echo esc_html_e('Collect the Webhook Signing secret key from below link.', 'gift-voucher'); ?><br><a href="<?php echo esc_url('https://dashboard.stripe.com/account/webhooks') ?>" target="_blank">Click Here</a></p>
+										<p class="description">
+											<?php esc_html_e('Collect the Webhook Signing secret key from the link below.', 'gift-voucher'); ?><br>
+											<a href="<?php echo esc_url('https://dashboard.stripe.com/account/webhooks'); ?>" target="_blank">
+												<?php esc_html_e('Click Here', 'gift-voucher'); ?>
+											</a>
+										</p>
 									</th>
 									<td>
 										<input name="stripe_webhook_key" type="text" id="stripe_webhook_key" value="<?php echo esc_html($wpgv_stripe_webhook_key); ?>" class="regular-text">
@@ -762,8 +913,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<select name="sofort" class="regular-text" id="sofort">
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo ($options->sofort == 1) ? esc_attr('selected') : ''; ?>>Yes</option>
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo ($options->sofort == 0) ? esc_attr('selected') : ''; ?>>No</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($options->sofort, 1); ?>>
+												<?php esc_html_e('Yes', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($options->sofort, 0); ?>>
+												<?php esc_html_e('No', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
@@ -798,8 +953,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<select name="per_invoice" class="regular-text" id="per_invoice">
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo ($options->per_invoice == 1) ? esc_attr('selected') : ''; ?>>Yes</option>
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo ($options->per_invoice == 0) ? esc_attr('selected') : ''; ?>>No</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($options->per_invoice, 1); ?>>
+												<?php esc_html_e('Yes', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($options->per_invoice, 0); ?>>
+												<?php esc_html_e('No', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
@@ -809,8 +968,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<select name="invoice_mail_enable" id="invoice_mail_enable" class="regular-text">
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo ($wpgv_invoice_mail_enable == 1) ? esc_attr('selected') : ''; ?>>Yes</option>
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo ($wpgv_invoice_mail_enable == 0) ? esc_attr('selected') : ''; ?>>No</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($wpgv_invoice_mail_enable, 1); ?>>
+												<?php esc_html_e('Yes', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($wpgv_invoice_mail_enable, 0); ?>>
+												<?php esc_html_e('No', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
@@ -856,8 +1019,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									</th>
 									<td>
 										<select name="customer_receipt" id="customer_receipt" class="regular-text">
-											<option value="<?php echo esc_attr('1'); ?>" <?php echo ($wpgv_customer_receipt == 1) ? esc_attr('selected') : ''; ?>>Enable</option>
-											<option value="<?php echo esc_attr('0'); ?>" <?php echo ($wpgv_customer_receipt == 0) ? esc_attr('selected') : ''; ?>>Disable</option>
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($wpgv_customer_receipt, 1); ?>>
+												<?php esc_html_e('Enable', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($wpgv_customer_receipt, 0); ?>>
+												<?php esc_html_e('Disable', 'gift-voucher'); ?>
+											</option>
 										</select>
 									</td>
 								</tr>
@@ -954,7 +1121,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 
 			<div class="wpgiftv-col25">
 				<div class="white-box rating-box">
-					<h2>Rate Our Plugin</h2>
+					<h2><?php esc_html_e('Rate Our Plugin', 'gift-voucher'); ?></h2>
 					<div class="star-ratings">
 						<span class="dashicons dashicons-star-filled"></span>
 						<span class="dashicons dashicons-star-filled"></span>
@@ -962,39 +1129,69 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 						<span class="dashicons dashicons-star-filled"></span>
 						<span class="dashicons dashicons-star-filled"></span>
 					</div>
-					<p>Did WordPress Gift Voucher Plugin help you out? Please leave a 5-star review. Thank you!</p>
-					<a href="<?php echo esc_url('https://wordpress.org/support/plugin/gift-voucher/reviews/#new-post') ?>" target="_blank" class="button button-primary">Write a review</a>
+					<p><?php esc_html_e('Did WordPress Gift Voucher Plugin help you out? Please leave a 5-star review. Thank you!', 'gift-voucher'); ?></p>
+					<a href="<?php echo esc_url('https://wordpress.org/support/plugin/gift-voucher/reviews/#new-post'); ?>" target="_blank" class="button button-primary">
+						<?php esc_html_e('Write a review', 'gift-voucher'); ?>
+					</a>
 				</div>
+
 				<div class="white-box">
-					<h2>Gift Cards (Gift Vouchers and Packages)</h2>
-					<h4>Changelog</h4>
-					<p>See what's new in <a href="<?php echo esc_url('https://wordpress.org/plugins/gift-voucher/#developers') ?>" target="_blank">version <?php echo esc_html(WPGIFT_VERSION); ?></a>.</p>
-					<h4>Resources</h4>
+					<h2><?php esc_html_e('Gift Cards (Gift Vouchers and Packages)', 'gift-voucher'); ?></h2>
+					<h4><?php esc_html_e('Changelog', 'gift-voucher'); ?></h4>
+					<p><?php esc_html_e("See what's new in", 'gift-voucher'); ?>
+						<a href="<?php echo esc_url('https://wordpress.org/plugins/gift-voucher/#developers'); ?>" target="_blank">
+							<?php echo esc_html(sprintf(__('version %s', 'gift-voucher'), WPGIFT_VERSION)); ?>
+						</a>.
+					</p>
+					<h4><?php esc_html_e('Resources', 'gift-voucher'); ?></h4>
 					<ul>
-						<li><a href="<?php echo esc_url('https://www.wp-giftcard.com/') ?>" target="_blank"><i aria-hidden="true" class="dashicons dashicons-external"></i> Website</a></li>
-						<li><a href="<?php echo esc_url('https://www.wp-giftcard.com/docs/documentation/') ?>" target="_blank"><i aria-hidden="true" class="dashicons dashicons-external"></i> Documentation</a></li>
-						<li><a href="<?php echo esc_url('https://wp-sofa.chat/') ?>" target="_blank"><i aria-hidden="true" class="dashicons dashicons-external"></i> Support</a></li>
-						<li><a href="<?php echo esc_url('https://www.wp-giftcard.com/') ?>" target="_blank"><i aria-hidden="true" class="dashicons dashicons-external"></i> Pro</a></li>
+						<li><a href="<?php echo esc_url('https://www.wp-giftcard.com/'); ?>" target="_blank"><i aria-hidden="true" class="dashicons dashicons-external"></i> <?php esc_html_e('Website', 'gift-voucher'); ?></a></li>
+						<li><a href="<?php echo esc_url('https://www.wp-giftcard.com/docs/documentation/'); ?>" target="_blank"><i aria-hidden="true" class="dashicons dashicons-external"></i> <?php esc_html_e('Documentation', 'gift-voucher'); ?></a></li>
+						<li><a href="<?php echo esc_url('https://wp-sofa.chat/'); ?>" target="_blank"><i aria-hidden="true" class="dashicons dashicons-external"></i> <?php esc_html_e('Support', 'gift-voucher'); ?></a></li>
+						<li><a href="<?php echo esc_url('https://www.wp-giftcard.com/'); ?>" target="_blank"><i aria-hidden="true" class="dashicons dashicons-external"></i> <?php esc_html_e('Pro', 'gift-voucher'); ?></a></li>
 					</ul>
 				</div>
+
 				<div class="white-box">
-					<h2>Having Issues?</h2>
-					<p>Need a helping hand? Please ask for help on the <a href="<?php echo esc_url('https://wp-sofa.chat/') ?>" target="_blank">Support forum</a>. Be sure to mention your WordPress version and give as much additional information as possible.</p>
-					<a href="<?php echo esc_url('https://wp-sofa.chat/') ?>" class="button button-primary" target="_blank">Submit your question</a>
+					<h2><?php esc_html_e('Having Issues?', 'gift-voucher'); ?></h2>
+					<p><?php esc_html_e('Need a helping hand? Please ask for help on the Support forum. Be sure to mention your WordPress version and give as much additional information as possible.', 'gift-voucher'); ?>
+						<a href="<?php echo esc_url('https://wp-sofa.chat/'); ?>" target="_blank"><?php esc_html_e('Support forum', 'gift-voucher'); ?></a>.
+					</p>
+					<a href="<?php echo esc_url('https://wp-sofa.chat/'); ?>" class="button button-primary" target="_blank">
+						<?php esc_html_e('Submit your question', 'gift-voucher'); ?>
+					</a>
 				</div>
+
 				<div class="white-box">
-					<h2>Customization Service</h2>
-					<p>We are a European Company. To hire our agency to help you with this plugin installation or any other customization or requirements please contact us through our site <a href="<?php echo esc_url('https://wp-sofa.chat/') ?>" target="_blank">contact form</a> or email <a href="mailto:gdpr@codemenschen.at">gdpr@codemenschen.at</a> directly.</p>
-					<a href="<?php echo esc_url('https://wp-sofa.chat/') ?>" class="button button-primary" target="_blank">Hire Us Now</a>
+					<h2><?php esc_html_e('Customization Service', 'gift-voucher'); ?></h2>
+					<p><?php esc_html_e('We are a European Company. To hire our agency to help you with this plugin installation or any other customization or requirements please contact us through our site contact form or email us directly.', 'gift-voucher'); ?>
+						<a href="<?php echo esc_url('https://wp-sofa.chat/'); ?>" target="_blank"><?php esc_html_e('contact form', 'gift-voucher'); ?></a>
+						<?php esc_html_e('or email', 'gift-voucher'); ?>
+						<a href="mailto:gdpr@codemenschen.at">gdpr@codemenschen.at</a>
+						<?php esc_html_e('directly.', 'gift-voucher'); ?>
+					</p>
+					<a href="<?php echo esc_url('https://wp-sofa.chat/'); ?>" class="button button-primary" target="_blank">
+						<?php esc_html_e('Hire Us Now', 'gift-voucher'); ?>
+					</a>
 				</div>
+
 				<div class="image-banner" style="margin-bottom: 10px;">
-					<a href="<?php echo esc_url("https://wp-sofa.chat/"); ?>" target="_blank"><img src="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/banner-8.png'); ?>" style="width: 100%;"></a>
+					<a href="<?php echo esc_url('https://wp-sofa.chat/'); ?>" target="_blank">
+						<img src="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/banner-8.png'); ?>" style="width: 100%;">
+					</a>
 				</div>
+
 				<div class="image-banner" style="margin-bottom: 10px;">
-					<a href="<?php echo esc_url("https://wp-sofa.chat/"); ?>" target="_blank"><img src="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/banner-9.png'); ?>" style="width: 100%;"></a>
+					<a href="<?php echo esc_url('https://wp-sofa.chat/'); ?>" target="_blank">
+						<img src="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/assets/img/banner-9.png'); ?>" style="width: 100%;">
+					</a>
 				</div>
 			</div>
+
 		</div>
-		<span class="wpgiftv-disclaimer">Thank you for using <b>WordPress Gift Voucher</b>.</span>
+		<span class="wpgiftv-disclaimer">
+			<?php printf(esc_html__('Thank you for using %s.', 'gift-voucher'), '<b>WordPress Gift Voucher</b>'); ?>
+		</span>
+
 	</div>
 <?php }
