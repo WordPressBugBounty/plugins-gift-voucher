@@ -1020,5 +1020,5 @@ function custom_additional_html()
 
 
 <?php
-    echo $html;
+    echo wp_kses_post($html);
 }

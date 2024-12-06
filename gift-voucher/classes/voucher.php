@@ -45,7 +45,11 @@ if (!class_exists('WPGV_Voucher_List')) :
 
 			// Prepare where clause
 			$where_clauses = [];
-			$where_clauses[] = $wpdb->prepare(" `order_type` = %s", $itemorder ? 'items' : 'vouchers');
+			$where_clauses[] = $wpdb->prepare(
+				" `order_type` = %s OR `order_type` IS NULL",
+				$itemorder ? 'items' : 'vouchers'
+			);
+
 
 			if ($page == 'vouchers-lists') {
 				if ($search && $voucher_code) {

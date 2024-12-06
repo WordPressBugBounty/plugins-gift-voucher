@@ -24,22 +24,12 @@ if (! class_exists('wpgv_gift_voucher_admin')) :
 
             $product = new wpgv_wc_product_gift_voucher($post_id);
 
-            /*echo "<pre>";
-        print_r($product);
-        echo "</pre>";
-        exit;*/
-
             $new_amount = wc_clean($_POST['wpgv_price']);
             if (!empty($new_amount)) {
                 $result = $product->add_amount($new_amount);
                 if (!is_numeric($result)) {
-                    wp_die($result);
+                    wp_die(esc_html($result));
                 }
-
-                /*echo "<pre>";
-            print_r($result);
-            echo "</pre>";
-            exit;*/
             }
 
             $product->save();

@@ -90,8 +90,9 @@ if (! class_exists('WPGV_Voucher_Product_List')) :
         /** Text displayed when no template data is available */
         public function no_items()
         {
-            _e('No Product yet.', 'gift-voucher');
+            esc_html_e('No Product yet.', 'gift-voucher');
         }
+
 
         /**
          * Render a column when no column specific method exist.
@@ -181,10 +182,14 @@ if (! class_exists('WPGV_Voucher_Product_List')) :
          */
         function column_image($item)
         {
+            $thumbnail_url = wp_get_attachment_url(get_post_thumbnail_id($item->ID));
+            if ($thumbnail_url) {
 ?>
-            <img height="60" src="<?php echo wp_get_attachment_url(get_post_thumbnail_id($item->ID)); ?>">
-        <?php
+                <img height="60" src="<?php echo esc_url($thumbnail_url); ?>">
+            <?php
+            }
         }
+
 
         /**
          * Method for display template create date
@@ -195,11 +200,13 @@ if (! class_exists('WPGV_Voucher_Product_List')) :
          */
         function column_templateadd_time($item)
         {
-
-        ?>
-            <abbr title="<?php echo date('Y/m/d H:i:s a', strtotime($item->post_date)); ?>"><?php echo date('Y/m/d', strtotime($item->post_date)); ?></abbr>
+            $formatted_date = date('Y/m/d', strtotime($item->post_date));
+            $formatted_title = date('Y/m/d H:i:s a', strtotime($item->post_date));
+            ?>
+            <abbr title="<?php echo esc_attr($formatted_title); ?>"><?php echo esc_html($formatted_date); ?></abbr>
 <?php
         }
+
 
         /**
          * Returns an associative array containing the bulk action

@@ -405,7 +405,7 @@ if (!class_exists('wpgv-')) :
                 // Grab the Variation, otherwise there will be trouble.
                 $variation_id = absint($order_item['variation_id']);
                 if (!($variation = wc_get_product($variation_id))) {
-                    wp_die(__('Unable to retrieve variation ', 'gift-voucher') . $variation_id);
+                    wp_die(esc_html__('Unable to retrieve variation ', 'gift-voucher') . esc_html($variation_id));
                 }
 
                 $credit_amount = wc_get_order_item_meta($order_item_id, WPGV_AMOUNT_META_KEY);
