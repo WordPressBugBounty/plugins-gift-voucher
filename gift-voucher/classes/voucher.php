@@ -31,59 +31,30 @@ if (!class_exists('WPGV_Voucher_List')) :
 		public static function get_vouchers($per_page = 20, $page_number = 1)
 		{
 			global $wpdb;
-
 			$page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : 'vouchers-lists';
 			$search = isset($_GET['search']) ? '%' . $wpdb->esc_like(sanitize_text_field($_GET['search'])) . '%' : '';
 			$itemorder = isset($_GET['items']) ? sanitize_text_field($_GET['items']) : '';
 			$voucher_code = isset($_GET['voucher_code']) ? sanitize_text_field($_GET['voucher_code']) : '';
 			$search_email = '';
-
 			if ($voucher_code && filter_var($voucher_code, FILTER_VALIDATE_EMAIL)) {
 				$search_email = $voucher_code;
-				$voucher_code = '1'; // Update logic if you need to check a specific voucher code.
+				$voucher_code = '1';
 			}
 
-			// Prepare where clause
-			$where_clauses = [];
-			$where_clauses[] = $wpdb->prepare(
-				" `order_type` = %s OR `order_type` IS NULL",
-				$itemorder ? 'items' : 'vouchers'
-			);
-
+			$where_clause = $wpdb->prepare(" WHERE `order_type` = %s ", $itemorder ? 'items' : 'vouchers');
 
 			if ($page == 'vouchers-lists') {
 				if ($search && $voucher_code) {
-					// Prepare search clause
-					$where_clauses[] = $wpdb->prepare("(`couponcode` LIKE %s OR `email` LIKE %s OR `shipping_email` LIKE %s)", $voucher_code, $search_email, $search_email);
+					$where_clause .= $wpdb->prepare(" AND (`couponcode` LIKE %s OR `email` LIKE %s OR `shipping_email` LIKE %s) ", $voucher_code, $search_email, $search_email);
 				}
 			} elseif ($page == 'redeem-voucher') {
-				$where_clauses[] = $wpdb->prepare("(`couponcode` = %s OR `email` LIKE %s OR `shipping_email` LIKE %s)", $voucher_code, $search_email, $search_email);
+				$where_clause .= $wpdb->prepare(" AND (`couponcode` = %s OR `email` LIKE %s OR `shipping_email` LIKE %s) ", $voucher_code, $search_email, $search_email);
 			}
 
-			// Join all where clauses together
-			$where_clause = 'WHERE ' . implode(' AND ', $where_clauses);
+			$sql = "SELECT * FROM {$wpdb->prefix}giftvouchers_list" . $where_clause . " ORDER BY `id` DESC LIMIT %d OFFSET %d";
+			$sql = $wpdb->prepare($sql, $per_page, ($page_number - 1) * $per_page);
 
-			// Cache key can be generated dynamically based on parameters if needed
-			$cache_key = 'wpgv_vouchers_' . md5(serialize([$per_page, $page_number, $itemorder, $search, $voucher_code]));
-
-			// Check the cache first
-			$result = wp_cache_get($cache_key);
-
-			if ($result === false) {
-				// Prepare the SQL query with LIMIT and OFFSET placeholders
-				$result = $wpdb->get_results(
-					$wpdb->prepare(
-						"SELECT * FROM {$wpdb->prefix}giftvouchers_list $where_clause ORDER BY `id` DESC LIMIT %d OFFSET %d",
-						$per_page,
-						($page_number - 1) * $per_page
-					),
-					'ARRAY_A'
-				);
-
-
-				// Set the results in the cache
-				wp_cache_set($cache_key, $result);
-			}
+			$result = $wpdb->get_results($sql, 'ARRAY_A');
 
 			return $result;
 		}
