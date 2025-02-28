@@ -57,50 +57,18 @@ if ($voucher_options->order_type == 'vouchers') {
 						else echo '<span class="vused">' . esc_html_e('Voucher Used', 'gift-voucher') . '</span>'; ?>
 					</td>
 					<td>
-						<p><?php echo esc_attr($voucher_options->note_order); ?></p>
-						<button class="edit-note" id="edit-note" data-voucher-id="<?php echo esc_attr($voucher_options->id); ?>"><i class="dashicons dashicons-edit"></i></button>
+						<p><?php echo isset($voucher_options->note_order) ? esc_attr($voucher_options->note_order) : ''; ?></p>
+						<button class="edit-note" id="edit-note" data-voucher-id="<?php echo esc_attr($voucher_options->id); ?>">
+							<i class="dashicons dashicons-edit"></i>
+						</button>
 					</td>
+
 					<td>
 						<?php echo '<a href="' . esc_url($baseurl . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '.pdf') . '" title="click to show order receipt" target="_blank"><img src="' . esc_url(WPGIFT__PLUGIN_URL . '/assets/img/pdf.png') . '" width="50"></a>'; ?>
 					</td>
 				</tr>
 			</tbody>
 		</table><br>
-		<?php if ($voucher_options->order_type == 'vouchers'): ?>
-			<h2 class="hndle ui-sortable-handle"><span><?php echo esc_html_e('Template Information', 'gift-voucher') ?></span></h2>
-			<table class="widefat">
-				<thead>
-					<tr>
-						<th><?php echo esc_html_e('Template Name', 'gift-voucher') ?></th>
-						<th><?php echo esc_html_e('Template Image', 'gift-voucher') ?></th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td><?php echo esc_html($template_options->title); ?></td>
-						<td><img src="<?php echo esc_url($image_attributes[0]); ?>" height="60"></td>
-					</tr>
-				</tbody>
-			</table>
-		<?php else: ?>
-			<h2 class="hndle ui-sortable-handle"><span><?php echo esc_html_e('Item Information', 'gift-voucher') ?></span></h2>
-			<table class="widefat">
-				<thead>
-					<tr>
-						<th><?php echo esc_html_e('Item Name', 'gift-voucher') ?></th>
-						<th><?php echo esc_html_e('Item Description', 'gift-voucher') ?></th>
-						<th><?php echo esc_html_e('Item Image', 'gift-voucher') ?></th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td><?php echo esc_html(get_the_title($voucher_options->item_id)); ?></td>
-						<td><?php echo esc_html(get_post_meta($voucher_options->item_id, 'description', true)); ?></td>
-						<td><img src="<?php echo esc_url($image_attributes[0]); ?>" height="60"></td>
-					</tr>
-				</tbody>
-			</table>
-		<?php endif; ?>
 		<h2 class="hndle ui-sortable-handle"><span><?php echo esc_html_e('Voucher Information', 'gift-voucher') ?></span></h2>
 		<table class="widefat">
 			<thead>
@@ -190,6 +158,7 @@ if ($voucher_options->order_type == 'vouchers') {
 
 			</div>
 			<div class="wp-core-ui-modal-body modal-body">
+				<?php wp_nonce_field('update_voucher_date_action', 'update_voucher_date_nonce'); ?>
 				<div class="form-group">
 					<label for="datepicker" class="voucher-label">
 						<?php esc_html_e('Select Date:', 'gift-voucher'); ?>
@@ -221,7 +190,8 @@ if ($voucher_options->order_type == 'vouchers') {
 					<label class="voucher-label">
 						<?php esc_html_e('Note:', 'gift-voucher'); ?>
 					</label>
-					<textarea id="data-note"><?php echo esc_attr($voucher_options->note_order); ?></textarea>
+					<textarea id="data-note"><?php echo esc_attr(isset($voucher_options->note_order) ? $voucher_options->note_order : ''); ?></textarea>
+					<?php wp_nonce_field('update_voucher_note_action', 'update_voucher_note_nonce'); ?>
 				</div>
 			</div>
 			<div class="wp-core-ui-modal-footer modal-footer">
@@ -245,6 +215,7 @@ if ($voucher_options->order_type == 'vouchers') {
 				</h1>
 			</div>
 			<div class="wp-core-ui-modal-body modal-body">
+				<?php wp_nonce_field('update_voucher_price_action', 'update_voucher_price_nonce'); ?>
 				<div class="form-group">
 					<label class="voucher-label">
 						<?php esc_html_e('Price:', 'gift-voucher'); ?>
@@ -274,6 +245,7 @@ if ($voucher_options->order_type == 'vouchers') {
 		$('.btn-update-date').on('click', function() {
 			var voucher_id = $(this).data('voucher-id');
 			var new_date = $('#datepicker').val();
+			var nonce = $('#update_voucher_date_nonce').val();
 
 			$.ajax({
 				type: 'POST',
@@ -281,7 +253,8 @@ if ($voucher_options->order_type == 'vouchers') {
 				data: {
 					action: 'update_voucher_date',
 					voucher_id: voucher_id,
-					new_date: new_date
+					new_date: new_date,
+					security: nonce
 				},
 				success: function(response) {
 					if (response.success) {
@@ -293,10 +266,10 @@ if ($voucher_options->order_type == 'vouchers') {
 					}
 				}
 			});
-		}); // code date
+		});
+
 
 		$('#edit-note').on('click', function() {
-			console.log("123");
 			$('#modal-note').css('display', 'block');
 		});
 		$('#close-modal-button, .close-modal-button').on('click', function() {
@@ -305,6 +278,7 @@ if ($voucher_options->order_type == 'vouchers') {
 		$('.btn-update-note').on('click', function() {
 			var voucher_id = $(this).data('voucher-id');
 			var data_note = $('#data-note').val();
+			var nonce = $('#update_voucher_note_nonce').val();
 
 			$.ajax({
 				type: 'POST',
@@ -312,7 +286,8 @@ if ($voucher_options->order_type == 'vouchers') {
 				data: {
 					action: 'update_voucher_note',
 					voucher_id: voucher_id,
-					data_note: data_note
+					data_note: data_note,
+					security: nonce
 				},
 				success: function(response) {
 					if (response.success) {
@@ -320,11 +295,12 @@ if ($voucher_options->order_type == 'vouchers') {
 						$('#modal-note').css('display', 'none');
 						location.reload();
 					} else {
-						alert('Note update failed');
+						alert(response.data || 'Note update failed');
 					}
 				}
 			});
-		}); // code note
+		});
+
 
 		// code price
 		$('#edit-price').on('click', function() {
@@ -337,7 +313,7 @@ if ($voucher_options->order_type == 'vouchers') {
 			var activity_id = $(this).data('activity-id');
 			var voucher_id = $(this).data('voucher-id');
 			var data_price = $('#data-price').val();
-
+			var nonce = $('#update_voucher_price_nonce').val();
 
 			$.ajax({
 				type: 'POST',
@@ -346,7 +322,8 @@ if ($voucher_options->order_type == 'vouchers') {
 					action: 'update_voucher_price',
 					activity_id: activity_id,
 					data_price: data_price,
-					voucher_id: voucher_id
+					voucher_id: voucher_id,
+					security: nonce
 				},
 				success: function(response) {
 					if (response.success) {

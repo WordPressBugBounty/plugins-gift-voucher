@@ -31,10 +31,10 @@ if (!class_exists('WPGV_Voucher_List')) :
 		public static function get_vouchers($per_page = 20, $page_number = 1)
 		{
 			global $wpdb;
-			$page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : 'vouchers-lists';
-			$search = isset($_GET['search']) ? '%' . $wpdb->esc_like(sanitize_text_field($_GET['search'])) . '%' : '';
-			$itemorder = isset($_GET['items']) ? sanitize_text_field($_GET['items']) : '';
-			$voucher_code = isset($_GET['voucher_code']) ? sanitize_text_field($_GET['voucher_code']) : '';
+			$page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : 'vouchers-lists';
+			$search = isset($_GET['search']) ? '%' . $wpdb->esc_like(sanitize_text_field(wp_unslash($_GET['search']))) . '%' : '';
+			$itemorder = isset($_GET['items']) ? sanitize_text_field(wp_unslash($_GET['items'])) : '';
+			$voucher_code = isset($_GET['voucher_code']) ? sanitize_text_field(wp_unslash($_GET['voucher_code'])) : '';
 			$search_email = '';
 			if ($voucher_code && filter_var($voucher_code, FILTER_VALIDATE_EMAIL)) {
 				$search_email = $voucher_code;
@@ -51,10 +51,14 @@ if (!class_exists('WPGV_Voucher_List')) :
 				$where_clause .= $wpdb->prepare(" AND (`couponcode` = %s OR `email` LIKE %s OR `shipping_email` LIKE %s) ", $voucher_code, $search_email, $search_email);
 			}
 
-			$sql = "SELECT * FROM {$wpdb->prefix}giftvouchers_list" . $where_clause . " ORDER BY `id` DESC LIMIT %d OFFSET %d";
-			$sql = $wpdb->prepare($sql, $per_page, ($page_number - 1) * $per_page);
-
-			$result = $wpdb->get_results($sql, 'ARRAY_A');
+			$result = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$wpdb->prefix}giftvouchers_list {$where_clause} ORDER BY `id` DESC LIMIT %d OFFSET %d",
+					$per_page,
+					($page_number - 1) * $per_page
+				),
+				'ARRAY_A'
+			);
 
 			return $result;
 		}
@@ -109,7 +113,9 @@ if (!class_exists('WPGV_Voucher_List')) :
 		{
 			global $wpdb;
 			$setting_table 	= $wpdb->prefix . 'giftvouchers_setting';
-			$setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
+			$setting_options = $wpdb->get_row(
+				$wpdb->prepare("SELECT * FROM {$wpdb->prefix}%s WHERE id = %d", 'giftvouchers_settings', 1)
+			);
 
 			$result = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_list WHERE id = %d", $id));
 
@@ -172,49 +178,37 @@ if (!class_exists('WPGV_Voucher_List')) :
 		{
 			global $wpdb;
 
-			$page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : '';
-			$search = isset($_GET['search']) ? sanitize_text_field($_GET['search']) : '';
-			$itemorder = isset($_GET['items']) ? sanitize_text_field($_GET['items']) : '';
-			$voucher_code = isset($_GET['voucher_code']) ? sanitize_text_field($_GET['voucher_code']) : '';
+			$page         = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+			$search       = isset($_GET['search']) ? sanitize_text_field(wp_unslash($_GET['search'])) : '';
+			$itemorder    = isset($_GET['items']) ? sanitize_text_field(wp_unslash($_GET['items'])) : '';
+			$voucher_code = isset($_GET['voucher_code']) ? sanitize_text_field(wp_unslash($_GET['voucher_code'])) : '';
 
 			$search_email = '';
 			if (filter_var($voucher_code, FILTER_VALIDATE_EMAIL)) {
 				$search_email = $voucher_code;
-				$voucher_code = 1;
+				$voucher_code = '1';
 			}
-			$query_args = array(
-				'select' => 'COUNT(*)',
-				'from' => $wpdb->prefix . 'giftvouchers_list',
-				'where' => array(
-					'order_type' => ($itemorder) ? 'items' : 'vouchers',
-				),
-				'orderby' => 'id DESC',
-			);
+
+			$where_clause = " WHERE `order_type` = %s";
+			$params       = [($itemorder) ? 'items' : 'vouchers'];
 
 			if ($search && $voucher_code) {
-				$query_args['where'][] = array(
-					'compare' => 'OR',
-					array('couponcode' => $voucher_code),
-					array('shipping_email' => $search_email),
-				);
+				$where_clause .= " AND (`couponcode` = %s OR `shipping_email` = %s)";
+				array_push($params, $voucher_code, $search_email);
 			}
 
 			if ($page === 'redeem-voucher') {
-				$query_args['where'][] = array(
-					'compare' => 'OR',
-					array('couponcode' => $voucher_code),
-					array('shipping_email' => $search_email),
-				);
+				$where_clause .= " AND (`couponcode` = %s OR `shipping_email` = %s)";
+				array_push($params, $voucher_code, $search_email);
 			}
 
-			$result = $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT {$query_args['select']} FROM {$query_args['from']} WHERE {$query_args['where']} ORDER BY {$query_args['orderby']}"
-				)
-			);
+			$result = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_list {$where_clause}", ...$params));
+
 
 			return $result;
 		}
+
+
 
 		/** Text displayed when no voucher data is available */
 		public function no_items()
@@ -300,7 +294,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 			$form = '';
 			$actions = [
 				'order_detail' => sprintf('<a href="?page=%s&action=%s&voucher_id=%s">%s</a>', sanitize_text_field('view-voucher-details'), sanitize_text_field('view_voucher'), sanitize_text_field($item['id']), esc_html(__('View Details', 'gift-voucher'))),
-				'delete' => sprintf('<a class="" href="?page=%s&action=%s&voucher=%s&_wpdelete=%s">%s</a>', sanitize_text_field($_REQUEST['page']), sanitize_text_field('delete'), sanitize_text_field(absint($item['id'])), sanitize_text_field($delete), esc_html(__('Delete Voucher', 'gift-voucher'))),
+				'delete' => sprintf('<a class="" href="?page=%s&action=%s&voucher=%s&_wpdelete=%s">%s</a>', sanitize_text_field(wp_unslash($_REQUEST['page'])), sanitize_text_field('delete'), sanitize_text_field(absint($item['id'])), sanitize_text_field($delete), esc_html(__('Delete Voucher', 'gift-voucher'))),
 			];
 			$actions = $this->row_actions($actions);
 			$arr = array(
@@ -481,7 +475,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 			$used = wp_create_nonce('used_voucher');
 			if ($item['status'] == 'unused') {
 				$actions = array(
-					'used' => sprintf('<a class="used" href="?page=%s&action=%s&voucher=%s&_wpdelete=%s">%s</a>', sanitize_text_field($_REQUEST['page']), sanitize_text_field('used'), sanitize_text_field(absint($item['id'])), sanitize_text_field($used), esc_html(__('Mark as Used', 'gift-voucher'))),
+					'used' => sprintf('<a class="used" href="?page=%s&action=%s&voucher=%s&_wpdelete=%s">%s</a>', sanitize_text_field(wp_unslash($_REQUEST['page'])), sanitize_text_field('used'), sanitize_text_field(absint($item['id'])), sanitize_text_field($used), esc_html(__('Mark as Used', 'gift-voucher'))),
 				);
 				$mark_used = $this->row_actions($actions, true);
 			} else {
@@ -490,14 +484,14 @@ if (!class_exists('WPGV_Voucher_List')) :
 			$paid = wp_create_nonce('paid_voucher');
 			if ($item['payment_status'] != 'Paid') {
 				$actions = array(
-					'paid' => sprintf('<a class="paid" href="?page=%s&action=%s&voucher=%s&_wpdelete=%s">%s</a>', sanitize_text_field($_REQUEST['page']), sanitize_text_field('paid'), sanitize_text_field(absint($item['id'])), sanitize_text_field($paid), esc_html(__('Mark as Paid', 'gift-voucher')))
+					'paid' => sprintf('<a class="paid" href="?page=%s&action=%s&voucher=%s&_wpdelete=%s">%s</a>', sanitize_text_field(wp_unslash($_REQUEST['page'])), sanitize_text_field('paid'), sanitize_text_field(absint($item['id'])), sanitize_text_field($paid), esc_html(__('Mark as Paid', 'gift-voucher')))
 				);
 				$mark_paid = $this->row_actions($actions, true);
 				$send_mail = '';
 			} else {
 				$mark_paid = '<span class="vpaid">' . __('Paid', 'gift-voucher') . '</span>';
 				$actions = array(
-					'paid' => sprintf('<a class="npaid" href="?page=%s&action=%s&voucher=%s&_wpdelete=%s">%s</a>', sanitize_text_field($_REQUEST['page']), sanitize_text_field('mail'), sanitize_text_field(absint($item['id'])), sanitize_text_field($paid), esc_html(__('Send Mail', 'gift-voucher')))
+					'paid' => sprintf('<a class="npaid" href="?page=%s&action=%s&voucher=%s&_wpdelete=%s">%s</a>', sanitize_text_field(wp_unslash($_REQUEST['page'])), sanitize_text_field('mail'), sanitize_text_field(absint($item['id'])), sanitize_text_field($paid), esc_html(__('Send Mail', 'gift-voucher')))
 				);
 				$send_mail = $this->row_actions($actions, true);
 			}
@@ -615,99 +609,71 @@ if (!class_exists('WPGV_Voucher_List')) :
 		 */
 		public function process_bulk_action()
 		{
-			//Detect when a bulk action is being triggered...
-			if ('bulk-used' === $this->current_action()) {
-				if (is_array($_REQUEST['voucher_code'])) {
-					foreach ($_REQUEST['voucher_code'] as $voucher) {
-						self::used_voucher(absint($voucher));
+			$action = $this->current_action();
+
+			if (in_array($action, ['bulk-used', 'bulk-paid', 'bulk-delete'], true)) {
+				if (!empty($_REQUEST['voucher_code']) && is_array($_REQUEST['voucher_code'])) {
+					$voucher_codes = array_map('absint', wp_unslash($_REQUEST['voucher_code']));
+					foreach ($voucher_codes as $voucher_code) {
+						if ('bulk-used' === $action) {
+							self::used_voucher($voucher_code);
+						} elseif ('bulk-paid' === $action) {
+							self::paid_voucher($voucher_code);
+						} elseif ('bulk-delete' === $action) {
+							self::delete_voucher($voucher_code);
+						}
 					}
 				}
-				// esc_url_raw() is used to prevent converting ampersand in url to "#038;"
-				// add_query_arg() return the current url
-				wp_safe_redirect("?page=vouchers-lists");
+				wp_safe_redirect(esc_url_raw(add_query_arg([], "admin.php?page=vouchers-lists")));
 				exit;
-			} elseif ('bulk-paid' === $this->current_action()) {
-				if (is_array($_REQUEST['voucher_code'])) {
-					foreach ($_REQUEST['voucher_code'] as $voucher) {
-						self::paid_voucher(absint($voucher));
+			}
+			if (in_array($action, ['used', 'paid', 'mail', 'delete'], true)) {
+				if (!isset($_REQUEST['_wpdelete']) || !wp_verify_nonce($_REQUEST['_wpdelete'], "{$action}_voucher")) {
+					wp_die(esc_html__('Invalid request.', 'gift-voucher'));
+				}
+
+				$voucher_id = isset($_GET['voucher']) ? absint(wp_unslash($_GET['voucher'])) : 0;
+				if ($voucher_id > 0) {
+					if ('used' === $action) {
+						self::used_voucher($voucher_id);
+					} elseif ('paid' === $action) {
+						self::paid_voucher($voucher_id);
+					} elseif ('mail' === $action) {
+						self::send_mail($voucher_id);
+					} elseif ('delete' === $action) {
+						self::delete_voucher($voucher_id);
 					}
 				}
-				// esc_url_raw() is used to prevent converting ampersand in url to "#038;"
-				// add_query_arg() return the current url
-				wp_safe_redirect("?page=vouchers-lists");
-				exit;
-			} elseif ('bulk-delete' === $this->current_action()) {
-				if (is_array($_REQUEST['voucher_code'])) {
-					foreach ($_REQUEST['voucher_code'] as $voucher) {
-						self::delete_voucher(absint($voucher));
-					}
-				}
-				// esc_url_raw() is used to prevent converting ampersand in url to "#038;"
-				// add_query_arg() return the current url
-				wp_safe_redirect("?page=vouchers-lists");
-				exit;
-			} elseif ('used' === $this->current_action()) {
-				$nonce = esc_attr($_REQUEST['_wpdelete']);
 
-				if (!wp_verify_nonce($nonce, 'used_voucher')) {
-					wp_die('Go get a life script kiddies');
-				}
-				self::used_voucher(absint($_GET['voucher']));
-				wp_safe_redirect("?page=vouchers-lists");
-				exit;
-			} elseif ('paid' === $this->current_action()) {
-				$nonce = esc_attr($_REQUEST['_wpdelete']);
-
-				if (!wp_verify_nonce($nonce, 'paid_voucher')) {
-					wp_die('Go get a life script kiddies');
-				}
-				self::paid_voucher(absint($_GET['voucher']));
-				wp_safe_redirect("?page=vouchers-lists");
-				exit;
-			} elseif ('mail' === $this->current_action()) {
-				$nonce = esc_attr($_REQUEST['_wpdelete']);
-
-				if (!wp_verify_nonce($nonce, 'paid_voucher')) {
-					wp_die('Go get a life script kiddies');
-				}
-				self::send_mail(absint($_GET['voucher']));
-				wp_safe_redirect("?page=vouchers-lists");
-				exit;
-			} elseif ('delete' === $this->current_action()) {
-				$nonce = esc_attr($_REQUEST['_wpdelete']);
-
-				if (!wp_verify_nonce($nonce, 'delete_voucher')) {
-					wp_die('Go get a life script kiddies');
-				}
-				self::delete_voucher(absint($_GET['voucher']));
-				wp_safe_redirect("?page=vouchers-lists");
+				wp_safe_redirect(esc_url_raw(add_query_arg([], "admin.php?page=vouchers-lists")));
 				exit;
 			}
 
-			if ('order_detail' === $this->current_action()) {
+			if ('order_detail' === $action) {
+				$order_id = isset($_REQUEST['order_id']) ? absint($_REQUEST['order_id']) : 0;
 
-				$order_id = absint($_REQUEST['order_id']);
-				global $wpdb;
-				$voucher_table_name = $wpdb->prefix . 'giftvouchers_list';
-				$order_detail = $wpdb->get_row(
-					$wpdb->prepare("SELECT * FROM $voucher_table_name WHERE id = %d", $order_id)
-				);
+				if ($order_id > 0) {
+					global $wpdb;
+					$voucher_table_name = $wpdb->prefix . 'giftvouchers_list';
+					$order_detail = $wpdb->get_row($wpdb->prepare("SELECT * FROM $voucher_table_name WHERE id = %d", $order_id));
+
+					if ($order_detail) {
 			?>
-				<div class="admin-modal">
-					<div class="admin-custom-modal add-new">
-						<span class="close dashicons dashicons-no-alt"></span>
-						<h3><?php echo esc_html__('Order Details', 'gift-voucher'); ?> (Order ID: <?php echo esc_attr($order_id); ?>)
-							<?php
-							if ($order_detail->status == "unused") {
-								echo "<strong style='color:#fff;font-size:14px;background:#ddd;padding:2px 5px;'>Unused</strong>";
-							} else if ($order_detail->status == "used") {
-								echo "<strong style='color:#fff;font-size:14px;display: inline-block;background:#233dcc;padding:2px 5px;'>Used</strong>";
-							} ?>
-						</h3>
-					</div>
-				</div>
-
+						<div class="admin-modal">
+							<div class="admin-custom-modal add-new">
+								<span class="close dashicons dashicons-no-alt"></span>
+								<h3><?php echo esc_html__('Order Details', 'gift-voucher'); ?> (Order ID: <?php echo esc_attr($order_id); ?>)
+									<?php if ($order_detail->status === "unused") : ?>
+										<strong style='color:#fff;font-size:14px;background:#ddd;padding:2px 5px;'>Unused</strong>
+									<?php elseif ($order_detail->status === "used") : ?>
+										<strong style='color:#fff;font-size:14px;display: inline-block;background:#233dcc;padding:2px 5px;'>Used</strong>
+									<?php endif; ?>
+								</h3>
+							</div>
+						</div>
 <?php
+					}
+				}
 			}
 		}
 	}

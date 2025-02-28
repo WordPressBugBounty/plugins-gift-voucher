@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.4.9
+ * Version: 4.5.0
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.4.9');
+define('WPGIFT_VERSION', '4.5.0');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -50,7 +50,7 @@ function wpgv_is_woocommerce_enable()
 {
   global $wpdb;
   $setting_table_name = $wpdb->prefix . 'giftvouchers_setting';
-  $options = $wpdb->get_row("SELECT * FROM $setting_table_name WHERE id = 1");
+  $options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1));
   if ($options->is_woocommerce_enable) {
     return true;
   } else {
@@ -82,6 +82,7 @@ require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-gift-voucher.php');
 require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-gift-voucher-activity.php');
 require_once(WPGIFT__PLUGIN_DIR . '/giftcard.php');
 require_once(WPGIFT__PLUGIN_DIR . '/include/wpgv_giftcard_pdf.php');
+require_once(WPGIFT__PLUGIN_DIR . '/include/edit-order-voucher.php');
 
 
 if (wpgv_is_woocommerce_enable()) {
@@ -99,42 +100,42 @@ add_action('admin_init', function () {
 
   global $wpdb;
 
-  // Bảng giftvouchers_list
-  $giftvouchers_list = $wpdb->prefix . 'giftvouchers_list';
 
-  // Kiểm tra cột 'check_send_mail'
-  $column_exists_list = $wpdb->get_results("SHOW COLUMNS FROM `$giftvouchers_list` LIKE 'check_send_mail'");
+  $column_exists_list = $wpdb->get_results("SHOW COLUMNS FROM `{$wpdb->prefix}giftvouchers_list` LIKE 'check_send_mail'");
+
   if (empty($column_exists_list)) {
-    $wpdb->query("ALTER TABLE $giftvouchers_list ADD check_send_mail varchar(30) NOT NULL DEFAULT 'unsent'");
+    $wpdb->query("ALTER TABLE `{$wpdb->prefix}giftvouchers_list` ADD check_send_mail VARCHAR(30) NOT NULL DEFAULT 'unsent'");
   }
 
-  // Kiểm tra cột 'product_id'
-  $column_exists_product_id = $wpdb->get_results("SHOW COLUMNS FROM `$giftvouchers_list` LIKE 'product_id'");
+  $column_exists_product_id = $wpdb->get_results("SHOW COLUMNS FROM `{$wpdb->prefix}giftvouchers_list` LIKE 'product_id'");
+
   if (empty($column_exists_product_id)) {
-    $wpdb->query("ALTER TABLE $giftvouchers_list ADD product_id BIGINT(20) UNSIGNED DEFAULT NULL");
+    $wpdb->query("ALTER TABLE `{$wpdb->prefix}giftvouchers_list` ADD product_id BIGINT(20) UNSIGNED DEFAULT NULL");
   }
 
-  // Kiểm tra cột 'order_id'
-  $column_exists_order_id = $wpdb->get_results("SHOW COLUMNS FROM `$giftvouchers_list` LIKE 'order_id'");
+  $column_exists_order_id = $wpdb->get_results("SHOW COLUMNS FROM `{$wpdb->prefix}giftvouchers_list` LIKE 'order_id'");
+
   if (empty($column_exists_order_id)) {
-    $wpdb->query("ALTER TABLE $giftvouchers_list ADD order_id BIGINT(20) UNSIGNED DEFAULT NULL");
+    $wpdb->query("ALTER TABLE `{$wpdb->prefix}giftvouchers_list` ADD order_id BIGINT(20) UNSIGNED DEFAULT NULL");
   }
 
-  // Bảng giftvouchers_setting
-  $giftvouchers_setting = $wpdb->prefix . 'giftvouchers_setting';
+  $column_exists_note_order = $wpdb->get_results("SHOW COLUMNS FROM `{$wpdb->prefix}giftvouchers_list` LIKE 'note_order'");
 
-  // Kiểm tra cột 'is_order_form_enable'
-  $column_exists_setting = $wpdb->get_results("SHOW COLUMNS FROM `$giftvouchers_setting` LIKE 'is_order_form_enable'");
+  if (empty($column_exists_note_order)) {
+    $wpdb->query("ALTER TABLE `{$wpdb->prefix}giftvouchers_list` ADD note_order VARCHAR(255) NOT NULL");
+  }
+
+
+  $column_exists_setting = $wpdb->get_results("SHOW COLUMNS FROM `{$wpdb->prefix}giftvouchers_setting` LIKE 'is_order_form_enable'");
+
   if (empty($column_exists_setting)) {
-    $wpdb->query("ALTER TABLE $giftvouchers_setting ADD is_order_form_enable TINYINT(1) DEFAULT 1");
+    $wpdb->query("ALTER TABLE `{$wpdb->prefix}giftvouchers_setting` ADD is_order_form_enable TINYINT(1) DEFAULT 1");
   }
 
-  // Kiểm tra xem người dùng có phải là quản trị viên không
   if (!current_user_can('manage_options')) {
     return false;
   }
 
-  // Include nag class
   require_once(WPGIFT__PLUGIN_DIR . '/classes/class-nag.php');
 
   // Setup nag
@@ -148,8 +149,8 @@ add_action('woocommerce_init', 'wpgv_files_loaded', 10, 1);
 function wpgv_files_loaded()
 {
   global $wpdb;
-  $setting_table_name = $wpdb->prefix . 'giftvouchers_setting';
-  $options = $wpdb->get_row("SELECT * FROM $setting_table_name WHERE id = 1");
+  $options = $wpdb->get_row("SELECT * FROM `{$wpdb->prefix}giftvouchers_setting` WHERE id = 1");
+
   if ($options->is_woocommerce_enable) {
     require_once(WPGIFT__PLUGIN_DIR . '/include/redeem-voucher.php');
     require_once(WPGIFT__PLUGIN_DIR . '/classes/wc-order-item-wpgv-gift-voucher.php');
@@ -185,8 +186,8 @@ function wpgv_front_enqueue()
 {
 
   global $wpdb;
-  $setting_table  = $wpdb->prefix . 'giftvouchers_setting';
-  $setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
+  $setting_options = $wpdb->get_row("SELECT * FROM `{$wpdb->prefix}giftvouchers_setting` WHERE id = 1");
+
 
   $translations = array(
     'ajaxurl' => admin_url('admin-ajax.php'),
@@ -450,15 +451,18 @@ function wpgv_plugin_activation()
       array('%d')
     );
   }
+  require_once ABSPATH . 'wp-admin/includes/file.php';
+  WP_Filesystem();
+
   $upload = wp_upload_dir();
-  $upload_dir = $upload['basedir'];
-  $upload_dir = $upload_dir . '/voucherpdfuploads';
-  if (!is_dir($upload_dir)) {
-    mkdir($upload_dir, 0755);
-    $file = fopen($upload_dir . '/index.html', "wb");
-    fwrite($file, "Silence is golden.");
-    fclose($file);
+  $upload_dir = trailingslashit($upload['basedir']) . 'voucherpdfuploads';
+
+  global $wp_filesystem;
+  if (!$wp_filesystem->is_dir($upload_dir)) {
+    $wp_filesystem->mkdir($upload_dir, 0755);
+    $wp_filesystem->put_contents($upload_dir . '/index.html', 'Silence is golden.', 0755);
   }
+
 
   if (!wp_next_scheduled('wpgv_check_voucher_status')) {
     wp_schedule_event(time(), 'hourly', 'wpgv_check_voucher_status');
@@ -553,8 +557,14 @@ function wpgv_display_update_notice()
 {
   if (get_transient('wpgv_updated')) {
     $class = 'notice notice-info';
-    $message = sprintf('Thanks for Updating <b>Gift Cards</b> plugin. Please see the new plugin settings features from <a href="%s" target="_blank">here</a>. We upgraded PayPal (New Checkout) and Stripe (SCA-ready) payment process so you need to update the fields of these payment methods in the settings page. Please see here the documentation of new payment settings <a href="%s" target="_blank">here</a>.<br><br>We have noticed that you have been using Gift Cards plugin from long time. We hope you love it, and we would really appreciate it if you would <a href="%s" target="_blank">give us a 5 stars rating</a>.', admin_url('admin.php') . '?page=voucher-setting', 'https://www.wp-giftcard.com/docs/documentation/plugin-settings/payment-settings/', 'https://wordpress.org/support/plugin/gift-voucher/reviews/#new-post');
-    printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), $message);
+    $message = sprintf(
+      'Thanks for Updating <b>Gift Cards</b> plugin. Please see the new plugin settings features from <a href="%s" target="_blank">here</a>. We upgraded PayPal (New Checkout) and Stripe (SCA-ready) payment process so you need to update the fields of these payment methods in the settings page. Please see here the documentation of new payment settings <a href="%s" target="_blank">here</a>.<br><br>We have noticed that you have been using Gift Cards plugin for a long time. We hope you love it, and we would really appreciate it if you would <a href="%s" target="_blank">give us a 5 stars rating</a>.',
+      esc_url(admin_url('admin.php') . '?page=voucher-setting'),
+      esc_url('https://www.wp-giftcard.com/docs/documentation/plugin-settings/payment-settings/'),
+      esc_url('https://wordpress.org/support/plugin/gift-voucher/reviews/#new-post')
+    );
+
+    printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), wp_kses_post($message));
     delete_transient('wpgv_updated');
   }
 }
@@ -564,8 +574,12 @@ function wpgv_display_install_notice()
 {
   if (get_transient('wpgv_activated')) {
     $class = 'notice notice-info';
-    $message = sprintf('Thanks for Installing <b>Gift Cards</b> plugin. Please setup your plugin settings from <a href="%s" target="_blank">here</a>.', admin_url('admin.php') . '?page=voucher-setting');
-    printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), $message);
+    $message = sprintf(
+      'Thanks for Installing <b>Gift Cards</b> plugin. Please setup your plugin settings from <a href="%s" target="_blank">here</a>.',
+      esc_url(admin_url('admin.php') . '?page=voucher-setting')
+    );
+
+    printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), wp_kses_post($message));
     delete_transient('wpgv_activated');
   }
 }
@@ -644,7 +658,7 @@ function wpgv_txtentities($html)
 
 function wpgv_em($word)
 {
-  $word = html_entity_decode(strip_tags(stripslashes($word)), ENT_NOQUOTES, 'UTF-8');
+  $word = html_entity_decode(wp_strip_all_tags(stripslashes($word)), ENT_NOQUOTES, 'UTF-8');
   $word = iconv('UTF-8', 'windows-1252', $word);
   return $word;
 }
@@ -762,7 +776,7 @@ function wpgv_redeem_voucher()
   $setting_table_name = $wpdb->prefix . 'giftvouchers_setting';
   $setting_options = $wpdb->get_row("SELECT * FROM $setting_table_name WHERE id = 1");
 
-  $voucher_id = sanitize_text_field($_POST['voucher_id']);
+  $voucher_id = sanitize_text_field(wp_unslash($_POST['voucher_id']));
   $voucher_amount = sanitize_text_field($_POST['voucher_amount']);
   WPGV_Gift_Voucher_Activity::record($voucher_id, 'transaction', '-' . $voucher_amount, 'Voucher amount ' . $setting_options->currency . $voucher_amount . ' used directly by administrator.');
 
@@ -775,7 +789,7 @@ function wpgv_price_format($price)
   global $wpdb;
   $setting_table_name = $wpdb->prefix . 'giftvouchers_setting';
   $setting_options = $wpdb->get_row("SELECT * FROM $setting_table_name WHERE id = 1");
-  $price = html_entity_decode(strip_tags(stripslashes($price)), ENT_NOQUOTES, 'UTF-8');
+  $price = html_entity_decode(wp_strip_all_tags(stripslashes($price)), ENT_NOQUOTES, 'UTF-8');
   $price = iconv('UTF-8', 'windows-1252', $price);
   $price = number_format((float)$price, 2, ',', '.');
   $currency = ($setting_options->currency_position == 'Left') ? $setting_options->currency . ' ' . $price : $price . ' ' . $setting_options->currency;
@@ -898,26 +912,38 @@ function wpgv_display_testmode_notice()
 
   if ($setting_options->paypal && $setting_options->test_mode) {
     $class = 'notice notice-info';
-    $message = sprintf('PayPal Testmode has enabled in the <a href="%s" target="_blank">plugin settings</a> in <b>Gift Cards</b> plugin.', admin_url('admin.php') . '?page=voucher-setting#payment');
-    printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), $message);
+    $message = sprintf(
+      'PayPal Testmode has enabled in the <a href="%s" target="_blank">plugin settings</a> in <b>Gift Cards</b> plugin.',
+      esc_url(admin_url('admin.php') . '?page=voucher-setting#payment')
+    );
+    printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), wp_kses_post($message));
   }
 
   if ($setting_options->paypal && (!$wpgv_paypal_client_id || !$wpgv_paypal_secret_key)) {
     $class = 'notice notice-info';
-    $message = sprintf('PayPal has enabled but empty client id or secret key in the <a href="%s" target="_blank">plugin settings</a> in <b>Gift Cards</b> plugin.', admin_url('admin.php') . '?page=voucher-setting#payment');
-    printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), $message);
+    $message = sprintf(
+      'PayPal has enabled but empty client id or secret key in the <a href="%s" target="_blank">plugin settings</a> in <b>Gift Cards</b> plugin.',
+      esc_url(admin_url('admin.php') . '?page=voucher-setting#payment')
+    );
+    printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), wp_kses_post($message));
   }
 
   if ($setting_options->stripe && (!$setting_options->stripe_publishable_key || !$setting_options->stripe_secret_key)) {
     $class = 'notice notice-info';
-    $message = sprintf('Stripe has enabled but empty Publishable key or Secret key in the <a href="%s" target="_blank">plugin settings</a> in <b>Gift Cards</b> plugin.', admin_url('admin.php') . '?page=voucher-setting#payment');
-    printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), $message);
+    $message = sprintf(
+      'Stripe has enabled but empty Publishable key or Secret key in the <a href="%s" target="_blank">plugin settings</a> in <b>Gift Cards</b> plugin.',
+      esc_url(admin_url('admin.php') . '?page=voucher-setting#payment')
+    );
+    printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), wp_kses_post($message));
   }
 
-  if ($setting_options->sofort && (!$setting_options->sofort_configure_key)) {
+  if ($setting_options->sofort && !$setting_options->sofort_configure_key) {
     $class = 'notice notice-info';
-    $message = sprintf('Sofort has enabled but empty Configuration Key in the <a href="%s" target="_blank">plugin settings</a> in <b>Gift Cards</b> plugin.', admin_url('admin.php') . '?page=voucher-setting#payment');
-    printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), $message);
+    $message = sprintf(
+      'Sofort has enabled but empty Configuration Key in the <a href="%s" target="_blank">plugin settings</a> in <b>Gift Cards</b> plugin.',
+      esc_url(admin_url('admin.php') . '?page=voucher-setting#payment')
+    );
+    printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), wp_kses_post($message));
   }
 }
 add_action('admin_notices', 'wpgv_display_testmode_notice');

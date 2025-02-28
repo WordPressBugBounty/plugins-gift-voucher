@@ -283,7 +283,7 @@ function getSelectTemplateVoucher()
     //$date_of = __('Date of Expiry', 'gift-voucher');
     $date_of = __('Date', 'gift-voucher');
     $counpon = __('Coupon', 'gift-voucher');
-    $voucher_id = !empty($_POST['voucher_id']) ? sanitize_text_field($_POST['voucher_id']) : 0;
+    $voucher_id = !empty($_POST['voucher_id']) ? sanitize_text_field(wp_unslash($_POST['voucher_id'])) : 0;
     $web = !empty($setting_options->pdf_footer_url) ? $setting_options->pdf_footer_url : get_site_url();
     $email = !empty($setting_options->pdf_footer_email) ? $setting_options->pdf_footer_email : get_option('admin_email');;
     $company_name = !empty($setting_options->company_name) ? $setting_options->company_name : get_bloginfo('name');;

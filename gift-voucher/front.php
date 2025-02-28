@@ -21,8 +21,10 @@ function wpgv_voucher_shortcode()
     wp_enqueue_script('wpgv-voucher-script');
     $wpgv_termstext = get_option('wpgv_termstext') ? get_option('wpgv_termstext') : 'I hereby accept the terms and conditions, the revocation of the privacy policy and confirm that all information is correct.';
 
-    $setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
-    $template_options = $wpdb->get_results("SELECT * FROM $template_table WHERE active = 1");
+    $setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1));
+
+    $template_options = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_template WHERE active = %d", 1));
+
     $nonce = wp_create_nonce('voucher_form_verify');
     $wpgv_custom_css = get_option('wpgv_custom_css') ? stripslashes(trim(get_option('wpgv_custom_css'))) : '';
 
@@ -523,13 +525,9 @@ function wpgv__doajax_front_template()
 {
     global $wpdb;
     $template_table = $wpdb->prefix . 'giftvouchers_template';
-    $template_id = (int) base64_decode(sanitize_text_field($_REQUEST['template_id']));
-    $template_options = $wpdb->get_row(
-        $wpdb->prepare(
-            "SELECT * FROM $template_table WHERE id = %d",
-            $template_id
-        )
-    );
+    $template_id = isset($_REQUEST['template_id']) ? (int) base64_decode(sanitize_text_field(wp_unslash($_REQUEST['template_id']))) : 0;
+    $template_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_template WHERE id = %d", $template_id));
+
 
     $images = $template_options->image_style ? json_decode($template_options->image_style) : ['', '', ''];
     $image_styles = array();

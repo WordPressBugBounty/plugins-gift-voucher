@@ -275,7 +275,7 @@ if (! class_exists('wpgv_wc_product_gift_voucher')) :
                 $price = apply_filters('wpgv_to_current_currency', $price);
             }
 
-            return strip_tags(wc_price($price));
+            return wp_strip_all_tags(wc_price($price));
         }
 
         return $name;

@@ -108,14 +108,14 @@ if (! class_exists('WPGV_Voucher_Product_List')) :
 		exit();*/
             switch ($column_id) {
                 case 'id':
-                    return $item->ID;
+                    return esc_html($item->ID);
                 case 'title':
                 case 'image':
                 case 'active':
-                    return $item->post_status;
+                    return esc_html($item->post_status);
                 case 'templateadd_time':
                 default:
-                    return print_r($item, true); //Show the whole array for troubleshooting purposes
+                    return wp_json_encode($item, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
             }
         }
 
@@ -164,10 +164,22 @@ if (! class_exists('WPGV_Voucher_Product_List')) :
         {
             $delete_nonce = wp_create_nonce('delete_template');
             $title = '<strong>' . $item->post_title . '</strong>';
-
+            $page = isset($_REQUEST['page']) ? sanitize_text_field(wp_unslash($_REQUEST['page'])) : '';
             $actions = array(
-                'edit_template' => '<a href=' . get_edit_post_link($item->ID) . '>Edit Product</a>',
-                'delete' => sprintf('<a href="?page=%s&action=%s&product_id=%s&_wpnonce=%s">%s</a>', esc_attr($_REQUEST['page']), 'delete', absint($item->ID), $delete_nonce, __('Delete', 'gift-voucher'))
+                'edit_template' => '<a href="' . esc_url(get_edit_post_link($item->ID)) . '">Edit Product</a>',
+                'delete' => sprintf(
+                    '<a href="%s">%s</a>',
+                    esc_url(add_query_arg(
+                        array(
+                            'page'       => $page,
+                            'action'     => 'delete',
+                            'product_id' => absint($item->ID),
+                            '_wpnonce'   => $delete_nonce,
+                        ),
+                        admin_url('admin.php')
+                    )),
+                    __('Delete', 'gift-voucher')
+                )
             );
 
             return $title . $this->row_actions($actions);
@@ -200,8 +212,8 @@ if (! class_exists('WPGV_Voucher_Product_List')) :
          */
         function column_templateadd_time($item)
         {
-            $formatted_date = date('Y/m/d', strtotime($item->post_date));
-            $formatted_title = date('Y/m/d H:i:s a', strtotime($item->post_date));
+            $formatted_date = gmdate('Y/m/d', strtotime($item->post_date));
+            $formatted_title = gmdate('Y/m/d H:i:s a', strtotime($item->post_date));
             ?>
             <abbr title="<?php echo esc_attr($formatted_title); ?>"><?php echo esc_html($formatted_date); ?></abbr>
 <?php
@@ -251,13 +263,15 @@ if (! class_exists('WPGV_Voucher_Product_List')) :
         {
             //Detect when a bulk action is being triggered...
             if ('bulk-delete' === $this->current_action()) {
-                foreach ($_REQUEST['product_id'] as $template) {
-                    self::delete_template(absint($template));
+                if (!empty($_REQUEST['product_id']) && is_array($_REQUEST['product_id'])) {
+                    $product_ids = array_map('absint', wp_unslash($_REQUEST['product_id']));
+
+                    foreach ($product_ids as $template) {
+                        self::delete_template($template);
+                    }
+                    wp_safe_redirect(esc_url_raw(add_query_arg('page', 'voucher-products', admin_url('admin.php'))));
+                    exit;
                 }
-                // esc_url_raw() is used to prevent converting ampersand in url to "#038;"
-                // add_query_arg() return the current url
-                wp_safe_redirect("?page=voucher-products");
-                exit;
             }
         }
     }

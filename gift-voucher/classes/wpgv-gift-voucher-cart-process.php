@@ -94,19 +94,15 @@ if (!class_exists('wpgv-')) :
 
             foreach ($wpgv_gift_voucher->gift_voucher_meta as $key => $display) {
                 if (isset($_REQUEST[$key])) {
-                    if ($key == WPGV_MESSAGE_META_KEY) {
+                    $value = sanitize_textarea_field(wp_unslash($_REQUEST[$key]));
 
-                        $cart_item_data[$key] = sanitize_textarea_field(stripslashes($_REQUEST[$key]));
+                    if ($key == WPGV_MESSAGE_META_KEY) {
+                        $cart_item_data[$key] = $value;
                     } else {
-                        $cart_item_data[$key] = sanitize_text_field(stripslashes($_REQUEST[$key]));
+                        $cart_item_data[$key] = $value;
                     }
                 }
             }
-
-            /*echo "<pre>";
-        print_r($cart_item_data);
-        echo "</pre>";
-        exit();*/
 
 
             return $cart_item_data;
@@ -318,7 +314,7 @@ if (!class_exists('wpgv-')) :
             $order = wc_get_order($order_id);
             global $wpdb;
             $setting_table_name = $wpdb->prefix . 'giftvouchers_setting';
-            $options = $wpdb->get_row("SELECT * FROM $setting_table_name WHERE id = 1");
+            $options = $wpdb->get_row($wpdb->prepare("SELECT * FROM `" . esc_sql($setting_table_name) . "` WHERE id = %d", 1));
 
             foreach ($order->get_items('line_item') as $order_item_id => $order_item) {
                 if ($order_item->get_quantity() <= 0) {
@@ -381,7 +377,12 @@ if (!class_exists('wpgv-')) :
         function add_gift_vouchers_to_order($order_id, $order, $note)
         {
 
-            $create_note = sprintf(__('Order %s purchased by %s %s', 'gift-voucher'), $order->get_id(), $order->get_billing_first_name(), $order->get_billing_last_name());
+            $create_note = sprintf(
+                __('Order %1$s purchased by %2$s %3$s', 'gift-voucher'),
+                $order->get_id(),
+                $order->get_billing_first_name(),
+                $order->get_billing_last_name()
+            );
 
 
             foreach ($order->get_items('line_item') as $order_item_id => $order_item) {
@@ -442,6 +443,7 @@ if (!class_exists('wpgv-')) :
                 $order_quantity = $order_item['quantity'];
                 $payment_method = $order->get_payment_method();
 
+
                 $order = wc_get_order($order_id);
                 $wvgc_order_id = $order->get_id();
                 $billing_email  = $order->get_billing_email();
@@ -466,11 +468,8 @@ if (!class_exists('wpgv-')) :
 
 
             global $wpdb;
-            $voucher_table     = $wpdb->prefix . 'giftvouchers_list';
-            $setting_table     = $wpdb->prefix . 'giftvouchers_setting';
-
-            $setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
-            $voucher_options_results = $wpdb->get_results("SELECT * FROM $voucher_table WHERE order_id = $wvgc_order_id");
+            $setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM `" . esc_sql($wpdb->prefix . 'giftvouchers_setting') . "` WHERE id = %d", 1));
+            $voucher_options_results = $wpdb->get_results($wpdb->prepare("SELECT * FROM `" . esc_sql($wpdb->prefix . 'giftvouchers_list') . "` WHERE order_id = %d", $wvgc_order_id));
 
             $emailsubject = get_option('wpgv_emailsubject') ? get_option('wpgv_emailsubject') : 'Order Confirmation - Your Order with {company_name} (Voucher Order No: {order_number} ) has been successfully placed!';
 
@@ -523,17 +522,9 @@ if (!class_exists('wpgv-')) :
                     if ($voucher_options->email_send_date_time == 'send_instantly') {
                         $checkmail1 = wp_mail($recipientto, $recipientsub, $recipientmsg, $headers, $attachments_user);
                     } else {
-                        $save_zone = date_default_timezone_get();
-
-                        if (get_option('timezone_string') != "") {
-                            date_default_timezone_set(get_option('timezone_string'));
-                            $send_gift_voucher_email_event_date_time = strtotime($voucher_options->email_send_date_time);
-                        } else {
-                            date_default_timezone_set($save_zone);
-                            $send_gift_voucher_email_event_date_time = strtotime($voucher_options->email_send_date_time);
-                        }
-
-                        date_default_timezone_set($save_zone);
+                        $timezone = wp_timezone();
+                        $datetime = new DateTime($voucher_options->email_send_date_time, $timezone);
+                        $send_gift_voucher_email_event_date_time = $datetime->getTimestamp();
 
                         $send_gift_voucher_email_event_args = array($recipientto, $recipientsub, $recipientmsg, $headers, $attachments_user);
                         wp_schedule_single_event($send_gift_voucher_email_event_date_time, 'send_gift_voucher_email_event', $send_gift_voucher_email_event_args);

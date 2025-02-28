@@ -121,68 +121,6 @@ class WPGiftVoucherAdminPages
 		require_once WPGIFT__PLUGIN_DIR . '/include/wpgv_license_page.php';
 	}
 
-	/**
-	 * Method for export vouchers in xls
-	 */
-	function export_orders()
-	{
-		if (is_admin()) {
-			global $wpdb;
-
-			// Check if the POST variable is set
-			if (isset($_POST["tbl_name"])) {
-				$tablename = sanitize_text_field($_POST["tbl_name"]);
-
-				// Check if the table exists safely
-				$safe_tablename = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $wpdb->esc_like($tablename)));
-
-				if ($safe_tablename) {
-					$filename = "export-orders";
-					$rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$safe_tablename}"), ARRAY_A);
-
-					if ($rows) {
-						// Clear output buffer
-						ob_clean();
-
-						// Set headers for Excel download
-						header("Content-Type: application/vnd.ms-excel; charset=utf-8");
-						header("Content-Disposition: attachment; filename=" . esc_attr($filename) . "-" . gmdate('d-m-y') . ".xls");
-						header("Expires: 0");
-						header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-						header("Cache-Control: private", false);
-
-						// Start outputting HTML for the Excel file
-						echo "<html><meta http-equiv=\"Content-Type\" content=\"text/html; charset=Windows-1252\"><body><table>";
-
-						// Output the header row
-						if (!empty($rows)) {
-							echo "<tr>";
-							foreach (array_keys($rows[0]) as $col) {
-								echo "<th style='border: thin solid; background-color: #83b4d8;'>" . esc_html($col) . "</th>";
-							}
-							echo "</tr>";
-						}
-
-						// Output the data rows
-						foreach ($rows as $row) {
-							echo "<tr>";
-							foreach ($row as $cell) {
-								echo "<td style='border: thin solid;'>" . esc_html($cell) . "</td>";
-							}
-							echo "</tr>";
-						}
-
-						echo "</table></body></html>";
-					} else {
-						echo esc_html(__('Invalid Request.', 'gift-voucher'));
-					}
-				} else {
-					echo esc_html(__('Invalid table name provided.', 'gift-voucher'));
-				}
-			}
-		}
-	}
-
 
 	/**
 	 * Screen options for voucher list

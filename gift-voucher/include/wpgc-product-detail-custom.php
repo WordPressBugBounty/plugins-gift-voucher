@@ -44,8 +44,9 @@ function custom_additional_html()
 
 
     // Get other values
-    $setting_table = $wpdb->prefix . 'giftvouchers_setting'; // Update the table name here
-    $setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
+    $setting_table = $wpdb->prefix . 'giftvouchers_setting';
+    $setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1));
+
 
     $voucher_bgcolor = $setting_options->voucher_bgcolor;
     $voucher_color = $setting_options->voucher_color;

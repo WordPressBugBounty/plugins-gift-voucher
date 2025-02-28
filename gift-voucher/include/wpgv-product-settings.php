@@ -5,7 +5,8 @@ if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 global $wpdb;
 
 $setting_table_name = $wpdb->prefix . 'giftvouchers_setting';
-$options = $wpdb->get_row("SELECT * FROM $setting_table_name WHERE id = 1");
+$options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1));
+
 
 if ($options->is_woocommerce_enable) {
     /*
@@ -89,7 +90,7 @@ if ($options->is_woocommerce_enable) {
                                                                             ?><div class='options_group'>
                 <?php
 
-                $post_id = isset($_GET['post']) ? sanitize_text_field($_GET['post']) : 0;
+                $post_id = isset($_GET['post']) ? sanitize_text_field(wp_unslash($_GET['post'])) : 0;
 
                 woocommerce_wp_text_input(array(
                     'id'                => 'wpgv_price',
@@ -109,18 +110,27 @@ if ($options->is_woocommerce_enable) {
                 }
                 echo '</div>';*/
 
-                echo '<div id="wpgv_variation_price_main" class="container" style="justify-content: center;display: flex;margin-left: 10px;margin-right: 10px;margin-bottom: 10px;">';
+                echo '<div id="wpgv_variation_price_main" class="container" style="justify-content: center; display: flex; margin-left: 10px; margin-right: 10px; margin-bottom: 10px;">';
+
                 foreach ($variations as $variation) {
                     if ($variation->get_regular_price() > 0) {
                 ?>
-                        <span id="wpgv_variation_<?php echo $variation->get_id(); ?>" class="wpgv-tag wpgv-amount-container" data-variation_id="<?php echo $variation->get_id(); ?>"> <?php echo $wpgv_gift_voucher->pretty_price($variation->get_regular_price()); ?> <span class="wpgv-remove-amount-button wpgv-price-remove" data-variation_id="<?php echo $variation->get_id(); ?>" data-role="remove">×</span> </span>
+                        <span id="wpgv_variation_<?php echo esc_attr($variation->get_id()); ?>"
+                            class="wpgv-tag wpgv-amount-container"
+                            data-variation_id="<?php echo esc_attr($variation->get_id()); ?>">
+                            <?php echo esc_html($wpgv_gift_voucher->pretty_price($variation->get_regular_price())); ?>
+                            <span class="wpgv-remove-amount-button wpgv-price-remove"
+                                data-variation_id="<?php echo esc_attr($variation->get_id()); ?>"
+                                data-role="remove">×</span>
+                        </span>
                 <?php
                     }
                 }
+
                 echo '</div>';
 
                 ?>
-                <input type="hidden" name="wpgv_product_id" id="wpgv_product_id" value="<?php echo $post_id; ?>">
+                <input type="hidden" name="wpgv_product_id" id="wpgv_product_id" value="<?php echo esc_attr($post_id); ?>">
                 <input type="button" value="Add" name="wpgv-add-price-button" id="wpgv-add-price-button" class="button button-primary">
 
             </div>

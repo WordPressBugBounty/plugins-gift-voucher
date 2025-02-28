@@ -11,19 +11,19 @@ if (!isset($_GET['action'])) {
 
 
 $watermark = __('This is a preview voucher.', 'gift-voucher');
-if (sanitize_text_field($_GET['action']) == 'preview') {
+if (sanitize_text_field(wp_unslash($_GET['action'])) == 'preview') {
 	$watermark = __('This is a preview voucher.', 'gift-voucher');
 } else {
 	exit();
 }
 
-$template = wp_kses_post(base64_decode($_GET['template']));
-$buyingfor = sanitize_textarea_field(base64_decode($_GET['buying_for']));
-$for = sanitize_textarea_field(base64_decode($_GET['for']));
-$from = sanitize_textarea_field(base64_decode($_GET['from']));
-$value = sanitize_textarea_field(base64_decode($_GET['value']));
-$message = sanitize_textarea_field(base64_decode($_GET['message']));
-$expiry = sanitize_textarea_field(base64_decode($_GET['expiry']));
+$template = isset($_GET['template']) ? wp_kses_post(base64_decode(wp_unslash($_GET['template']))) : '';
+$buyingfor = isset($_GET['buying_for']) ? sanitize_textarea_field(base64_decode(wp_unslash($_GET['buying_for']))) : '';
+$for = isset($_GET['for']) ? sanitize_textarea_field(base64_decode(wp_unslash($_GET['for']))) : '';
+$from = isset($_GET['from']) ? sanitize_textarea_field(base64_decode(wp_unslash($_GET['from']))) : '';
+$value = isset($_GET['value']) ? sanitize_textarea_field(base64_decode(wp_unslash($_GET['value']))) : '';
+$message = isset($_GET['message']) ? sanitize_textarea_field(base64_decode(wp_unslash($_GET['message']))) : '';
+$expiry = isset($_GET['expiry']) ? sanitize_textarea_field(base64_decode(wp_unslash($_GET['expiry']))) : '';
 $code = '################';
 
 global $wpdb;

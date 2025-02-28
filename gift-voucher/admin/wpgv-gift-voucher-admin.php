@@ -24,7 +24,7 @@ if (! class_exists('wpgv_gift_voucher_admin')) :
 
             $product = new wpgv_wc_product_gift_voucher($post_id);
 
-            $new_amount = wc_clean($_POST['wpgv_price']);
+            $new_amount = wc_clean(wp_unslash($_POST['wpgv_price']));
             if (!empty($new_amount)) {
                 $result = $product->add_amount($new_amount);
                 if (!is_numeric($result)) {
@@ -48,7 +48,7 @@ if (! class_exists('wpgv_gift_voucher_admin')) :
             }
 
             $product_id = absint($_POST['product_id']);
-            $new_amount = wc_clean($_POST['wpgv_price']);
+            $new_amount = wc_clean(wp_unslash($_POST['wpgv_price']));
             $new_amount = $wpgv_gift_voucher->sanitize_amount($new_amount);
 
             if ($product = new wpgv_wc_product_gift_voucher($product_id)) {

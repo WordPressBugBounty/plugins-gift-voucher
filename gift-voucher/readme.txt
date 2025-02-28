@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
 Tested up to: 6.7.1
-Stable tag: 4.4.9
+Stable tag: 4.5.0
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -217,6 +217,13 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.5.0 - Released: February 26 2025
+* Addressed a security vulnerability (CVE-2024-13520) by adding proper capability checks and nonce verification for voucher price, date, and note update functions.
+* Updated the following files to ensure secure database interactions:
+  - `wpgv-gift-voucher-cart-process.php` (Lines: 444-446, 473)
+  - `voucher.php` (Lines: 171, 178, 203, 210-212)
+  - `admin.php` (Lines: 123, 141)
 
 = Version 4.4.9 - Released: January 15 2025
 * Fixed the search functionality on the Gift Voucher Orders page.

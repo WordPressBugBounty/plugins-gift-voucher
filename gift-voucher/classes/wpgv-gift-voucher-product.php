@@ -124,7 +124,7 @@ if (! class_exists('wpgv_gift_voucher_product')) :
 
         function only_numbers_and_decimal($value)
         {
-            return preg_replace('/[^0-9.]/', '', strip_tags(html_entity_decode($value)));
+            return preg_replace('/[^0-9.]/', '', wp_strip_all_tags(html_entity_decode($value)));
         }
 
         function sanitize_amount($amount)
@@ -132,7 +132,7 @@ if (! class_exists('wpgv_gift_voucher_product')) :
             $thousand_separator = wc_get_price_thousand_separator();
             $decimal_separator = wc_get_price_decimal_separator();
 
-            $amount = strip_tags(html_entity_decode($amount));
+            $amount = wp_strip_all_tags(html_entity_decode($amount));
             $amount = str_replace($thousand_separator, '', $amount);
             $amount = str_replace($decimal_separator, '.', $amount);
 
@@ -168,7 +168,7 @@ if (! class_exists('wpgv_gift_voucher_product')) :
                     $amount = wc_price($amount, array('decimals' => $decimals));
                 }
 
-                $amount = strip_tags($amount);
+                $amount = wp_strip_all_tags($amount);
                 $amount = html_entity_decode($amount);
                 return $amount;
             } else {

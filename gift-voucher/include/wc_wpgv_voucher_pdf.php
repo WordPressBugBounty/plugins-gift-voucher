@@ -20,7 +20,7 @@ function wc_wpgv_voucher_pdf_save_func($value, $for, $from, $email, $shipping_em
     $voucher_table     = $wpdb->prefix . 'giftvouchers_list';
     $setting_table     = $wpdb->prefix . 'giftvouchers_setting';
     $template_table = $wpdb->prefix . 'giftvouchers_template';
-    $setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
+    $setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1));
 
     /*$template_options = $wpdb->get_row( "SELECT * FROM $template_table WHERE id = $template" );
 	$images = $template_options->image_style ? json_decode($template_options->image_style) : ['','',''];*/
@@ -38,7 +38,7 @@ function wc_wpgv_voucher_pdf_save_func($value, $for, $from, $email, $shipping_em
     if ($wpgv_hide_expiry == 'no') {
         $expiry = __('No Expiry', 'gift-voucher');
     } else {
-        $expiry = ($setting_options->voucher_expiry_type == 'days') ? date($wpgv_expiry_date_format, strtotime('+' . $setting_options->voucher_expiry . ' days', time())) . PHP_EOL : $setting_options->voucher_expiry;
+        $expiry = ($setting_options->voucher_expiry_type == 'days') ? gmdate($wpgv_expiry_date_format, strtotime('+' . $setting_options->voucher_expiry . ' days', time())) . PHP_EOL : $setting_options->voucher_expiry;
     }
 
 
@@ -125,8 +125,8 @@ function wc_wpgv_voucher_pdf_save_func($value, $for, $from, $email, $shipping_em
     $voucher_table     = $wpdb->prefix . 'giftvouchers_list';
     $setting_table     = $wpdb->prefix . 'giftvouchers_setting';
 
-    $setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
-    $voucher_options = $wpdb->get_row("SELECT * FROM $voucher_table WHERE id = $lastid");
+    $setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1));
+    $voucher_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_list WHERE id = %d", $lastid));
 
     $emailsubject = get_option('wpgv_emailsubject') ? get_option('wpgv_emailsubject') : 'Order Confirmation - Your Order with {company_name} (Voucher Order No: {order_number} ) has been successfully placed!';
 
@@ -161,17 +161,11 @@ function wc_wpgv_voucher_pdf_save_func($value, $for, $from, $email, $shipping_em
             wp_mail($recipientto, $recipientsub, $recipientmsg, $headers, $attachments);
         } else {
 
-            $save_zone = date_default_timezone_get();
+            $timezone = get_option('timezone_string') ? get_option('timezone_string') : 'UTC';
 
-            if (get_option('timezone_string') != "") {
-                date_default_timezone_set(get_option('timezone_string'));
-                $send_gift_voucher_email_event_date_time = strtotime($voucher_options->email_send_date_time);
-            } else {
-                date_default_timezone_set($save_zone);
-                $send_gift_voucher_email_event_date_time = strtotime($voucher_options->email_send_date_time);
-            }
+            $send_gift_voucher_email_event_date_time = strtotime($voucher_options->email_send_date_time);
 
-            date_default_timezone_set($save_zone);
+            $send_gift_voucher_email_event_date_time = get_date_from_gmt(gmdate('Y-m-d H:i:s', $send_gift_voucher_email_event_date_time), 'Y-m-d H:i:s');
 
             $send_gift_voucher_email_event_args = array($recipientto, $recipientsub, $recipientmsg, $headers, $attachments);
             wp_schedule_single_event($send_gift_voucher_email_event_date_time, 'send_gift_voucher_email_event', $send_gift_voucher_email_event_args);

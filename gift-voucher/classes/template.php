@@ -237,12 +237,13 @@ if (!class_exists('WPGV_Voucher_Template')) :
 		{
 			//Detect when a bulk action is being triggered...
 			if ('bulk-delete' === $this->current_action()) {
-				foreach ($_REQUEST['template_id'] as $template) {
-					self::delete_template(absint($template));
+				if (!empty($_REQUEST['template_id']) && is_array($_REQUEST['template_id'])) {
+					$template_ids = array_map('absint', wp_unslash($_REQUEST['template_id']));
+					foreach ($template_ids as $template_id) {
+						self::delete_template($template_id);
+					}
 				}
-				// esc_url_raw() is used to prevent converting ampersand in url to "#038;"
-				// add_query_arg() return the current url
-				wp_safe_redirect("?page=voucher-templates");
+				wp_safe_redirect(esc_url_raw(add_query_arg([], "admin.php?page=voucher-templates")));
 				exit;
 			}
 		}
