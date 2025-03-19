@@ -296,8 +296,7 @@ jQuery(document).ready(function ($) {
         var expiry = $('.expiryCard').val();
         var style = $('#chooseStyle').val();
         var code = $('.codeCard').val();
-        // console.log(voucherValue);
-        // return false;
+
         $('#voucher-multistep-form #voucherPaymentButton').addClass('clicked');
 
         $.ajax({

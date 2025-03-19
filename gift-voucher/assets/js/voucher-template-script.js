@@ -137,7 +137,7 @@ jQuery(document).ready(function ($) {
     //jQuery select template gift card
     jQuery(document).on('click', '#giftvoucher-template .item-voucher-template .layout-button', function (event) {
         var voucher_id = jQuery(this).parents('.layout-overlay').data('post_id');
-        //console.log(voucher_id);
+
         var step_voucher = voucherTemplate.find('.giftvoucher-step.active .step-group').data('step');
         var data = {
             action: 'ajax_select_voucher_template',
@@ -151,7 +151,7 @@ jQuery(document).ready(function ($) {
                 voucherTemplate.find('.voucher-content-step').addClass('loading');
             },
             success: function (results) {
-                //console.log(JSON.parse(results));
+
                 var data = JSON.parse(results);
                 imagesGiftCard = data.url;
                 currency = data.currency;
@@ -165,7 +165,7 @@ jQuery(document).ready(function ($) {
                 notice = data.leftside_notice;
                 counpon_label = data.counpon;
                 json = data.json;
-                console.log(json);
+
                 changeStepVoucher(step_voucher + 1);
                 var couponcode = Math.floor(1000000000000000 + Math.random() * 9000000000000000);
                 voucherTemplate.find('#voucher-id').val(voucher_id);
@@ -547,7 +547,7 @@ jQuery(document).ready(function ($) {
     var containerWidth = 0;
     //function canvas
     function showTemplateGiftCard(json, urlImage, currency, giftto, giftfrom, date_label, email, website, company_name, expiryDate, notice, counpon, step) {
-        console.log(json);
+
         if (step != 1) {
             if (json != null || urlImage != null || currency != null || giftto != null || email != null || date_label != null || website != null || company_name != null || expiryDate != null || notice != null || counpon != null) {
                 stage = Konva.Node.create(json, 'template_giftcard_container');

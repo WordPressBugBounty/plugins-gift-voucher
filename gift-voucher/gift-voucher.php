@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.5.0
+ * Version: 4.5.1
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.5.0');
+define('WPGIFT_VERSION', '4.5.1');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -222,7 +222,7 @@ function wpgv_front_enqueue()
   wp_register_script('wpgv-jspdf-js', WPGIFT__PLUGIN_URL . '/assets/js/jspdf.debug.js', array('jquery'), '1.5.3', true);
   wp_register_script('wpgv-jquery-validate', WPGIFT__PLUGIN_URL . '/assets/js/jquery.validate.min.js', array('jquery'), '1.17.0', true);
   wp_register_script('wpgv-jquery-steps', WPGIFT__PLUGIN_URL . '/assets/js/jquery.steps.min.js', array('jquery'), '1.1.0', true);
-  wp_register_script('wpgv-stripe-js', 'https://js.stripe.com/v3/', array('jquery'), NULL, true);
+  wp_register_script('wpgv-stripe-js', WPGIFT__PLUGIN_URL . '/assets/js/stripe-v3.js', array('jquery'), NULL, true);
   wp_register_script('wpgv-voucher-script', WPGIFT__PLUGIN_URL  . '/assets/js/voucher-script.js', array('jquery'), '3.3.9.1', true);
   wp_register_script('wpgv-item-script', WPGIFT__PLUGIN_URL  . '/assets/js/item-script.js', array('jquery'), '3.3.9.1', true);
   wp_register_script('wpgv-woocommerce-script', WPGIFT__PLUGIN_URL  . '/assets/js/woocommerce-script.js', array('jquery'), '3.3.9.1', true);
@@ -245,7 +245,9 @@ function wpgv_front_enqueue()
         'max_message_characters'        => WPGV_MAX_MESSAGE_CHARACTERS,
         'i18n'                          => array(
           'custom_amount_required_error' => __('Required', 'gift-voucher'),
+          // translators: %s is the currency symbol.
           'min_amount_error'          => sprintf(__('Minimum amount is %s', 'gift-voucher'), get_woocommerce_currency_symbol()),
+          // translators: %s is the currency symbol.
           'max_amount_error'          => sprintf(__('Maximum amount is %s', 'gift-voucher'), get_woocommerce_currency_symbol()),
           'invalid_recipient_error'   => __('The "To" field should only contain email addresses. The following recipients do not look like valid email addresses:', 'gift-voucher'),
         ),

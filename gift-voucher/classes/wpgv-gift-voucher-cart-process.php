@@ -377,13 +377,8 @@ if (!class_exists('wpgv-')) :
         function add_gift_vouchers_to_order($order_id, $order, $note)
         {
 
-            $create_note = sprintf(
-                __('Order %1$s purchased by %2$s %3$s', 'gift-voucher'),
-                $order->get_id(),
-                $order->get_billing_first_name(),
-                $order->get_billing_last_name()
-            );
-
+            // translators: 1: Order ID, 2: Customer's first name, 3: Customer's last name.
+            $create_note = sprintf(__('Order %1$s purchased by %2$s %3$s', 'gift-voucher'), $order->get_id(), $order->get_billing_first_name(), $order->get_billing_last_name());
 
             foreach ($order->get_items('line_item') as $order_item_id => $order_item) {
 

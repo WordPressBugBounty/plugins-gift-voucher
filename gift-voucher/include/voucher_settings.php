@@ -1140,7 +1140,10 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 					<h4><?php esc_html_e('Changelog', 'gift-voucher'); ?></h4>
 					<p><?php esc_html_e("See what's new in", 'gift-voucher'); ?>
 						<a href="<?php echo esc_url('https://wordpress.org/plugins/gift-voucher/#developers'); ?>" target="_blank">
-							<?php echo esc_html(sprintf(__('version %s', 'gift-voucher'), WPGIFT_VERSION)); ?>
+							<?php
+							// translators: %s is the plugin version.
+							echo esc_html(sprintf(__('version %s', 'gift-voucher'), WPGIFT_VERSION));
+							?>
 						</a>.
 					</p>
 					<h4><?php esc_html_e('Resources', 'gift-voucher'); ?></h4>
@@ -1190,7 +1193,10 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 
 		</div>
 		<span class="wpgiftv-disclaimer">
-			<?php printf(esc_html__('Thank you for using %s.', 'gift-voucher'), '<b>WordPress Gift Voucher</b>'); ?>
+			<?php
+			// translators: %s is the plugin name in bold.
+			printf(esc_html__('Thank you for using %s.', 'gift-voucher'), '<b>WordPress Gift Voucher</b>');
+			?>
 		</span>
 
 	</div>

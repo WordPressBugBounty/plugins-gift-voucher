@@ -27,7 +27,7 @@ if (isset($session_data['gift_voucher'])) {
                         <?php echo esc_html(__('Code', 'gift-voucher')); ?>: <b><?php echo esc_attr($gift_voucher->get_number()); ?></b><br />
                         <?php
                         // translators: %s: remaining balance
-                        echo sprintf(esc_html__('Remaining balance is %s', 'gift-voucher'), esc_html($balance));
+                        echo sprintf(esc_html__('Remaining balance is %s', 'gift-voucher'), wp_kses_post($balance));
                         ?>
 
 

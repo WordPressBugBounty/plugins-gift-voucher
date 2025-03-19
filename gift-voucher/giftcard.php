@@ -433,7 +433,10 @@ function show_shipping_method_voucher()
     foreach ($shipping_methods as $key => $method) {
         if ($method != '') {
             $shipping_method = explode(':', $method);
-            $shipping_methods_string .= '<label data-value="' . trim(stripslashes($shipping_method[0])) . '"><input type="radio" name="shipping_method" value="' . trim(stripslashes($shipping_method[1])) . '" class="radio-field"> ' . trim(stripslashes($shipping_method[1])) . '</label>';
+            $shipping_methods_string .= '<label data-value="' . trim(stripslashes($shipping_method[0] ?? '')) . '">
+    <input type="radio" name="shipping_method" value="' . trim(stripslashes($shipping_method[1] ?? '')) . '" class="radio-field">
+    ' . trim(stripslashes($shipping_method[1] ?? '')) . '
+</label>';
         }
     }
     $shipping_methods_string .= '</div>';
@@ -548,18 +551,18 @@ function format_categories_function()
             <ul class="format-category-voucher">';
     if ($type == 'portrait_giftcard') {
         $html .= '<li data-type="portrait" class="layout-type active">
-                        <a href="javascript:;" class="portrait" title="' . esc_attr('portrait', 'gift-voucher') . '"></a>
+                        <a href="javascript:;" class="portrait" title="' . esc_attr__('portrait', 'gift-voucher') . '"></a>
                     </li>';
     } elseif ($type == 'landscape_giftcard') {
         $html .= '<li data-type="landscape" class="layout-type active">
-                        <a href="javascript:;" class="landscape" title="' . esc_attr('landscape', 'gift-voucher') . '"></a>
+                        <a href="javascript:;" class="landscape" title="' . esc_attr__('landscape', 'gift-voucher') . '"></a>
                     </li>';
     } else {
         $html .= '<li data-type="portrait" class="layout-type active">
-                        <a href="javascript:;" class="portrait" title="' . esc_attr('portrait', 'gift-voucher') . '"></a>
+                        <a href="javascript:;" class="portrait" title="' . esc_attr__('portrait', 'gift-voucher') . '"></a>
                     </li>
                     <li data-type="landscape" class="layout-type template_mode_active">
-                        <a href="javascript:;" class="landscape" title="' . esc_attr('landscape', 'gift-voucher') . '"></a>
+                        <a href="javascript:;" class="landscape" title="' . esc_attr__('landscape', 'gift-voucher') . '"></a>
                     </li>';
     }
     $html .= '</ul>

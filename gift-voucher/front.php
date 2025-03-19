@@ -101,7 +101,10 @@ function wpgv_voucher_shortcode()
     foreach ($shipping_methods as $method) {
         if ($method != '') {
             $shipping_method = explode(':', $method);
-            $shipping_methods_string .= '<label data-value="' . trim(esc_attr($shipping_method[0])) . '"><input type="radio" name="shipping_method" value="' . esc_attr(trim(stripslashes($shipping_method[1]))) . '" class="radio-field"> ' . esc_attr(trim(stripslashes($shipping_method[1]))) . '</label>';
+            $shipping_methods_string .= '<label data-value="' . trim(esc_attr($shipping_method[0] ?? '')) . '">
+    <input type="radio" name="shipping_method" value="' . esc_attr(trim(stripslashes($shipping_method[1] ?? ''))) . '" class="radio-field">
+    ' . esc_attr(trim(stripslashes($shipping_method[1] ?? ''))) . '
+</label>';
         }
     }
 

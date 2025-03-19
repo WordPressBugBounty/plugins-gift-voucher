@@ -99,6 +99,7 @@ if ($options->is_woocommerce_enable) {
                     'data_type'         => 'price',
                     'class'             => 'wpgv-price',
                     'desc_tip'          => 'true',
+                    // translators: %1$s is the currency symbol.
                     'description'       => sprintf(__('The available denominations that can be purchased. For example: %1$s25.00, %1$s50.00, %1$s100.00', 'gift-voucher'), get_woocommerce_currency_symbol()),
                 ));
 
@@ -186,7 +187,7 @@ if ($options->is_woocommerce_enable) {
                         if (response.data.succsess == 1) {
                             $('#wpgv_variation_price_main').html(response.data.variations_html);
                         } else {
-                            console.log(response);
+                            // console.log(response);
                         }
                     }, 'json');
                 });
@@ -207,7 +208,7 @@ if ($options->is_woocommerce_enable) {
                         if (response.data.succsess == 1) {
                             $("#wpgv_variation_" + variation_id).hide();
                         } else {
-                            console.log(response);
+                            // console.log(response);
                         }
                     }, 'json');
                 });

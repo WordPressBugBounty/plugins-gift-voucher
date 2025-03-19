@@ -22,10 +22,21 @@ if (! class_exists('wpgv_gift_voucher_admin')) :
         {
             global $wpgv_gift_voucher;
 
-            $product = new wpgv_wc_product_gift_voucher($post_id);
+            if (!isset($_POST['_wpgv_nonce']) || !wp_verify_nonce($_POST['_wpgv_nonce'], 'wpgv_save_product_meta')) {
+                wp_die(esc_html__('Invalid request.', 'gift-voucher'));
+            }
+            if (!current_user_can('edit_post', $post_id)) {
+                wp_die(esc_html__('You do not have permission to edit this product.', 'gift-voucher'));
+            }
 
-            $new_amount = wc_clean(wp_unslash($_POST['wpgv_price']));
+            $product = new wpgv_wc_product_gift_voucher($post_id);
+            $new_amount = isset($_POST['wpgv_price']) ? wc_clean(wp_unslash($_POST['wpgv_price'])) : '';
+
             if (!empty($new_amount)) {
+                if (!is_numeric($new_amount)) {
+                    wp_die(esc_html__('Invalid amount format.', 'gift-voucher'));
+                }
+
                 $result = $product->add_amount($new_amount);
                 if (!is_numeric($result)) {
                     wp_die(esc_html($result));
@@ -34,6 +45,7 @@ if (! class_exists('wpgv_gift_voucher_admin')) :
 
             $product->save();
         }
+
 
         // ajax add new gift voucher price varation
         function ajax_add_wpgv_voucher_amount()
@@ -71,6 +83,7 @@ if (! class_exists('wpgv_gift_voucher_admin')) :
                     wp_send_json_error(array('succsess' => 0, 'message' => $result));
                 }
             } else {
+                // translators: %s is the product ID.
                 wp_send_json_error(array('succsess' => 0, 'message' => sprintf(__('Could not locate product id %s', 'gift-voucher'), $product_id)));
             }
         }

@@ -481,6 +481,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 			} else {
 				$mark_used = '<span class="vused">' . __('Voucher Used', 'gift-voucher') . '</span>';
 			}
+			$paid_nonce = wp_create_nonce('mail_voucher');
 			$paid = wp_create_nonce('paid_voucher');
 			if ($item['payment_status'] != 'Paid') {
 				$actions = array(
@@ -491,7 +492,14 @@ if (!class_exists('WPGV_Voucher_List')) :
 			} else {
 				$mark_paid = '<span class="vpaid">' . __('Paid', 'gift-voucher') . '</span>';
 				$actions = array(
-					'paid' => sprintf('<a class="npaid" href="?page=%s&action=%s&voucher=%s&_wpdelete=%s">%s</a>', sanitize_text_field(wp_unslash($_REQUEST['page'])), sanitize_text_field('mail'), sanitize_text_field(absint($item['id'])), sanitize_text_field($paid), esc_html(__('Send Mail', 'gift-voucher')))
+					'paid' => sprintf(
+						'<a href="?page=%s&action=%s&voucher=%s&_wpdelete=%s">%s</a>',
+						esc_attr($_REQUEST['page']),
+						'mail',
+						absint($item['id']),
+						$paid_nonce, // Nonce đúng action
+						__('Send Mail', 'gift-voucher')
+					)
 				);
 				$send_mail = $this->row_actions($actions, true);
 			}
@@ -628,6 +636,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 				exit;
 			}
 			if (in_array($action, ['used', 'paid', 'mail', 'delete'], true)) {
+
 				if (!isset($_REQUEST['_wpdelete']) || !wp_verify_nonce($_REQUEST['_wpdelete'], "{$action}_voucher")) {
 					wp_die(esc_html__('Invalid request.', 'gift-voucher'));
 				}
