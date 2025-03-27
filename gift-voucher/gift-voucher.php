@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.5.1
+ * Version: 4.5.2
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.5.1');
+define('WPGIFT_VERSION', '4.5.2');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -132,6 +132,23 @@ add_action('admin_init', function () {
     $wpdb->query("ALTER TABLE `{$wpdb->prefix}giftvouchers_setting` ADD is_order_form_enable TINYINT(1) DEFAULT 1");
   }
 
+  $column_exists_portrait = $wpdb->get_results("SHOW COLUMNS FROM `{$wpdb->prefix}giftvouchers_setting` LIKE 'portrait_mode_templates'");
+
+  if (!empty($column_exists_portrait)) {
+    $portrait_mode_templates = $wpdb->get_var("SELECT portrait_mode_templates FROM `{$wpdb->prefix}giftvouchers_setting` LIMIT 1");
+
+    if (empty($portrait_mode_templates) || $portrait_mode_templates === '0') {
+      $template_portail = 'template-voucher-portail-1.png, template-voucher-portail-2.png, template-voucher-portail-6.png';
+
+      $wpdb->query($wpdb->prepare("
+            UPDATE `{$wpdb->prefix}giftvouchers_setting`
+            SET portrait_mode_templates = %s
+            WHERE portrait_mode_templates = '' OR portrait_mode_templates IS NULL OR portrait_mode_templates = '0'
+        ", $template_portail));
+    }
+  }
+
+
   if (!current_user_can('manage_options')) {
     return false;
   }
@@ -211,6 +228,7 @@ function wpgv_front_enqueue()
     'min' => __('Please enter a value greater than or equal to {0}.', 'gift-voucher'),
     'preview' => __('This is Preview!', 'gift-voucher'),
     'text_value' => __('Value', 'gift-voucher'),
+    'nonce'   => wp_create_nonce('wpgv_nonce_action'),
   );
   wp_register_style('wpgv-voucher-style',  WPGIFT__PLUGIN_URL . '/assets/css/voucher-style.css');
   wp_register_style('wpgv-item-style',  WPGIFT__PLUGIN_URL . '/assets/css/item-style.css');
@@ -440,7 +458,7 @@ function wpgv_plugin_activation()
     );
   }
   $data_setting = $wpdb->get_row("SELECT * FROM $giftvouchers_setting WHERE id = 1");
-  if (empty($data_setting->landscape_mode_templates)) {
+  if (empty($data_setting->landscape_mode_templates) || empty($data_setting->portrait_mode_templates)) {
     // Use update() function from $wpdb
     $wpdb->update(
       $giftvouchers_setting,

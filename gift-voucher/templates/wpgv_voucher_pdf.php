@@ -17,13 +17,13 @@ if (sanitize_text_field(wp_unslash($_GET['action'])) == 'preview') {
 	exit();
 }
 
-$template = isset($_GET['template']) ? wp_kses_post(base64_decode(wp_unslash($_GET['template']))) : '';
-$buyingfor = isset($_GET['buying_for']) ? sanitize_textarea_field(base64_decode(wp_unslash($_GET['buying_for']))) : '';
-$for = isset($_GET['for']) ? sanitize_textarea_field(base64_decode(wp_unslash($_GET['for']))) : '';
-$from = isset($_GET['from']) ? sanitize_textarea_field(base64_decode(wp_unslash($_GET['from']))) : '';
-$value = isset($_GET['value']) ? sanitize_textarea_field(base64_decode(wp_unslash($_GET['value']))) : '';
-$message = isset($_GET['message']) ? sanitize_textarea_field(base64_decode(wp_unslash($_GET['message']))) : '';
-$expiry = isset($_GET['expiry']) ? sanitize_textarea_field(base64_decode(wp_unslash($_GET['expiry']))) : '';
+$template   = isset($_GET['template']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['template']))) : '';
+$buyingfor  = isset($_GET['buying_for']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['buying_for']))) : '';
+$for        = isset($_GET['for']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['for']))) : '';
+$from       = isset($_GET['from']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['from']))) : '';
+$value      = isset($_GET['value']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['value']))) : '';
+$message    = isset($_GET['message']) ? sanitize_textarea_field(base64_decode(wp_unslash($_GET['message']))) : '';
+$expiry     = isset($_GET['expiry']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['expiry']))) : '';
 $code = '################';
 
 global $wpdb;
@@ -43,7 +43,7 @@ $formtype = 'voucher';
 $preview = true;
 
 if ($setting_options->is_style_choose_enable) {
-	$voucher_style = sanitize_textarea_field(base64_decode($_GET['style']));
+	$voucher_style = isset($_GET['style']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['style']))) : '';
 	$image_attributes = get_attached_file($images[$voucher_style]);
 	$image = ($image_attributes) ? $image_attributes : get_option('wpgv_demoimageurl_voucher');
 } else {

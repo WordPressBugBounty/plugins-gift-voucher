@@ -637,7 +637,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 			}
 			if (in_array($action, ['used', 'paid', 'mail', 'delete'], true)) {
 
-				if (!isset($_REQUEST['_wpdelete']) || !wp_verify_nonce($_REQUEST['_wpdelete'], "{$action}_voucher")) {
+				if (!isset($_REQUEST['_wpdelete']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_REQUEST['_wpdelete'])), "{$action}_voucher")) {
 					wp_die(esc_html__('Invalid request.', 'gift-voucher'));
 				}
 

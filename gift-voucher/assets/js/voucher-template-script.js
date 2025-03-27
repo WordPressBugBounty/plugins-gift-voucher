@@ -72,6 +72,7 @@ jQuery(document).ready(function ($) {
                     voucherTemplate.find('.voucher-content-step').addClass('loading');
                 },
                 success: function (results) {
+                    console.log(results);
                     if (results) {
                         voucherTemplate.find('#slider-giftvoucher-template').html(results);
                         // if (dataType == 'landscape') {

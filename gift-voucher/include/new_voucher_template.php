@@ -139,8 +139,12 @@ if (function_exists('wp_enqueue_media')) {
 						<td>
 							<img class="image_src<?php echo esc_html($i); ?>" src="" width="100" style="display: none;" /><br>
 							<input class="image_url<?php echo esc_html($i); ?>" type="hidden" name="image<?php echo esc_html($i); ?>" size="60" value="<?php echo esc_attr($value); ?>">
-							<button type="button" class="upload_image<?php echo esc_html($i); ?> button"><?php echo esc_html('Upload Image', 'gift-voucher') ?></button>
-							<button type="button" class="button button-primary remove_image<?php echo esc_attr($i); ?>" style="display: none;"><?php echo esc_html('Remove Image', 'gift-voucher') ?></button>
+							<button type="button" class="upload_image<?php echo esc_attr($i); ?> button">
+								<?php esc_html_e('Upload Image', 'gift-voucher'); ?>
+							</button>
+							<button type="button" class="button button-primary remove_image<?php echo esc_attr($i); ?>" style="display: none;">
+								<?php esc_html_e('Remove Image', 'gift-voucher'); ?>
+							</button>
 						</td>
 					</tr>
 				<?php } ?>
@@ -150,9 +154,14 @@ if (function_exists('wp_enqueue_media')) {
 					</th>
 					<td>
 						<select name="active" id="active">
-							<option value="<?php echo esc_html("1"); ?>" <?php echo ($options->active == 1) ? esc_html('selected') : ''; ?>><?php echo esc_html('Active', 'gift-voucher') ?></option>
-							<option class="0" <?php echo ($options->active == 0) ? esc_html('selected') : ''; ?>><?php echo esc_html('Inactive', 'gift-voucher') ?></option>
+							<option value="<?php echo esc_attr("1"); ?>" <?php selected($options->active, 1); ?>>
+								<?php esc_html_e('Active', 'gift-voucher'); ?>
+							</option>
+							<option value="<?php echo esc_attr("0"); ?>" <?php selected($options->active, 0); ?>>
+								<?php esc_html_e('Inactive', 'gift-voucher'); ?>
+							</option>
 						</select>
+
 					</td>
 				</tr>
 			</tbody>

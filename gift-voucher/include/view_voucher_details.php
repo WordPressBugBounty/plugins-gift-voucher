@@ -84,7 +84,8 @@ if ($voucher_options->order_type == 'vouchers') {
 			</thead>
 			<tbody>
 				<tr>
-					<td><?php echo ($voucher_options->buying_for == 'yourself') ? esc_html('Yourself') : esc_html('Someone Else'); ?></td>
+					<td><?php echo ($voucher_options->buying_for == 'yourself') ? esc_html__('Yourself', 'gift-voucher') : esc_html__('Someone Else', 'gift-voucher'); ?></td>
+
 					<td><?php echo esc_html($voucher_options->from_name); ?></td>
 					<?php if ($voucher_options->buying_for != 'yourself') { ?>
 						<td><?php echo esc_html($voucher_options->to_name); ?></td>
@@ -118,7 +119,7 @@ if ($voucher_options->order_type == 'vouchers') {
 			</thead>
 			<tbody>
 				<tr>
-					<td><?php echo ($voucher_options->shipping_type == 'shipping_as_email') ? esc_html('Shipping as Email') : esc_html('Shipping as Post'); ?></td>
+					<td><?php echo ($voucher_options->shipping_type == 'shipping_as_email') ? esc_html__('Shipping as Email', 'gift-voucher') : esc_html__('Shipping as Post', 'gift-voucher'); ?></td>
 					<?php if ($voucher_options->shipping_type == 'shipping_as_email') { ?>
 						<td><?php echo esc_html($voucher_options->shipping_email); ?></td>
 					<?php } else { ?>

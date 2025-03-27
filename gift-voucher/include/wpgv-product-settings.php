@@ -171,6 +171,8 @@ if ($options->is_woocommerce_enable) {
         </style>
         <script type="text/javascript">
             jQuery(document).ready(function($) {
+                var wpgv_nonce = '<?php echo esc_js(wp_create_nonce('wpgv_nonce_action')); ?>';
+
                 // ajax add new price varation
                 $('#wpgv-add-price-button').click(function() {
                     var voucherPrice = $("#wpgv_price").val();
@@ -179,7 +181,8 @@ if ($options->is_woocommerce_enable) {
                     var data = {
                         action: 'ajax_add_wpgv_voucher_amount',
                         wpgv_price: voucherPrice,
-                        product_id: productId
+                        product_id: productId,
+                        nonce: wpgv_nonce
                     };
 
                     // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
@@ -200,7 +203,8 @@ if ($options->is_woocommerce_enable) {
                     var data = {
                         action: 'ajax_remove_wpgv_voucher_amount',
                         variation_id: variation_id,
-                        product_id: productId
+                        product_id: productId,
+                        nonce: wpgv_nonce
                     };
 
                     // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php

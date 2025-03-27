@@ -32,9 +32,14 @@ if (isset($_POST['submit'])) {
 	$stripe_publishable_key = isset($_POST['stripe_publishable_key']) ? sanitize_text_field(wp_unslash($_POST['stripe_publishable_key'])) : '';
 	$stripe_webhook_key = isset($_POST['stripe_webhook_key']) ? sanitize_text_field(wp_unslash($_POST['stripe_webhook_key'])) : '';
 	$stripe_secret_key = isset($_POST['stripe_secret_key']) ? sanitize_text_field(wp_unslash($_POST['stripe_secret_key'])) : '';
-	$voucher_bgcolor = isset($_POST['voucher_bgcolor']) ? sanitize_text_field(substr($_POST['voucher_bgcolor'], 1)) : '';
-	$voucher_brcolor = isset($_POST['voucher_brcolor']) ? sanitize_text_field(substr($_POST['voucher_brcolor'], 1)) : '';
-	$voucher_color = isset($_POST['voucher_color']) ? sanitize_text_field(substr($_POST['voucher_color'], 1)) : '';
+	$voucher_bgcolor = isset($_POST['voucher_bgcolor']) ? sanitize_text_field(wp_unslash($_POST['voucher_bgcolor'])) : '';
+	$voucher_brcolor = isset($_POST['voucher_brcolor']) ? sanitize_text_field(wp_unslash($_POST['voucher_brcolor'])) : '';
+	$voucher_color  = isset($_POST['voucher_color']) ? sanitize_text_field(wp_unslash($_POST['voucher_color'])) : '';
+
+	$voucher_bgcolor = ltrim($voucher_bgcolor, '#');
+	$voucher_brcolor = ltrim($voucher_brcolor, '#');
+	$voucher_color   = ltrim($voucher_color, '#');
+
 	$template_col = isset($_POST['template_col']) ? sanitize_text_field(wp_unslash($_POST['template_col'])) : '';
 	$voucher_min_value = isset($_POST['voucher_min_value']) ? sanitize_text_field(wp_unslash($_POST['voucher_min_value'])) : '';
 	$voucher_max_value = isset($_POST['voucher_max_value']) ? sanitize_text_field(wp_unslash($_POST['voucher_max_value'])) : '';
@@ -57,12 +62,16 @@ if (isset($_POST['submit'])) {
 	$wpgvtermstext = isset($_POST['wpgvtermstext']) ? sanitize_text_field(wp_unslash($_POST['wpgvtermstext'])) : '';
 	$bank_info = isset($_POST['bank_info']) ? sanitize_text_field(wp_unslash($_POST['bank_info'])) : '';
 	$email_subject = isset($_POST['email_subject']) ? sanitize_text_field(wp_unslash($_POST['email_subject'])) : '';
-	$email_body = isset($_POST['email_body']) ? wp_filter_post_kses(wp_unslash($_POST['email_body'])) : '';
-	$email_body_per_invoice = isset($_POST['email_body_per_invoice']) ? wp_filter_post_kses(wp_unslash($_POST['email_body_per_invoice'])) : '';
-	$recipient_email_subject = isset($_POST['recipient_email_subject']) ? wp_filter_post_kses(wp_unslash($_POST['recipient_email_subject'])) : '';
-	$recipient_email_body = isset($_POST['recipient_email_body']) ? wp_filter_post_kses(wp_unslash($_POST['recipient_email_body'])) : '';
-	$admin_email_subject = isset($_POST['admin_email_subject']) ? wp_filter_post_kses(wp_unslash($_POST['admin_email_subject'])) : '';
-	$admin_email_body = isset($_POST['admin_email_body']) ? wp_filter_post_kses(wp_unslash($_POST['admin_email_body'])) : '';
+
+	$email_body = isset($_POST['email_body']) ? wp_kses_post(wp_unslash($_POST['email_body'])) : '';
+
+	$email_body_per_invoice = isset($_POST['email_body_per_invoice']) ? wp_kses_post(wp_unslash($_POST['email_body_per_invoice'])) : '';
+	$recipient_email_body   = isset($_POST['recipient_email_body']) ? wp_kses_post(wp_unslash($_POST['recipient_email_body'])) : '';
+	$admin_email_body       = isset($_POST['admin_email_body']) ? wp_kses_post(wp_unslash($_POST['admin_email_body'])) : '';
+
+	$recipient_email_subject = isset($_POST['recipient_email_subject']) ? sanitize_text_field(wp_unslash($_POST['recipient_email_subject'])) : '';
+	$admin_email_subject     = isset($_POST['admin_email_subject']) ? sanitize_text_field(wp_unslash($_POST['admin_email_subject'])) : '';
+
 	$demo_image_voucher = isset($_POST['demo_image_voucher']) ? sanitize_text_field(wp_unslash($_POST['demo_image_voucher'])) : '';
 	$demo_image_item = isset($_POST['demo_image_item']) ? sanitize_text_field(wp_unslash($_POST['demo_image_item'])) : '';
 	$cancelpagemessage = isset($_POST['cancelpagemessage']) ? wp_kses_post(wp_unslash($_POST['cancelpagemessage'])) : '';
@@ -76,10 +85,8 @@ if (isset($_POST['submit'])) {
 	$invoice_mail_enable = isset($_POST['invoice_mail_enable']) ? sanitize_text_field(wp_unslash($_POST['invoice_mail_enable'])) : '';
 
 	$voucher_styles = array();
-	if (isset($_POST['voucher_style'])) {
-		foreach ($_POST['voucher_style'] as $value) {
-			$voucher_styles[] = sanitize_text_field(wp_unslash($value));
-		}
+	if (isset($_POST['voucher_style']) && is_array($_POST['voucher_style'])) {
+		$voucher_styles = array_map('sanitize_text_field', wp_unslash($_POST['voucher_style']));
 	}
 
 	$check = $wpdb->update(
@@ -205,7 +212,7 @@ $wpgv_stripe_alternative_text = get_option('wpgv_stripe_alternative_text') ? get
 $wpgv_paypal_client_id = get_option('wpgv_paypal_client_id') ? get_option('wpgv_paypal_client_id') : '';
 $wpgv_paypal_secret_key = get_option('wpgv_paypal_secret_key') ? get_option('wpgv_paypal_secret_key') : '';
 $wpgv_stripe_webhook_key = get_option('wpgv_stripe_webhook_key') ? get_option('wpgv_stripe_webhook_key') : '';
-$options = $wpdb->get_row("SELECT * FROM $setting_table_name WHERE id = 1");
+$options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$setting_table_name} WHERE id = %d", 1));
 $voucher_styles = $options->voucher_style ? json_decode($options->voucher_style) : [''];
 
 $url = admin_url('admin.php?page=voucher-setting&action=create_default_pages');
@@ -214,7 +221,7 @@ $url = wp_nonce_url($url, 'create_default_pages_action');
 ?>
 <?php
 if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
-	if (isset($_GET['_wpnonce']) && wp_verify_nonce($_GET['_wpnonce'], 'create_default_pages_action')) {
+	if (isset($_GET['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'create_default_pages_action')) {
 ?>
 		<div class="wrap wpgiftv-settings">
 			<h1><?php esc_html_e('Pages Created', 'gift-voucher'); ?></h1>

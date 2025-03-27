@@ -21,7 +21,7 @@ function update_voucher_date()
     // Process data if valid
     if (isset($_POST['voucher_id']) && isset($_POST['new_date'])) {
         $voucher_id = sanitize_text_field(wp_unslash($_POST['voucher_id']));
-        $new_date = sanitize_text_field($_POST['new_date']);
+        $new_date = sanitize_text_field(wp_unslash($_POST['new_date']));
 
         global $wpdb;
         $voucher_table = $wpdb->prefix . 'giftvouchers_list';
@@ -63,7 +63,7 @@ function update_voucher_note()
     // Process data if valid
     if (isset($_POST['voucher_id']) && isset($_POST['data_note'])) {
         $voucher_id = sanitize_text_field(wp_unslash($_POST['voucher_id']));
-        $data_note = sanitize_textarea_field($_POST['data_note']);
+        $data_note = sanitize_textarea_field(wp_unslash($_POST['data_note']));
 
         global $wpdb;
         $voucher_table = $wpdb->prefix . 'giftvouchers_list';

@@ -395,11 +395,11 @@ function wpgv_check_voucher_balance_shortcode()
 			</h4>
 			<table class="wpgv-balance-activity-table">
 				<tr>
-					<th><?php echo esc_html('Date', 'gift-voucher'); ?></th>
-					<th><?php echo esc_html('Action', 'gift-voucher'); ?></th>
-					<th><?php echo esc_html('Note', 'gift-voucher'); ?></th>
-					<th><?php echo esc_html('Amount', 'gift-voucher'); ?></th>
-					<th><?php echo esc_html('Balance', 'gift-voucher'); ?></th>
+					<th><?php esc_html_e('Date', 'gift-voucher'); ?></th>
+					<th><?php esc_html_e('Action', 'gift-voucher'); ?></th>
+					<th><?php esc_html_e('Note', 'gift-voucher'); ?></th>
+					<th><?php esc_html_e('Amount', 'gift-voucher'); ?></th>
+					<th><?php esc_html_e('Balance', 'gift-voucher'); ?></th>
 				</tr>
 				<?php
 				$running_balance = $gift_voucher->get_balance();
