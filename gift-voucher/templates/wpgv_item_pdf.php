@@ -4,15 +4,17 @@
  * Description: A Page Template for pdf viewer.
  */
 
-if (!isset($_GET['action'])) {
+if (!isset($_GET['action']) || !isset($_GET['nonce'])) {
 	exit();
 }
 
-$watermark = __('This is a preview voucher.', 'gift-voucher');
-if (sanitize_text_field(wp_unslash($_GET['action'])) == 'preview') {
+$action = sanitize_text_field(wp_unslash($_GET['action']));
+$nonce = sanitize_text_field(wp_unslash($_GET['nonce']));
+
+if ($action === 'preview' && wp_verify_nonce($nonce, 'wpgv_giftitems_form_verify')) {
 	$watermark = __('This is a preview voucher.', 'gift-voucher');
 } else {
-	exit();
+	wp_die(__('Security check failed', 'gift-voucher'));
 }
 
 $catid = isset($_GET['catid']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['catid']))) : '';
@@ -26,8 +28,8 @@ $message = isset($_GET['recipientmessage']) ? sanitize_text_field(base64_decode(
 $code = '################';
 
 global $wpdb;
-$setting_table 	= $wpdb->prefix . 'giftvouchers_setting';
-$setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
+$setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1));
+
 $voucher_bgcolor = wpgv_hex2rgb($setting_options->voucher_bgcolor);
 $voucher_color = wpgv_hex2rgb($setting_options->voucher_color);
 $currency = ($setting_options->currency_position == 'Left') ? $setting_options->currency . ' ' . $value : $value . ' ' . $setting_options->currency;

@@ -41,12 +41,11 @@ $voucher_code = isset($_GET['voucher_code']) ? sanitize_textarea_field($_GET['vo
 				</div>
 
 				<form action="<?php echo esc_url(admin_url('admin.php')); ?>">
-					<!-- <input type="hidden" name="post_type" value="wpgv_voucher_product"> -->
 					<input type="hidden" name="page" value="<?php echo esc_html("vouchers-lists"); ?>">
 					<?php if ($items): ?><input type="hidden" name="items" value="<?php echo esc_html("1"); ?>"><?php endif; ?>
 					<input type="hidden" name="search" value="<?php echo esc_html("1"); ?>">
 					<input type="text" name="voucher_code" autocomplete="off" placeholder="<?php echo esc_attr__('Search by Gift voucher code or email', 'gift-voucher'); ?>" value="<?php echo esc_html($voucher_code); ?>" style="width: 400px;">
-					<input type="submit" class="button button-primary" value="<?php echo esc_html("Search"); ?>">
+					<input type="submit" class="button button-primary" value="<?php echo esc_attr__("Search"); ?>">
 				</form>
 			</div>
 		<?php } ?>

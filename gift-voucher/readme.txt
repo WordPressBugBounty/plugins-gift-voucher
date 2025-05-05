@@ -2,8 +2,8 @@
 Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
-Tested up to: 6.7.2
-Stable tag: 4.5.2
+Tested up to: 6.8.1
+Stable tag: 4.5.3
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -217,6 +217,11 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.5.3 - Released: May 05 2025
+* Fix incorrect usage of esc_html_ in submit button templates.
+* Improve security with nonce validation for preview-related actions.
+* Sanitize and validate user input parameters for voucher
 
 = Version 4.5.2 - Released: March 27 2025
 * Fix undefined function error for esc_html_ in new voucher template

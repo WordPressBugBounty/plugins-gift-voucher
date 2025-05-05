@@ -4,17 +4,17 @@
  * Description: A Page Template for pdf viewer.
  */
 
-if (!isset($_GET['action'])) {
+if (!isset($_GET['action']) || !isset($_GET['nonce'])) {
 	exit();
 }
 
+$action = sanitize_text_field(wp_unslash($_GET['action']));
+$nonce = sanitize_text_field(wp_unslash($_GET['nonce']));
 
-
-$watermark = __('This is a preview voucher.', 'gift-voucher');
-if (sanitize_text_field(wp_unslash($_GET['action'])) == 'preview') {
+if ($action === 'preview' && wp_verify_nonce($nonce, 'voucher_form_verify')) {
 	$watermark = __('This is a preview voucher.', 'gift-voucher');
 } else {
-	exit();
+	wp_die(__('Security check failed', 'gift-voucher'));
 }
 
 $template   = isset($_GET['template']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['template']))) : '';
