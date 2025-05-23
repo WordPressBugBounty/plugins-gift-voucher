@@ -8,6 +8,13 @@ use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
 
 function wpgv__doajax_gift_card_pdf_save_func()
 {
+
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	if (! isset($_POST['nonce']) || ! ! wp_verify_nonce(wp_unslash($_POST['nonce']), 'wpgv_giftitems_form_verify')) {
+		wp_send_json_error(array('message' => 'Invalid security token'));
+		wp_die();
+	}
+
 	global $wpdb;
 	$voucher_table 	= $wpdb->prefix . 'giftvouchers_list';
 	$setting_options = get_data_settings_voucher();

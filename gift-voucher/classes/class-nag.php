@@ -1,5 +1,7 @@
 <?php
 
+if (!defined('ABSPATH')) exit;
+
 class WPGIFT_Nag
 {
 
@@ -36,8 +38,8 @@ class WPGIFT_Nag
 			}
 
 			$redirect_url = "";
-			$host  = isset($_SERVER['HTTP_HOST']) ? wp_unslash($_SERVER['HTTP_HOST']) : '';
-			$path  = isset($_SERVER['PHP_SELF']) ? wp_unslash($_SERVER['PHP_SELF']) : '';
+			$host = isset($_SERVER['HTTP_HOST']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_HOST'])) : '';
+			$path = isset($_SERVER['PHP_SELF']) ? sanitize_text_field(wp_unslash($_SERVER['PHP_SELF'])) : '';
 
 			if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
 				$redirect_url = sanitize_url('https://' . $host . $path . $query_string);
@@ -96,7 +98,7 @@ class WPGIFT_Nag
 	private function get_admin_querystring_array()
 	{
 
-		$query_string = isset($_SERVER['QUERY_STRING']) ? wp_unslash($_SERVER['QUERY_STRING']) : '';
+		$query_string = isset($_SERVER['QUERY_STRING']) ? sanitize_text_field(wp_unslash($_SERVER['QUERY_STRING'])) : '';
 
 		if (!empty($query_string)) {
 			wp_parse_str($query_string, $params);

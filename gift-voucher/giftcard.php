@@ -133,6 +133,7 @@ function wpgv_voucher_template_shortcode()
     if (!empty($setting_options->post_shipping)) {
         $html .= '<div class="wrap-shipping-info-voucher">' . show_shipping_method_voucher() . '</div>';
     }
+    $nonce = wp_create_nonce('wpgv_giftitems_form_action');
     $html .= '<div class="choose-payment-method">' . show_payment_option_voucher() . '</div>
                                         <div class="order-voucher-details">' . show_order_detail_voucher() . '</div>
                                     </div>
@@ -150,6 +151,7 @@ function wpgv_voucher_template_shortcode()
                         <a href="javascript:;" class="voucher-prev-step" data-prev-step="1"><span><i class="fa fa-angle-left" aria-hidden="true"></i></span>' . __('Prev step', 'gift-voucher') . '</a>
                     </div>
                     <div class="next-prev-button next-button">
+                        <input type="hidden" name="wpgv_giftitems_form_verify" id="wpgv_giftitems_form_verify" value="' . esc_attr($nonce) . '">
                         <input type="hidden" value="" id="dataVoucher"/>
                         <input type="hidden" value="' . $number_slider . '" id="number_giftcard_sl"/>';
     if (!empty($setting_options->preview_button)) {

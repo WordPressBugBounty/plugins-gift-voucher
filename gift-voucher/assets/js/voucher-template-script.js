@@ -517,11 +517,12 @@ jQuery(document).ready(function ($) {
     jQuery(document).on('click', '#payment-voucher-template', function (event) {
         var data = voucherTemplate.find('#dataVoucher').val();
         var dataURL = voucherTemplate.find('#show-preview-gift-card').attr('href');
+        var nonce = jQuery('#wpgv_giftitems_form_verify').val();
         voucherTemplate.find('#setup-voucher-template').addClass('loading');
         $.ajax({
             url: frontend_ajax_object.ajaxurl,
             type: "POST",
-            data: 'action=wpgv_save_gift_card' + data + '&urlImage=' + wpgv_b64EncodeUnicode(dataURL),
+            data: 'action=wpgv_save_gift_card' + data + '&urlImage=' + wpgv_b64EncodeUnicode(dataURL) + '&nonce=' + nonce,
             success: function (response) {
                 if (response.success) {
                     if (response.data.approve_link) {

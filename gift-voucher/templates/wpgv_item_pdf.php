@@ -14,16 +14,19 @@ $nonce = sanitize_text_field(wp_unslash($_GET['nonce']));
 if ($action === 'preview' && wp_verify_nonce($nonce, 'wpgv_giftitems_form_verify')) {
 	$watermark = __('This is a preview voucher.', 'gift-voucher');
 } else {
-	wp_die(__('Security check failed', 'gift-voucher'));
+	wp_die(esc_html__('Security check failed', 'gift-voucher'));
 }
 
-$catid = isset($_GET['catid']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['catid']))) : '';
-$itemid = isset($_GET['itemid']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['itemid']))) : '';
-$buyingfor = isset($_GET['buyingfor']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['buyingfor']))) : '';
-$for = isset($_GET['yourname']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['yourname']))) : '';
-$from = isset($_GET['recipientname']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['recipientname']))) : '';
-$value = isset($_GET['totalprice']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['totalprice']))) : '';
-$message = isset($_GET['recipientmessage']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['recipientmessage']))) : '';
+
+
+$get = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING) ?: [];
+$catid = !empty($get['catid']) ? sanitize_text_field(base64_decode(wp_unslash($get['catid']))) : '';
+$itemid    = !empty($get['itemid']) ? sanitize_text_field(base64_decode(wp_unslash($get['itemid']))) : '';
+$buyingfor = !empty($get['buyingfor']) ? sanitize_text_field(base64_decode(wp_unslash($get['buyingfor']))) : '';
+$for       = !empty($get['yourname']) ? sanitize_text_field(base64_decode(wp_unslash($get['yourname']))) : '';
+$from      = !empty($get['recipientname']) ? sanitize_text_field(base64_decode(wp_unslash($get['recipientname']))) : '';
+$value     = !empty($get['totalprice']) ? sanitize_text_field(base64_decode(wp_unslash($get['totalprice']))) : '';
+$message   = !empty($get['recipientmessage']) ? sanitize_text_field(base64_decode(wp_unslash($get['recipientmessage']))) : '';
 
 $code = '################';
 
@@ -49,7 +52,7 @@ $formtype = 'item';
 $preview = true;
 
 if ($setting_options->is_style_choose_enable) {
-	$voucher_style = sanitize_text_field(base64_decode($_GET['style']));
+	$voucher_style = !empty($get['style']) ? sanitize_text_field(base64_decode(wp_unslash($get['style']))) : '';
 	$style_image = esc_html(get_post_meta($itemid, 'style' . ($voucher_style + 1) . '_image', true));
 	$image_attributes = get_attached_file($style_image);
 	$image = ($image_attributes) ? $image_attributes : get_option('wpgv_demoimageurl_item');

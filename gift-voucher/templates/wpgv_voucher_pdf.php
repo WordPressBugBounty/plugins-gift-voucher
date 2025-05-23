@@ -14,24 +14,24 @@ $nonce = sanitize_text_field(wp_unslash($_GET['nonce']));
 if ($action === 'preview' && wp_verify_nonce($nonce, 'voucher_form_verify')) {
 	$watermark = __('This is a preview voucher.', 'gift-voucher');
 } else {
-	wp_die(__('Security check failed', 'gift-voucher'));
+	wp_die(esc_html__('Security check failed', 'gift-voucher'));
 }
 
-$template   = isset($_GET['template']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['template']))) : '';
-$buyingfor  = isset($_GET['buying_for']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['buying_for']))) : '';
-$for        = isset($_GET['for']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['for']))) : '';
-$from       = isset($_GET['from']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['from']))) : '';
-$value      = isset($_GET['value']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['value']))) : '';
-$message    = isset($_GET['message']) ? sanitize_textarea_field(base64_decode(wp_unslash($_GET['message']))) : '';
-$expiry     = isset($_GET['expiry']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['expiry']))) : '';
+$get = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING) ?: [];
+
+$template  = !empty($get['template'])   ? sanitize_text_field(base64_decode(wp_unslash($get['template']))) : '';
+$buyingfor = !empty($get['buying_for']) ? sanitize_text_field(base64_decode(wp_unslash($get['buying_for']))) : '';
+$for       = !empty($get['for'])        ? sanitize_text_field(base64_decode(wp_unslash($get['for']))) : '';
+$from      = !empty($get['from'])       ? sanitize_text_field(base64_decode(wp_unslash($get['from']))) : '';
+$value     = !empty($get['value'])      ? sanitize_text_field(base64_decode(wp_unslash($get['value']))) : '';
+$message   = !empty($get['message'])    ? sanitize_textarea_field(base64_decode(wp_unslash($get['message']))) : '';
+$expiry    = !empty($get['expiry'])     ? sanitize_text_field(base64_decode(wp_unslash($get['expiry']))) : '';
 $code = '################';
 
 global $wpdb;
-$setting_table = $wpdb->prefix . 'giftvouchers_setting';
-$template_table = $wpdb->prefix . 'giftvouchers_template';
 
-$setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM $setting_table WHERE id = %d", 1));
-$template_options = $wpdb->get_row($wpdb->prepare("SELECT image_style FROM $template_table WHERE id = %d", $template));
+$setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1));
+$template_options = $wpdb->get_row($wpdb->prepare("SELECT image_style FROM {$wpdb->prefix}giftvouchers_template WHERE id = %d", $template));
 $images = $template_options->image_style ? json_decode($template_options->image_style) : ['', '', ''];
 
 
@@ -43,7 +43,7 @@ $formtype = 'voucher';
 $preview = true;
 
 if ($setting_options->is_style_choose_enable) {
-	$voucher_style = isset($_GET['style']) ? sanitize_text_field(base64_decode(wp_unslash($_GET['style']))) : '';
+	$voucher_style = !empty($get['style']) ? sanitize_text_field(base64_decode(wp_unslash($get['style']))) : '';
 	$image_attributes = get_attached_file($images[$voucher_style]);
 	$image = ($image_attributes) ? $image_attributes : get_option('wpgv_demoimageurl_voucher');
 } else {

@@ -7,6 +7,13 @@ use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
 
 function wpgv__doajax_item_pdf_save_func()
 {
+
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	if (! isset($_POST['nonce']) || ! wp_verify_nonce(wp_unslash($_POST['nonce']), 'wpgv_giftitems_form_verify')) {
+		wp_send_json_error(array('message' => 'Invalid security token'));
+		wp_die();
+	}
+
 	$catid = sanitize_text_field(base64_decode($_POST['catid']));
 	$itemid = sanitize_text_field(base64_decode($_POST['itemid']));
 	$buyingfor = sanitize_text_field(base64_decode($_POST['buyingfor']));

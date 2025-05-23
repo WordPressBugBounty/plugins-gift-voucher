@@ -8,6 +8,11 @@ use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
 
 function wpgv__doajax_voucher_pdf_save_func()
 {
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	if (! isset($_POST['nonce']) || ! wp_verify_nonce(wp_unslash($_POST['nonce']), 'voucher_form_verify')) {
+		wp_send_json_error(array('message' => 'Invalid security token'));
+		wp_die();
+	}
 
 	$template = wp_kses_post($_POST['template']);
 	$buyingfor = sanitize_text_field($_POST['buying_for']);
