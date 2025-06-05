@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.5.4
+ * Version: 4.5.5
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.5.4');
+define('WPGIFT_VERSION', '4.5.5');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -463,7 +463,7 @@ function wpgv_plugin_activation()
     $wpdb->update(
       $giftvouchers_setting,
       array(
-        'landscape_mode_templates' => $template_landscape,
+        'landscape_mode_templates' => $template_lanscape,
         'portrait_mode_templates' => $template_portail,
       ),
       array('id' => 1),
@@ -806,14 +806,20 @@ function wpgv_redeem_voucher()
 
 function wpgv_price_format($price)
 {
-  global $wpdb;
-  $setting_table_name = $wpdb->prefix . 'giftvouchers_setting';
-  $setting_options = $wpdb->get_row("SELECT * FROM $setting_table_name WHERE id = 1");
-  $price = html_entity_decode(wp_strip_all_tags(stripslashes($price)), ENT_NOQUOTES, 'UTF-8');
-  $price = iconv('UTF-8', 'windows-1252', $price);
-  $price = number_format((float)$price, 2, ',', '.');
-  $currency = ($setting_options->currency_position == 'Left') ? $setting_options->currency . ' ' . $price : $price . ' ' . $setting_options->currency;
-  return $currency;
+	global $wpdb;
+	$setting_options = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1 ) );
+
+	$price = html_entity_decode(strip_tags(stripslashes($price)), ENT_NOQUOTES, 'UTF-8');
+	$price = iconv('UTF-8', 'windows-1252', $price);
+	// number format new
+	$wpgv_select_number_format = get_option('wpgv_select_number_format') ? get_option('wpgv_select_number_format') : '';
+	if ($wpgv_select_number_format == "comma") {
+		$price = number_format((float)$price, 2, '.', ',');
+	} elseif ($wpgv_select_number_format == "dot") {
+		$price = number_format((float)$price, 2, ',', '.');
+	}
+	$currency = ($setting_options->currency_position == 'Left') ? $setting_options->currency . ' ' . $price : $price . ' ' . $setting_options->currency;
+	return $currency;
 }
 
 function wpgv_create_plugin_pages()

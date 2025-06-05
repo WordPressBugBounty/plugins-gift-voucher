@@ -55,6 +55,7 @@ if (isset($_POST['submit'])) {
 	$hide_price_item = isset($_POST['hide_price_item']) ? sanitize_text_field(wp_unslash($_POST['hide_price_item'])) : '';
 	$hide_expiry = isset($_POST['hide_expiry']) ? sanitize_text_field(wp_unslash($_POST['hide_expiry'])) : '';
 	$expiry_date_format = isset($_POST['expiry_date_format']) ? sanitize_text_field(wp_unslash($_POST['expiry_date_format'])) : '';
+	$select_number_format 	     = sanitize_text_field($_POST['select_number_format']);
 	$post_shipping = isset($_POST['post_shipping']) ? sanitize_text_field(wp_unslash($_POST['post_shipping'])) : '';
 	$preview_button = isset($_POST['preview_button']) ? sanitize_text_field(wp_unslash($_POST['preview_button'])) : '';
 	$enable_pdf_saving = isset($_POST['enable_pdf_saving']) ? sanitize_text_field(wp_unslash($_POST['enable_pdf_saving'])) : '';
@@ -141,6 +142,7 @@ if (isset($_POST['submit'])) {
 
 	update_option('wpgv_hide_expiry', $hide_expiry);
 	update_option('wpgv_expiry_date_format', $expiry_date_format);
+	update_option('wpgv_select_number_format', $select_number_format);
 	update_option('wpgv_emailsubject', $email_subject);
 	update_option('wpgv_emailbody', stripslashes(wp_filter_post_kses(addslashes($email_body))));
 	update_option('wpgv_emailbodyperinvoice', stripslashes(wp_filter_post_kses(addslashes($email_body_per_invoice))));
@@ -194,6 +196,7 @@ $default_leftside_notice = esc_html__('Cash payment is not possible. The terms a
 $leftside_notice = !empty($wpgv_leftside_notice) ? $wpgv_leftside_notice : $default_leftside_notice;
 $wpgv_hide_expiry = get_option('wpgv_hide_expiry') ? get_option('wpgv_hide_expiry') : 'yes';
 $wpgv_expiry_date_format = get_option('wpgv_expiry_date_format') ? get_option('wpgv_expiry_date_format') : 'd.m.Y';
+$wpgv_select_number_format = get_option('wpgv_select_number_format') ? get_option('wpgv_select_number_format') : 'dot';
 $wpgv_termstext = get_option('wpgv_termstext') ? get_option('wpgv_termstext') : 'I hereby accept the terms and conditions, the revocation of the privacy policy and confirm that all information is correct.';
 $wpgv_custom_css = get_option('wpgv_custom_css') ? get_option('wpgv_custom_css') : '';
 $stripepageurl = get_option('wpgv_stripesuccesspage') ? get_page_link(get_option('wpgv_stripesuccesspage')) : '';
@@ -501,6 +504,20 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 										</p>
 									</td>
 								</tr>
+
+								<!-- Select number format -->
+								<tr>
+									<th scope="row">
+										<label for="select_number_format"><?php echo __('Select number format', 'gift-voucher'); ?></label>
+									</th>
+									<td>
+										<select name="select_number_format" id="template_col" class="regular-text">
+											<option value="comma" <?php echo ($wpgv_select_number_format == 'comma') ? 'selected' : ''; ?>>1,000.00 (<?php echo __('comma-separated', 'gift-voucher'); ?>)</option>
+											<option value="dot" <?php echo ($wpgv_select_number_format == 'dot') ? 'selected' : ''; ?>>1.000,00 (<?php echo __('dot-separated', 'gift-voucher'); ?>)</option>
+										</select>
+									</td>
+								</tr>
+								<!-- Select number format -->
 
 								<tr>
 									<th colspan="2">

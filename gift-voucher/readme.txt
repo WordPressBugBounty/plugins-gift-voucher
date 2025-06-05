@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
 Tested up to: 6.8.1
-Stable tag: 4.5.4
+Stable tag: 4.5.5
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -217,6 +217,12 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.5.5 - Released: June 05 2025
+* Feature: Added number format selection option (comma or dot separated).
+* Fix unexpected output during plugin activation warning.  
+* Fix invalid argument supplied for foreach() warning in class-nag.php on line 108.  
+* Change "personalize" to "personalise" for English (UK) localization.  
 
 = Version 4.5.4 - Released: May 23 2025
 * Add nonce verification to form processing for security.

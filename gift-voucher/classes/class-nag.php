@@ -100,13 +100,15 @@ class WPGIFT_Nag
 
 		$query_string = isset($_SERVER['QUERY_STRING']) ? sanitize_text_field(wp_unslash($_SERVER['QUERY_STRING'])) : '';
 
+		$params = array();
+
 		if (!empty($query_string)) {
 			wp_parse_str($query_string, $params);
 		}
 
-		$array_params =  array();
+		$array_params = array();
 		foreach ($params as $key => $value) {
-			$sanitize_value =  esc_html($value);
+			$sanitize_value = esc_html($value);
 			$array_params[esc_html($key)] = $sanitize_value;
 		}
 		return $array_params;
