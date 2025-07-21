@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.5.5
+ * Version: 4.5.6
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.5.5');
+define('WPGIFT_VERSION', '4.5.6');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -806,20 +806,20 @@ function wpgv_redeem_voucher()
 
 function wpgv_price_format($price)
 {
-	global $wpdb;
-	$setting_options = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1 ) );
+  global $wpdb;
+  $setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1));
 
-	$price = html_entity_decode(strip_tags(stripslashes($price)), ENT_NOQUOTES, 'UTF-8');
-	$price = iconv('UTF-8', 'windows-1252', $price);
-	// number format new
-	$wpgv_select_number_format = get_option('wpgv_select_number_format') ? get_option('wpgv_select_number_format') : '';
-	if ($wpgv_select_number_format == "comma") {
-		$price = number_format((float)$price, 2, '.', ',');
-	} elseif ($wpgv_select_number_format == "dot") {
-		$price = number_format((float)$price, 2, ',', '.');
-	}
-	$currency = ($setting_options->currency_position == 'Left') ? $setting_options->currency . ' ' . $price : $price . ' ' . $setting_options->currency;
-	return $currency;
+  $price = html_entity_decode(strip_tags(stripslashes($price)), ENT_NOQUOTES, 'UTF-8');
+  $price = iconv('UTF-8', 'windows-1252', $price);
+  // number format new
+  $wpgv_select_number_format = get_option('wpgv_select_number_format') ? get_option('wpgv_select_number_format') : '';
+  if ($wpgv_select_number_format == "comma") {
+    $price = number_format((float)$price, 2, '.', ',');
+  } elseif ($wpgv_select_number_format == "dot") {
+    $price = number_format((float)$price, 2, ',', '.');
+  }
+  $currency = ($setting_options->currency_position == 'Left') ? $setting_options->currency . ' ' . $price : $price . ' ' . $setting_options->currency;
+  return $currency;
 }
 
 function wpgv_create_plugin_pages()
@@ -973,3 +973,43 @@ function wpgv_display_testmode_notice()
   }
 }
 add_action('admin_notices', 'wpgv_display_testmode_notice');
+
+
+// Apply gift card code if valid and update cart totals
+function wpgv_handle_gift_voucher_application($err, $err_code, $coupon)
+{
+  $gift_voucher = new WPGV_Gift_Voucher($coupon->code);
+
+  if (!$gift_voucher->get_id() || $gift_voucher->get_payment_status() !== 'Paid') {
+    return $err;
+  }
+
+  $balance = $gift_voucher->get_balance();
+
+  if (empty($balance) || $balance <= 0) {
+    wc_add_notice(__('This gift voucher has a zero balance.', 'gift-voucher'), 'error');
+    return;
+  }
+
+  if ($gift_voucher->has_expired()) {
+    wc_add_notice(__('Your voucher has expired.', 'gift-voucher'), 'error');
+    return;
+  }
+
+  if (!WC()->session->has_session()) {
+    WC()->session->set_customer_session_cookie(true);
+  }
+
+  $session_data = (array) WC()->session->get(WPGIFT_SESSION_KEY);
+  $session_data['gift_voucher'][$coupon->code] = 0;
+  WC()->session->set(WPGIFT_SESSION_KEY, $session_data);
+
+  wc_add_notice(__('Gift voucher applied successfully.', 'gift-voucher'), 'success');
+
+  WC()->cart->calculate_totals();
+
+  if (is_checkout() && !is_admin()) {
+    wc_enqueue_js("jQuery('body').trigger('update_checkout');");
+  }
+}
+add_action('woocommerce_coupon_error', 'wpgv_handle_gift_voucher_application', 10, 3);
