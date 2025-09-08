@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.5.6
+ * Version: 4.5.7
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.5.6');
+define('WPGIFT_VERSION', '4.5.7');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -61,7 +61,11 @@ function wpgiftv_plugin_init()
 {
   $langOK = load_plugin_textdomain('gift-voucher', false, dirname(plugin_basename(__FILE__)) . '/languages');
 }
-add_action('plugins_loaded', 'wpgiftv_plugin_init');
+
+// Load textdomain at the right time to avoid WordPress 6.7+ warnings
+add_action('init', 'wpgiftv_plugin_init');
+add_action('after_setup_theme', 'wpgiftv_plugin_init');
+add_action('admin_init', 'wpgiftv_plugin_init');
 
 require_once(WPGIFT__PLUGIN_DIR . '/vendor/autoload.php');
 require_once(WPGIFT__PLUGIN_DIR . '/vendor/sofort/payment/sofortLibSofortueberweisung.inc.php');
@@ -91,7 +95,7 @@ if (wpgv_is_woocommerce_enable()) {
   require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-check-plugin-active.php');
 }
 
-add_action('plugins_loaded', function () {
+add_action('init', function () {
   WPGiftVoucherAdminPages::get_instance();
 });
 
@@ -183,7 +187,7 @@ function wpgv_files_loaded()
   }
 }
 
-add_action('plugins_loaded', 'wpgv_voucher_imagesize_setup');
+add_action('init', 'wpgv_voucher_imagesize_setup');
 function wpgv_voucher_imagesize_setup()
 {
   add_image_size('voucher-thumb', 300);
@@ -240,7 +244,7 @@ function wpgv_front_enqueue()
   wp_register_script('wpgv-jspdf-js', WPGIFT__PLUGIN_URL . '/assets/js/jspdf.debug.js', array('jquery'), '1.5.3', true);
   wp_register_script('wpgv-jquery-validate', WPGIFT__PLUGIN_URL . '/assets/js/jquery.validate.min.js', array('jquery'), '1.17.0', true);
   wp_register_script('wpgv-jquery-steps', WPGIFT__PLUGIN_URL . '/assets/js/jquery.steps.min.js', array('jquery'), '1.1.0', true);
-  wp_register_script('wpgv-stripe-js', WPGIFT__PLUGIN_URL . '/assets/js/stripe-v3.js', array('jquery'), NULL, true);
+  wp_register_script('wpgv-stripe-js', WPGIFT__PLUGIN_URL . '/assets/js/stripe-v3.js', array('jquery'), '3.0.0', true);
   wp_register_script('wpgv-voucher-script', WPGIFT__PLUGIN_URL  . '/assets/js/voucher-script.js', array('jquery'), '3.3.9.1', true);
   wp_register_script('wpgv-item-script', WPGIFT__PLUGIN_URL  . '/assets/js/item-script.js', array('jquery'), '3.3.9.1', true);
   wp_register_script('wpgv-woocommerce-script', WPGIFT__PLUGIN_URL  . '/assets/js/woocommerce-script.js', array('jquery'), '3.3.9.1', true);
@@ -248,10 +252,10 @@ function wpgv_front_enqueue()
   wp_register_script('wpgv-slick-script', WPGIFT__PLUGIN_URL  . '/assets/js/slick.min.js', array('jquery'), WPGIFT_VERSION, true);
   wp_register_script('wpgv-voucher-template-script', WPGIFT__PLUGIN_URL  . '/assets/js/voucher-template-script.js', array('jquery'), WPGIFT_VERSION, true);
   if ($setting_options->test_mode) {
-    wp_register_script('wpgv-paypal-js', 'https://www.paypal.com/sdk/js?client-id=sb&currency=' . $setting_options->currency_code, array('jquery'), NULL, true);
+    wp_register_script('wpgv-paypal-js', 'https://www.paypal.com/sdk/js?client-id=sb&currency=' . $setting_options->currency_code, array('jquery'), '5.0.0', true);
   } else {
     $wpgv_paypal_client_id = get_option('wpgv_paypal_client_id') ? get_option('wpgv_paypal_client_id') : '';
-    wp_register_script('wpgv-paypal-js', 'https://www.paypal.com/sdk/js?client-id=' . $wpgv_paypal_client_id . '&currency=' . $setting_options->currency_code, array('jquery'), NULL, true);
+    wp_register_script('wpgv-paypal-js', 'https://www.paypal.com/sdk/js?client-id=' . $wpgv_paypal_client_id . '&currency=' . $setting_options->currency_code, array('jquery'), '5.0.0', true);
   }
   if (wpgv_is_woocommerce_enable()) {
     $check_plugin = new WPGV_Check_Plugin_Active();
@@ -809,7 +813,7 @@ function wpgv_price_format($price)
   global $wpdb;
   $setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1));
 
-  $price = html_entity_decode(strip_tags(stripslashes($price)), ENT_NOQUOTES, 'UTF-8');
+  $price = html_entity_decode(wp_strip_all_tags(stripslashes($price)), ENT_NOQUOTES, 'UTF-8');
   $price = iconv('UTF-8', 'windows-1252', $price);
   // number format new
   $wpgv_select_number_format = get_option('wpgv_select_number_format') ? get_option('wpgv_select_number_format') : '';

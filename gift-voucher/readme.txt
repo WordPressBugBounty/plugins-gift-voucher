@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
 Tested up to: 6.8.2
-Stable tag: 4.5.6
+Stable tag: 4.5.7
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -217,6 +217,9 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.5.7 - Released: September 08 2025
+* Fix: Replace strip_tags() with wp_strip_all_tags() in wpgv_price_format() function for WordPress coding standards compliance
 
 = Version 4.5.6 - Released: July 21 2025
 * Feature: Merge Gift Card input into WooCommerce coupon field
