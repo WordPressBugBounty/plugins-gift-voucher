@@ -146,6 +146,40 @@ jQuery(document).ready(function ($) {
         $(".personalMessageCard").val(dInput);
         $(".voucherMessageInfo").html(dInput);
     });
+
+    // Fill voucher message when clicking on quote suggestion items
+    jQuery(document).on('click', '#voucher-multistep-form .voucher-quotes li', function (e) {
+        e.preventDefault();
+        var text = jQuery(this).text().trim();
+        if (!text) return;
+        jQuery('#voucherMessage').val(text).trigger('input').trigger('change').trigger('keyup');
+        // highlight active in quotes list
+        jQuery('#voucher-multistep-form .voucher-quotes li').removeClass('active');
+        jQuery(this).addClass('active');
+    });
+
+    // Show more quotes (reveal 5 per click)
+    jQuery(document).on('click', '#voucher-multistep-form .voucher-quotes .show-more-quotes', function (e) {
+        e.preventDefault();
+        var $btn = jQuery(this);
+        var step = parseInt($btn.data('step'), 10) || 5;
+        var shown = parseInt($btn.data('shown'), 10) || 5;
+        var $container = $btn.closest('.voucher-quotes');
+        var $items = $container.find('li.quote-item');
+        var total = $items.length;
+
+        var nextMax = Math.min(shown + step, total);
+        $items.each(function (idx) {
+            if (idx < nextMax) {
+                jQuery(this).show();
+            }
+        });
+
+        $btn.data('shown', nextMax);
+        if (nextMax >= total) {
+            $btn.hide();
+        }
+    });
     $('#voucherFirstName').on('input blur', function () {
         var dInput = this.value;
         $(".voucherFirstNameInfo").html(dInput);
@@ -272,9 +306,26 @@ jQuery(document).ready(function ($) {
 
     $('#voucherPaymentButton').on('click', function () {
 
+        var $btn = $(this);
+
+        // Prevent duplicate submissions: if already clicked, ignore subsequent clicks
+        if ($btn.hasClass('clicked')) {
+            return false;
+        }
+
         if (!$('input[name=acceptVoucherTerms]').is(':checked')) {
             alert(frontend_ajax_object.accept_terms);
             return false;
+        }
+
+        // Mark button as clicked and disable it to prevent multiple submissions
+        $btn.addClass('clicked').prop('disabled', true);
+
+        // Disable all form controls inside the voucher form to prevent any interaction
+        if (typeof form !== 'undefined' && form && form.length) {
+            form.find('input,select,textarea,button').prop('disabled', true);
+        } else {
+            $('#voucher-multistep-form').find('input,select,textarea,button').prop('disabled', true);
         }
 
         var nonce = $('input[name=voucher_form_verify]').val();
@@ -296,8 +347,6 @@ jQuery(document).ready(function ($) {
         var expiry = $('.expiryCard').val();
         var style = $('#chooseStyle').val();
         var code = $('.codeCard').val();
-
-        $('#voucher-multistep-form #voucherPaymentButton').addClass('clicked');
 
         $.ajax({
             url: frontend_ajax_object.ajaxurl,
@@ -340,7 +389,13 @@ jQuery(document).ready(function ($) {
             },
             error: function () {
                 alert(frontend_ajax_object.error_occur);
-                $('#voucher-multistep-form #voucherPaymentButton').removeClass('clicked');
+                // Remove clicked state and re-enable the button and all form controls so user can try again
+                $('#voucherPaymentButton').removeClass('clicked').prop('disabled', false);
+                if (typeof form !== 'undefined' && form && form.length) {
+                    form.find('input,select,textarea,button').prop('disabled', false);
+                } else {
+                    $('#voucher-multistep-form').find('input,select,textarea,button').prop('disabled', false);
+                }
             }
         });
     });

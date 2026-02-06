@@ -52,6 +52,11 @@ function wpgv__doajax_item_pdf_save_func()
 	$wpgv_expiry_date_format = get_option('wpgv_expiry_date_format') ? get_option('wpgv_expiry_date_format') : 'd.m.Y';
 	$wpgv_enable_pdf_saving = get_option('wpgv_enable_pdf_saving') ? get_option('wpgv_enable_pdf_saving') : 0;
 
+	// Optional settings with safe defaults
+	$wpgv_add_extra_charges = get_option('wpgv_add_extra_charges_item') ? get_option('wpgv_add_extra_charges_item') : 0;
+	$is_stripe_ideal_enable = get_option('wpgv_stripe_ideal') ? get_option('wpgv_stripe_ideal') : 0;
+	$wpgv_barcode_on_voucher = isset($setting_options->wpgv_barcode_on_voucher) ? $setting_options->wpgv_barcode_on_voucher : 0;
+
 	if ($wpgv_hide_expiry == 'no') {
 		$expiry = __('No Expiry', 'gift-voucher');
 	} else {

@@ -1,4 +1,7 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 // PDF Style 3
 
@@ -53,7 +56,7 @@ $pdf->SetXY(313, 110);
 $pdf->SetFillColor(255,255,255);
 $pdf->SetTextColor(85,85,85);
 $pdf->SetFontSize(15);
-$pdf->Cell(265,40,' '.wpgv_em($for),0,1,'L',1);
+$pdf->Cell(265,40,' '.wpgv_text_to_pdf_safe($for),0,1,'L',1);
 
 if($buyingfor != 'yourself') {
 	//From
@@ -66,7 +69,7 @@ if($buyingfor != 'yourself') {
 	$pdf->SetFillColor(255,255,255);
 	$pdf->SetTextColor(85,85,85);
 	$pdf->SetFontSize(15);
-	$pdf->Cell(265,40,' '.wpgv_em($from),0,1,'L',1);
+	$pdf->Cell(265,40,' '.wpgv_text_to_pdf_safe($from),0,1,'L',1);
 }
 
 if(!$wpgv_hide_price) {
@@ -96,7 +99,7 @@ $pdf->SetFontSize(15);
 $pdf->Cell(546,140,'',0,1,'L',1);
 
 $pdf->SetXY(35, 358);
-$pdf->MultiCell(540,23,wpgv_em($message),0,1,'L',1);
+$pdf->MultiCell(540,23,wpgv_text_to_pdf_safe($message),0,1,'L',1);
 //Date of Expiry
 $pdf->SetXY(30, 520);
 $pdf->SetTextColor($voucher_color[0],$voucher_color[1],$voucher_color[2]);

@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.5.7
+ * Version: 4.6.4
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,23 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.5.7');
+// Start an early output buffer to capture any accidental output from included
+// libraries (fonts, third-party files with closing PHP tags, etc.). We will
+// discard this buffer on 'init' and start a fresh one to avoid leaking any
+// characters during plugin activation.
+if (!ob_get_level()) {
+  ob_start();
+  add_action('init', function () {
+    // Discard any output generated during plugin file inclusion
+    while (ob_get_level()) {
+      @ob_end_clean();
+    }
+    // Start a fresh buffer for normal runtime output handling
+    ob_start();
+  });
+}
+
+define('WPGIFT_VERSION', '4.6.4');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -49,51 +65,72 @@ if (!class_exists('WP_List_Table')) {
 function wpgv_is_woocommerce_enable()
 {
   global $wpdb;
-  $setting_table_name = $wpdb->prefix . 'giftvouchers_setting';
-  $options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1));
-  if ($options->is_woocommerce_enable) {
-    return true;
-  } else {
+  // Defensive: during activation/upgrade the plugin tables may not exist yet.
+  // Check for the settings table before querying it to avoid warnings / output.
+  $table_name = $wpdb->prefix . 'giftvouchers_setting';
+  $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $wpdb->esc_like($table_name)));
+
+  if (!$table_exists) {
+    // Table doesn't exist yet (activation / install context). Treat WooCommerce as disabled so
+    // the conditional requires below won't include admin front-end files that may produce output.
     return false;
   }
+
+  $options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d", 1));
+  if (!$options) {
+    return false;
+  }
+
+  return !empty($options->is_woocommerce_enable);
 }
-function wpgiftv_plugin_init()
-{
-  $langOK = load_plugin_textdomain('gift-voucher', false, dirname(plugin_basename(__FILE__)) . '/languages');
-}
 
-// Load textdomain at the right time to avoid WordPress 6.7+ warnings
-add_action('init', 'wpgiftv_plugin_init');
-add_action('after_setup_theme', 'wpgiftv_plugin_init');
-add_action('admin_init', 'wpgiftv_plugin_init');
+// Load translations and plugin files on init to avoid early translation notice (WP 6.7+)
+add_action('init', function() {
+  load_plugin_textdomain('gift-voucher', false, dirname(plugin_basename(__FILE__)) . '/languages');
 
-require_once(WPGIFT__PLUGIN_DIR . '/vendor/autoload.php');
-require_once(WPGIFT__PLUGIN_DIR . '/vendor/sofort/payment/sofortLibSofortueberweisung.inc.php');
-require_once(WPGIFT__PLUGIN_DIR . '/classes/rotation.php');
-require_once(WPGIFT__PLUGIN_DIR . '/admin.php');
-require_once(WPGIFT__PLUGIN_DIR . '/front.php');
-require_once(WPGIFT__PLUGIN_DIR . '/giftitems.php');
-require_once(WPGIFT__PLUGIN_DIR . '/classes/fpdf.php');
-require_once(WPGIFT__PLUGIN_DIR . '/classes/voucher.php');
-require_once(WPGIFT__PLUGIN_DIR . '/classes/template.php');
-require_once(WPGIFT__PLUGIN_DIR . '/classes/page_template.php');
-require_once(WPGIFT__PLUGIN_DIR . '/include/wpgv_voucher_pdf.php');
-require_once(WPGIFT__PLUGIN_DIR . '/include/wpgv_item_pdf.php');
-require_once(WPGIFT__PLUGIN_DIR . '/include/voucher_posttype.php');
-require_once(WPGIFT__PLUGIN_DIR . '/include/voucher_metabox.php');
-require_once(WPGIFT__PLUGIN_DIR . '/include/voucher-shortcodes.php');
-require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-gift-voucher.php');
-require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-gift-voucher-activity.php');
-require_once(WPGIFT__PLUGIN_DIR . '/giftcard.php');
-require_once(WPGIFT__PLUGIN_DIR . '/include/wpgv_giftcard_pdf.php');
-require_once(WPGIFT__PLUGIN_DIR . '/include/edit-order-voucher.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/vendor/autoload.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/vendor/sofort/payment/sofortLibSofortueberweisung.inc.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/classes/rotation.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/admin.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/front.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/giftitems.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/classes/fpdf.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/classes/voucher.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/classes/template.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/classes/page_template.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/include/wpgv_voucher_pdf.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/include/wpgv_item_pdf.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/include/voucher_posttype.php');
+  // If we are including this file during 'init' after priority 0 executed, the
+  // post type registration hooks added in voucher_posttype.php won't have run
+  // on this request. Register them immediately if needed so admin pages work.
+  if (!post_type_exists('wpgv_voucher_product') && function_exists('wpgv_voucher_product_function')) {
+    wpgv_voucher_product_function();
+  }
+  if (!taxonomy_exists('wpgv_voucher_category') && function_exists('wpgv_voucher_category_function')) {
+    wpgv_voucher_category_function();
+  }
+  if (!post_type_exists('voucher_template') && function_exists('codemenschen_voucher_template')) {
+    codemenschen_voucher_template();
+  }
+  if (!taxonomy_exists('category_voucher_template') && function_exists('codemenschen_voucher_template_category')) {
+    codemenschen_voucher_template_category();
+  }
 
+  require_once(WPGIFT__PLUGIN_DIR . '/include/voucher_metabox.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/include/voucher-shortcodes.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-gift-voucher.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-gift-voucher-activity.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/giftcard.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/include/wpgv_giftcard_pdf.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/include/edit-order-voucher.php');
 
-if (wpgv_is_woocommerce_enable()) {
-  require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-voucher-product-list.php');
-  require_once(WPGIFT__PLUGIN_DIR . '/include/wc_wpgv_voucher_pdf.php');
-  require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-check-plugin-active.php');
-}
+  if (wpgv_is_woocommerce_enable()) {
+    require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-voucher-product-list.php');
+    require_once(WPGIFT__PLUGIN_DIR . '/include/wc_wpgv_voucher_pdf.php');
+    require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-check-plugin-active.php');
+  }
+}, 1);
 
 add_action('init', function () {
   WPGiftVoucherAdminPages::get_instance();
@@ -152,6 +189,18 @@ add_action('admin_init', function () {
     }
   }
 
+  // Seed default quotes JSON if not exists
+  $existing_quotes = get_option('wpgv_quotes', '');
+  if ($existing_quotes === '' || $existing_quotes === false) {
+    $default_quotes = array(
+      __('Happy Birthday! Wishing you a day filled with joy and laughter.', 'gift-voucher'),
+      __('Congratulations on your special day! Enjoy this little treat.', 'gift-voucher'),
+      __('Thank you for everything you do. Hope you love this gift!', 'gift-voucher'),
+      __('Wishing you all the best—may this gift bring a smile to your face!', 'gift-voucher'),
+      __('With love and warm wishes—enjoy every moment!', 'gift-voucher'),
+    );
+    update_option('wpgv_quotes', wp_json_encode($default_quotes));
+  }
 
   if (!current_user_can('manage_options')) {
     return false;
@@ -682,9 +731,101 @@ function wpgv_txtentities($html)
 
 function wpgv_em($word)
 {
-  $word = html_entity_decode(wp_strip_all_tags(stripslashes($word)), ENT_NOQUOTES, 'UTF-8');
-  $word = iconv('UTF-8', 'windows-1252', $word);
-  return $word;
+  if (is_null($word)) {
+    return '';
+  }
+
+  // Undo slashes safely (use WP helper)
+  if (function_exists('wp_unslash')) {
+    $word = wp_unslash($word);
+  } else {
+    $word = stripslashes($word);
+  }
+
+  // Remove any HTML tags
+  $word = wp_strip_all_tags($word);
+
+  // Decode HTML entities into UTF-8. Use HTML5 flag to support wider entity set.
+  $word = html_entity_decode($word, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+  // Fix invalid UTF-8 sequences (WP helper if available)
+  if (function_exists('wp_check_invalid_utf8')) {
+    $word = wp_check_invalid_utf8($word);
+  } elseif (function_exists('mb_convert_encoding')) {
+    $word = mb_convert_encoding($word, 'UTF-8', 'UTF-8');
+  }
+
+  // Normalize Unicode (NFC) if ext-intl is available
+  if (function_exists('normalizer_normalize')) {
+    $normalized = normalizer_normalize($word, Normalizer::FORM_C);
+    if ($normalized !== false) {
+      $word = $normalized;
+    }
+  }
+
+  // Trim whitespace and return; preserve full UTF-8 (including emoji and non-Latin)
+  return trim($word);
+}
+
+/**
+ * Convert UTF-8 text to ANSI for PDF compatibility
+ * Removes emoji and non-Latin characters but preserves common special chars
+ * @param string $text UTF-8 text that may contain emoji
+ * @return string Text safe for FPDF rendering
+ */
+function wpgv_text_to_pdf_safe($text)
+{
+  // First, try to convert to windows-1252 (Latin-1 Extended)
+  // This preserves more characters than pure ASCII
+  $text = html_entity_decode(wp_strip_all_tags(stripslashes($text)), ENT_NOQUOTES, 'UTF-8');
+
+  // Remove emoji and other Unicode symbols
+  // This regex removes most emoji and special Unicode characters
+  $text = preg_replace('/[\x{1F300}-\x{1F9FF}]/u', '', $text);  // Emoji ranges
+  $text = preg_replace('/[\x{2600}-\x{27BF}]/u', '', $text);    // Miscellaneous symbols
+  $text = preg_replace('/[\x{FE00}-\x{FE0F}]/u', '', $text);    // Variation selectors
+  $text = preg_replace('/[\x{200B}-\x{200D}]/u', '', $text);    // Zero-width characters
+
+  // Replace characters that won't be representable in CP1252 with ASCII equivalents
+  // Do this BEFORE iconv so FPDF (which expects CP1252 core fonts) receives safe bytes.
+  $pre_map = array(
+    // Czech/Slovak
+    'č' => 'c', 'Č' => 'C', 'š' => 's', 'Š' => 'S', 'ž' => 'z', 'Ž' => 'Z',
+    'ř' => 'r', 'Ř' => 'R', 'ď' => 'd', 'Ď' => 'D', 'ť' => 't', 'Ť' => 'T',
+    'ň' => 'n', 'Ň' => 'N', 'ě' => 'e', 'Ě' => 'E', 'ů' => 'u', 'Ů' => 'U',
+    // Polish
+    'ł' => 'l', 'Ł' => 'L', 'ą' => 'a', 'Ą' => 'A', 'ę' => 'e', 'Ę' => 'E',
+    'ś' => 's', 'Ś' => 'S', 'ź' => 'z', 'Ź' => 'Z', 'ż' => 'z', 'Ż' => 'Z',
+    // Misc Latin accents -> base letters
+    'á' => 'a', 'Á' => 'A', 'ć' => 'c', 'Ć' => 'C',
+    'é' => 'e', 'É' => 'E', 'í' => 'i', 'Í' => 'I', 'ó' => 'o', 'Ó' => 'O',
+    'ú' => 'u', 'Ú' => 'U', 'ý' => 'y', 'Ý' => 'Y',
+  );
+
+  // Currency/symbol fallbacks not in CP1252
+  $symbol_map = array(
+    '₪' => 'ILS',
+    '₱' => 'PHP',
+    '฿' => 'THB',
+    '₫' => 'VND',
+    '₩' => 'KRW'
+  );
+
+  $text = strtr($text, $pre_map);
+  $text = strtr($text, $symbol_map);
+
+  // Now convert to CP1252 which FPDF core fonts expect.
+  if (function_exists('iconv')) {
+    $converted = @iconv('UTF-8', 'WINDOWS-1252//TRANSLIT', $text);
+    if ($converted !== false) {
+      $text = $converted;
+    } else {
+      // As a last resort, remove non-ASCII characters
+      $text = preg_replace('/[\x80-\x{10FFFF}]/u', '', $text);
+    }
+  }
+
+  return $text;
 }
 function wpgv_mailvarstr_multiple($string, $setting_options, $voucher_options_results, $voucherpdf_link)
 {
@@ -695,40 +836,59 @@ function wpgv_mailvarstr_multiple($string, $setting_options, $voucher_options_re
   $to_name = null;
   $email = null;
   $amount = null;
-  foreach ($voucher_options_results as $get_value) {
-    $get_link_pdf[] = get_home_url() . '/wp-content/uploads/voucherpdfuploads/' . $get_value->voucherpdf_link . '.pdf';
-    $get_order_number[] = $get_value->id;
-    $from_name = $get_value->from_name;
-    $to_name = $get_value->to_name;
-    if ($get_value->email) {
-      $email = $get_value->email;
-    } else {
-      $email = $get_value->shipping_email;
-    }
-    $amount = $get_value->amount;
+
+  // Normalize input: ensure we can iterate and access an example item safely.
+  if (empty($voucher_options_results)) {
+    return $string;
   }
 
+  foreach ($voucher_options_results as $get_value) {
+    $get_link_pdf[] = get_home_url() . '/wp-content/uploads/voucherpdfuploads/' . (isset($get_value->voucherpdf_link) ? $get_value->voucherpdf_link : '') . '.pdf';
+    $get_order_number[] = isset($get_value->id) ? $get_value->id : '';
+    $from_name = isset($get_value->from_name) ? $get_value->from_name : '';
+    $to_name = isset($get_value->to_name) ? $get_value->to_name : '';
+    if (!empty($get_value->email)) {
+      $email = $get_value->email;
+    } else {
+      $email = isset($get_value->shipping_email) ? $get_value->shipping_email : '';
+    }
+    $amount = isset($get_value->amount) ? $get_value->amount : '';
+  }
+
+  // Use the first record as a representative for order-level fields if necessary.
+  $first = is_array($voucher_options_results) ? reset($voucher_options_results) : $voucher_options_results;
 
   $vars = array(
-    '{order_type}'        => ($voucher_options_results->order_type) ? $voucher_options_results->order_type : 'vouchers',
-    '{company_name}'      => ($setting_options->company_name) ? stripslashes($setting_options->company_name) : '',
+    '{order_type}'        => (!empty($first->order_type)) ? $first->order_type : 'vouchers',
+    '{company_name}'      => (!empty($setting_options->company_name)) ? stripslashes($setting_options->company_name) : '',
     '{website_url}'       => get_site_url(),
-    '{sender_email}'      => $setting_options->sender_email,
-    '{sender_name}'       => stripslashes($setting_options->sender_name),
-    '{order_number}'      => $voucher_options_results->id,
+    '{sender_email}'      => isset($setting_options->sender_email) ? $setting_options->sender_email : '',
+    '{sender_name}'       => isset($setting_options->sender_name) ? stripslashes($setting_options->sender_name) : '',
+    '{order_number}'      => isset($first->id) ? $first->id : '',
     '{amount}'            => $amount,
     '{customer_name}'     => stripslashes($from_name),
     '{recipient_name}'    => stripslashes($to_name),
     '{customer_email}'    => $email,
-    '{customer_address}'  => $voucher_options_results->address,
-    '{customer_postcode}' => $voucher_options_results->postcode,
-    '{coupon_code}'       => $voucher_options_results->couponcode,
-    '{payment_method}'    => $voucher_options_results->pay_method,
-    '{payment_status}'    => $voucher_options_results->payment_status,
+    '{customer_address}'  => isset($first->address) ? $first->address : '',
+    '{customer_postcode}' => isset($first->postcode) ? $first->postcode : '',
+    '{coupon_code}'       => isset($first->couponcode) ? $first->couponcode : '',
+    '{payment_method}'    => isset($first->pay_method) ? $first->pay_method : '',
+    '{payment_status}'    => isset($first->payment_status) ? $first->payment_status : '',
     '{pdf_link}'          => get_home_url() . '/wp-content/uploads/voucherpdfuploads/' . $voucherpdf_link . '.pdf',
-    '{receipt_link}'      => get_home_url() . '/wp-content/uploads/voucherpdfuploads/' . $voucher_options_results->voucherpdf_link . '-receipt.pdf',
+    '{receipt_link}'      => get_home_url() . '/wp-content/uploads/voucherpdfuploads/' . (isset($first->voucherpdf_link) ? $first->voucherpdf_link : '') . '-receipt.pdf',
   );
   return strtr($string, $vars);
+}
+
+// Provide admin variant fallback if not defined elsewhere. This keeps backward compatibility
+if (! function_exists('wpgv_mailvarstr_multiple_admin')) {
+  function wpgv_mailvarstr_multiple_admin($string, $setting_options, $voucher_options_results)
+  {
+    // Try to use the same logic as wpgv_mailvarstr_multiple; admin templates typically do not need a specific pdf link.
+    $first = !empty($voucher_options_results) && is_array($voucher_options_results) ? reset($voucher_options_results) : $voucher_options_results;
+    $voucherpdf_link = isset($first->voucherpdf_link) ? $first->voucherpdf_link : '';
+    return wpgv_mailvarstr_multiple($string, $setting_options, $voucher_options_results, $voucherpdf_link);
+  }
 }
 function wpgv_mailvarstr($string, $setting_options, $voucher_options)
 {
@@ -814,7 +974,15 @@ function wpgv_price_format($price)
   $setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1));
 
   $price = html_entity_decode(wp_strip_all_tags(stripslashes($price)), ENT_NOQUOTES, 'UTF-8');
-  $price = iconv('UTF-8', 'windows-1252', $price);
+  // Keep UTF-8 for front-end and general usage.
+  // Do not convert to windows-1252 here because this function is used
+  // in both HTML (UTF-8) and PDF contexts. PDF-specific conversion
+  // is handled by `wpgv_text_to_pdf_safe` when rendering PDFs.
+  if (function_exists('wp_check_invalid_utf8')) {
+    $price = wp_check_invalid_utf8($price);
+  } elseif (function_exists('mb_convert_encoding')) {
+    $price = mb_convert_encoding($price, 'UTF-8', 'UTF-8');
+  }
   // number format new
   $wpgv_select_number_format = get_option('wpgv_select_number_format') ? get_option('wpgv_select_number_format') : '';
   if ($wpgv_select_number_format == "comma") {

@@ -227,7 +227,9 @@ function wpgv_voucher_amount()
 
   $sizearr = array('', '1000px x 760px', '1000px x 1500px', '1000px x 750px');
   for ($i = 1; $i < 4; $i++) {
-    echo '<p class="post-attributes-label-wrapper"><label class="post-attributes-label" for="style' . esc_html($i) . '_image">Image - Style ' . esc_html($i) . ' (Recommended: ' . esc_html($sizearr[$i]) . '):</label></p>';
+    // Append a short note about supported file formats so admins don't pick WEBP by mistake
+    // Escape the supported-formats string at the point of output so scanners recognise it as escaped.
+    echo '<p class="post-attributes-label-wrapper"><label class="post-attributes-label" for="style' . esc_html($i) . '_image">Image - Style ' . esc_html($i) . ' (Recommended: ' . esc_html($sizearr[$i]) . '). ' . esc_html__('Supported formats: JPG, PNG only.', 'gift-voucher') . '</label></p>';
     ?>
     <img class="image_src<?php echo esc_attr($i); ?>" src="" width="100" style="display: none;" />
     <input class="image_url<?php echo esc_attr($i); ?>" type="hidden" name="style<?php echo esc_attr($i); ?>_image" size="60" value="<?php echo esc_attr(${'style' . $i . '_image'}); ?>">
@@ -248,10 +250,27 @@ function wpgv_voucher_amount()
               multiple: false // Set this to true to allow multiple files to be selected
             })
             .on('select', function() {
-              var attachment = custom_uploader.state().get('selection').first().toJSON();
-              $('.image_src<?php echo esc_html($i); ?>').attr('src', attachment.url).show();
-              $('.image_url<?php echo esc_html($i); ?>').val(attachment.id);
-              $('.remove_image<?php echo esc_html($i); ?>').show();
+                  var attachment = custom_uploader.state().get('selection').first().toJSON();
+                  // Client-side validation: only allow JPG/JPEG and PNG images.
+                  var mime = attachment.mime || attachment.mime_type || attachment.type || '';
+                  var url = attachment.url || '';
+                  var allowedMimes = ['image/jpeg', 'image/png'];
+                  var allowedExt = ['jpg', 'jpeg', 'png'];
+                  var ok = false;
+                  if (mime && allowedMimes.indexOf(mime) !== -1) {
+                    ok = true;
+                  } else if (url) {
+                    var parts = url.split('.');
+                    var ext = parts.length ? parts[parts.length - 1].toLowerCase() : '';
+                    if (allowedExt.indexOf(ext) !== -1) ok = true;
+                  }
+                  if (!ok) {
+                    alert('<?php echo esc_js( esc_html__("Only JPG and PNG images are supported for Image - Style. Please choose a JPG or PNG file.", "gift-voucher") ); ?>');
+                    return;
+                  }
+                  $('.image_src<?php echo esc_html($i); ?>').attr('src', attachment.url).show();
+                  $('.image_url<?php echo esc_html($i); ?>').val(attachment.id);
+                  $('.remove_image<?php echo esc_html($i); ?>').show();
             })
             .open();
         });
@@ -291,6 +310,37 @@ function wpt_save_voucher_meta($post_id, $post)
   $events_meta['style2_image'] = sanitize_text_field($_POST['style2_image']);
   $events_meta['style3_image'] = sanitize_text_field($_POST['style3_image']);
 
+  // Validate selected images: only allow JPEG and PNG. If an unsupported
+  // image (eg. WEBP) is selected we will NOT save it and display an admin notice.
+  $allowed_mimes = array('image/jpeg', 'image/png');
+  $invalid_image = false;
+  foreach (array('style1_image', 'style2_image', 'style3_image') as $img_key) {
+    $val = $events_meta[$img_key];
+    if (empty($val)) {
+      continue;
+    }
+    // If value is an attachment ID, use its mime type. Otherwise try to
+    // detect by file URL/filename.
+    $mime = '';
+    if (is_numeric($val)) {
+      $att_id = absint($val);
+      $att_post = get_post($att_id);
+      if ($att_post && isset($att_post->post_mime_type)) {
+        $mime = $att_post->post_mime_type;
+      }
+    } else {
+      $filetype = wp_check_filetype($val);
+      if (!empty($filetype['type'])) {
+        $mime = $filetype['type'];
+      }
+    }
+    if ($mime === '' || !in_array($mime, $allowed_mimes, true)) {
+      // clear invalid selection so it won't be saved
+      $events_meta[$img_key] = '';
+      $invalid_image = true;
+    }
+  }
+
   // Add values of $events_meta as custom fields
   foreach ($events_meta as $key => $value) { // Cycle through the $events_meta array!
     if ($post->post_type == 'revision') return; // Don't store custom data twice
@@ -305,7 +355,32 @@ function wpt_save_voucher_meta($post_id, $post)
     }
     if (!$value) delete_post_meta($post_id, $key); // Delete if blank
   }
+
+  // If any invalid images were detected, add a query arg so we can show
+  // an admin notice after redirect back to the edit screen.
+  if (!empty($invalid_image)) {
+    add_filter('redirect_post_location', 'wpgv_add_image_error_query_arg', 99);
+  }
 }
+
+/**
+ * Add query arg to post redirect location so admin notice can be shown.
+ */
+function wpgv_add_image_error_query_arg($location)
+{
+  return add_query_arg('wpgv_image_error', '1', $location);
+}
+
+/**
+ * Show admin notice when an unsupported image type was selected for voucher style.
+ */
+function wpgv_image_error_admin_notice()
+{
+  if (!empty($_GET['wpgv_image_error'])) {
+    echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html__('Warning: Only JPG and PNG images are supported for "Image - Style". The selected image was not saved.', 'gift-voucher') . '</p></div>';
+  }
+}
+add_action('admin_notices', 'wpgv_image_error_admin_notice');
 
 add_action('save_post', 'wpt_save_voucher_meta', 1, 2); // save the voucher meta fields
 class Template_Voucher

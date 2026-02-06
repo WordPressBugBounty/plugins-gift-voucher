@@ -376,6 +376,15 @@ if (!class_exists('wpgv-')) :
 
         function add_gift_vouchers_to_order($order_id, $order, $note)
         {
+            // Initialize commonly used variables to avoid undefined warnings
+            $return = '';
+            if (! $order || ! ( $order instanceof WC_Order ) ) {
+                $order = wc_get_order($order_id);
+            }
+            $billing_email = '';
+            if ( $order && $order instanceof WC_Order ) {
+                $billing_email = $order->get_billing_email();
+            }
 
             // translators: 1: Order ID, 2: Customer's first name, 3: Customer's last name.
             $create_note = sprintf(__('Order %1$s purchased by %2$s %3$s', 'gift-voucher'), $order->get_id(), $order->get_billing_first_name(), $order->get_billing_last_name());
@@ -514,15 +523,23 @@ if (!class_exists('wpgv-')) :
                     if ($voucher_options->buying_for == 'yourself') {
                         $recipientto = $voucher_options->from_name . '<' . $buy_email . '>';
                     }
-                    if ($voucher_options->email_send_date_time == 'send_instantly') {
+                    $email_send_time = isset($voucher_options->email_send_date_time) ? $voucher_options->email_send_date_time : 'send_instantly';
+                    if ($email_send_time === 'send_instantly' || empty($email_send_time)) {
                         $checkmail1 = wp_mail($recipientto, $recipientsub, $recipientmsg, $headers, $attachments_user);
                     } else {
-                        $timezone = wp_timezone();
-                        $datetime = new DateTime($voucher_options->email_send_date_time, $timezone);
-                        $send_gift_voucher_email_event_date_time = $datetime->getTimestamp();
+                        // Safely parse provided datetime; if parsing fails fallback to sending instantly.
+                        try {
+                            $timezone = wp_timezone();
+                            $datetime = new DateTime($email_send_time, $timezone);
+                            $send_gift_voucher_email_event_date_time = $datetime->getTimestamp();
 
-                        $send_gift_voucher_email_event_args = array($recipientto, $recipientsub, $recipientmsg, $headers, $attachments_user);
-                        wp_schedule_single_event($send_gift_voucher_email_event_date_time, 'send_gift_voucher_email_event', $send_gift_voucher_email_event_args);
+                            $send_gift_voucher_email_event_args = array($recipientto, $recipientsub, $recipientmsg, $headers, $attachments_user);
+                            wp_schedule_single_event($send_gift_voucher_email_event_date_time, 'send_gift_voucher_email_event', $send_gift_voucher_email_event_args);
+                        } catch (Exception $e) {
+                            // On error, send immediately and log the issue for debugging.
+                            error_log('WPGV: Failed to schedule voucher email: ' . $e->getMessage());
+                            $checkmail1 = wp_mail($recipientto, $recipientsub, $recipientmsg, $headers, $attachments_user);
+                        }
                     }
                 }
 
@@ -570,8 +587,16 @@ if (!class_exists('wpgv-')) :
                     }
                 }
 
-                $subadmin = wpgv_mailvarstr_multiple_admin($adminemailsubject, $setting_options, $voucher_options_results);
-                $bodyadmin = wpgv_mailvarstr_multiple_admin($adminemailbody, $setting_options, $voucher_options_results);
+                if ( function_exists('wpgv_mailvarstr_multiple_admin') ) {
+                    $subadmin = wpgv_mailvarstr_multiple_admin($adminemailsubject, $setting_options, $voucher_options_results);
+                    $bodyadmin = wpgv_mailvarstr_multiple_admin($adminemailbody, $setting_options, $voucher_options_results);
+                } else {
+                    // Fallback to non-admin variant
+                    $first = !empty($voucher_options_results) && is_array($voucher_options_results) ? reset($voucher_options_results) : $voucher_options_results;
+                    $voucherpdf_link = isset($first->voucherpdf_link) ? $first->voucherpdf_link : '';
+                    $subadmin = wpgv_mailvarstr_multiple($adminemailsubject, $setting_options, $voucher_options_results, $voucherpdf_link);
+                    $bodyadmin = wpgv_mailvarstr_multiple($adminemailbody, $setting_options, $voucher_options_results, $voucherpdf_link);
+                }
                 $headersadmin = 'Content-type: text/html;charset=utf-8' . "\r\n";
                 $headersadmin .= 'From: ' . $setting_options->sender_name . ' <' . $setting_options->sender_email . '>' . "\r\n";
                 $headersadmin .= 'Reply-to: ' . $voucher_options->from_name . ' <' . $buy_email . '>' . "\r\n";

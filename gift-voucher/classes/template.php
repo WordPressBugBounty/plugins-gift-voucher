@@ -70,7 +70,8 @@ if (!class_exists('WPGV_Voucher_Template')) :
 		{
 			global $wpdb;
 
-			return $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_template"));
+			// No placeholders needed — use a plain query for row count to avoid prepare() notices
+			return $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_template");
 		}
 
 

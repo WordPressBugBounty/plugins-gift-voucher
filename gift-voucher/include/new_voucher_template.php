@@ -17,8 +17,8 @@ $options->title = $options->image_style = $options->active = $options->action = 
 
 if (isset($_REQUEST['template_id'])) {
 	$template_id = absint($_REQUEST['template_id']);
-	$pageTitle = esc_html__('Edit Template', 'gift-voucher');
-	$btnText = esc_html__('Edit Template', 'gift-voucher');
+	$pageTitle = esc_html__('Save', 'gift-voucher');
+	$btnText = esc_html__('Save', 'gift-voucher');
 	$options->template_id = $template_id;
 }
 if (isset($_POST['title']) && $_REQUEST['action'] === 'edit_template') {
@@ -134,7 +134,7 @@ if (function_exists('wp_enqueue_media')) {
 					<tr>
 						<th scope="row">
 							<label for="image"><?php echo esc_html__('Image', 'gift-voucher') ?> - Style <?php echo esc_html($i + 1); ?></label>
-							<p class="description">(Recommended: <?php echo esc_html($sizearr[$i]); ?>)</p>
+							<p class="description">(Recommended: <?php echo esc_html($sizearr[$i]); ?>) <?php esc_html_e('Only JPG and PNG images are supported.', 'gift-voucher'); ?></p>
 						</th>
 						<td>
 							<img class="image_src<?php echo esc_html($i); ?>" src="" width="100" style="display: none;" /><br>
@@ -184,6 +184,13 @@ if (function_exists('wp_enqueue_media')) {
 					})
 					.on('select', function() {
 						var attachment = custom_uploader.state().get('selection').first().toJSON();
+						var mime = attachment.mime || '';
+						var invalid_msg = '<?php echo esc_js(esc_html__('Only JPG and PNG images are supported.', 'gift-voucher')); ?>';
+						if (mime.indexOf('image/jpeg') === -1 && mime.indexOf('image/png') === -1) {
+							alert(invalid_msg);
+							custom_uploader.open();
+							return;
+						}
 						$('.image_src<?php echo esc_html($i); ?>').attr('src', attachment.url).show();
 						$('.image_url<?php echo esc_html($i); ?>').val(attachment.id);
 						$('.remove_image<?php echo esc_html($i); ?>').show();

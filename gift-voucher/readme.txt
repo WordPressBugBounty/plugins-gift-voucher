@@ -2,8 +2,8 @@
 Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
-Tested up to: 6.8.2
-Stable tag: 4.5.7
+Tested up to: 6.9.1
+Stable tag: 4.6.4
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -46,6 +46,7 @@ Now, this plugin is also WooCommerce compatible. So customers can redeem the vou
 > * **TRACKING -** Powerful reporting and tracking features enable you to track the purchased voucher codes. Once the gift card is purchased, its further use can be tracked by the administrator through the unique gift card codes.
 > * **EASY DESIGNING -** Design templates for different themes as ‘Birthday’, ‘New Year’, ‘Valentine’s day’, ‘Independence day’ etc.
 > * **POSTAL DELIVERY -** You can accept postal orders for your gift cards. If you want, you can turn on the ability for your customers to buy your own printed gift cards/certificates. So you can send gift cards via post basis directly to the recipient.
+> * **INSPIRATIONAL QUOTES -** Enhance your gift cards with meaningful quotes! The plugin now includes a collection of inspirational quotes that customers can easily add to their personal messages. This feature provides suggested quotes for various occasions, making gift cards more thoughtful and personal.
 
 **Voucher Booking Forms**
 This plugin provides two types of voucher booking forms. They are,
@@ -66,6 +67,7 @@ This plugin provides two types of voucher booking forms. They are,
 * Customers can preview their Gift Card on their booking page.
 * Purchased gift card/voucher is sent to the recipient’s email address.
 * Add messages to be printed on the PDF  gift card/voucher.
+* Access to inspirational quote suggestions to enhance personal messages on gift cards.
 * Redeem gift cards/vouchers using unique auto-generated coupon codes.
 * Multiple payment gateway integrations available such as Stripe, PayPal, Sofort Pay, and Bank Transfer.
 * Invoice based payment solutions i.e. your customers can directly pay to your bank account after purchasing the voucher
@@ -85,6 +87,7 @@ This plugin provides two types of voucher booking forms. They are,
 * Generate Gift Vouchers from admin.
 * Export all orders from order page.
 * Admin can set options like sender name, email, company name along with company details on templates from plugin settings.
+* Manage and customize inspirational quotes collection for customer use in personal messages.
 * Admin can customize email templates both for itself and its customers.
 * Admin can also enable the postal delivery options for its customers.
 * Customers can view a list of their gift cards used so far, the order in which they have been used and the available credit left.
@@ -195,6 +198,10 @@ There are two ways to fill up translations:
 * Using Loco Translate plugin
 * Using the PoEdit platform
 
+= Can customers add inspirational quotes to their gift cards?
+
+Yes, the plugin now includes a collection of inspirational quotes that customers can easily select and add to their personal messages when creating gift cards. This feature helps make gift cards more meaningful and personal for special occasions.
+
 == Documentation ==
 Please, read the [official documentation of Gift Cards (Gift Cards and Packages)](https://www.wp-giftcard.com/docs/documentation/ "Documentation of Gift Cards") to learn more about all plugin features.
 
@@ -217,6 +224,51 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.6.4 - Released: February 05, 2026 =
+* Fix: Prevent WooCommerce email preview fatal. Ensure payment-complete filter returns original status for empty $order_id and validate WC_Order before calling methods to avoid preview crashes. (Files: include/redeem-voucher.php)
+* Fix: Do not force Stripe-paid orders to 'processing' for digital/download-only orders. Only set 'processing' when incoming status is 'completed' and the order requires shipping. (Files: include/redeem-voucher.php)
+* Fix/Improvement: Add diagnostics and robustness for Stripe order status and email handling — added temporary logs (WPGV_STATUS_DEBUG, wpgv_log_order_status_change), input guards and fallback for admin mail helper to prevent undefined function errors and PHP warnings. (Files: include/redeem-voucher.php, classes/wpgv-gift-voucher-cart-process.php, gift-voucher.php)
+* Fix: Load plugin translations on `init` and defer plugin file includes to prevent WordPress 6.7+ `_load_textdomain_just_in_time` notice. (Files: gift-voucher.php, admin.php, front.php)
+* Fix: Ensure post types/taxonomies are registered immediately if `voucher_posttype.php` is included late to avoid "Invalid post type." in admin. (Files: gift-voucher.php, include/voucher_posttype.php)
+* Fix: Remove unnecessary `wpdb->prepare()` usage without placeholders to prevent `wpdb::prepare()` notices. (Files: classes/template.php)
+* Fix: Add missing `_wpgv_nonce` hidden input to the Gift Voucher product tab so product updates without price no longer trigger "Invalid request." (Files: include/wpgv-product-settings.php, admin/wpgv-gift-voucher-admin.php)
+* Fix: Avoid warnings in `[wpgv_giftcard]` shortcode when taxonomy terms are returned as arrays; handle both term objects and arrays and escape output. (Files: giftcard.php)
+
+= Version 4.6.3 - Released: January 02, 2026 =
+* Fix: Secure database query in `classes/voucher.php::record_count()` by building the full SQL and using `$wpdb->prepare()` with bound parameters to avoid unescaped DB parameters.
+* Fix: Add direct file access protection to `templates/wpgv_item_pdf.php`, `templates/wpgv_voucher_pdf.php`, and `templates/pdfstyles/receipt.php`, `templates/pdfstyles/style1.php`, `templates/pdfstyles/style2.php`, `templates/pdfstyles/style3.php` by checking `if ( ! defined( 'ABSPATH' ) ) exit;` to prevent direct access.
+
+= Version 4.6.2 - Released: December 06, 2025 =
+* Improvement: Unicode and special character support improved for all user input fields and currency symbols in PDF exports and admin UI.
+* Fix: Currency symbols (€, £, Kč, ₱, ¥, etc.) now display correctly in voucher PDFs and admin voucher lists regardless of language or encoding.
+* Improvement: Added transliteration and symbol mapping for unsupported Unicode characters in FPDF output.
+* Update: All PDF templates now use `wpgv_text_to_pdf_safe()` for safe text rendering.
+* Fix: Voucher Value in admin list now respects the currency symbol set in plugin settings.
+* Update: Updated documentation and code comments for currency and encoding handling.
+
+= Version 4.6.1 - Released: December 05, 2025 =
+* Fix: Escape supported-formats output in `include/voucher_metabox.php` so translatable text is escaped at output and the WordPress.Security.EscapeOutput.OutputNotEscaped warning is resolved.
+* Fix: Escape translatable output and UI strings in voucher_settings.php (replaced raw __() usage with esc_html__() where appropriate and ensured submit_button text is escaped) to satisfy WP output-escaping guidance.
+* Improvement: Restrict image upload for voucher templates to JPG and PNG only (admin side). Added client-side validation to block non-JPG/PNG files in the media selector and show an alert if an invalid file is chosen. Updated UI note to clarify supported formats.
+
+= Version 4.6.0 - Released: November 24, 2025 =
+* Fix: Personal Message and user input fields now support emoji and special characters in PDF exports.
+* Improvement: Removed iconv conversion in `wpgv_em()` to preserve UTF-8 input.
+* Improvement: Added `wpgv_text_to_pdf_safe()` to safely handle user text for PDF output, stripping or replacing unsupported characters where necessary for FPDF.
+* Update: Replaced `wpgv_em()` with `wpgv_text_to_pdf_safe()` for user input fields (Personal Message, Your Name, Recipient Name, Email) in all PDF templates.
+* Fix: Prevent saving unsupported image types for voucher "Image - Style". The admin-side meta now validates images and only accepts JPG/JPEG and PNG; unsupported selections are cleared on save.
+* Fix: Admin notice added to inform the user when an unsupported image format (e.g. WEBP, SVG) was selected and not saved.
+* Improvement: Added client-side validation to the Item Details media selector to block non-JPG/PNG files at selection time (improves UX and prevents ambiguous preview errors).
+* Update: Item Details labels now include a short note: "Supported formats: JPG, PNG only." to guide administrators.
+* Fix: Prevent duplicate orders by disabling the Pay Now button and all controls inside `#voucher-multistep-form` during submission; controls are re-enabled only on AJAX error.
+* Improvement: Added client-side guard to ignore repeated clicks on Pay Now to avoid multiple order creation. Files changed: `assets/js/voucher-script.js`
+
+= Version 4.5.9 - Released: November 12, 2025 =
+* Fix: The plugin generated 192 characters of unexpected output during activation. If you notice "headers already sent" messages, problems with syndication feeds or other issues, try deactivating or removing this plugin.
+
+= Version 4.5.8 - Released: October 08, 2025 =
+* Feature: Add Quotes suggestions for Personal Message (frontend & backend).
 
 = Version 4.5.7 - Released: September 08 2025
 * Fix: Replace strip_tags() with wp_strip_all_tags() in wpgv_price_format() function for WordPress coding standards compliance

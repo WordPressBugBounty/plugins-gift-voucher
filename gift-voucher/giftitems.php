@@ -161,6 +161,19 @@ function wpgv_giftitems_shortcode($atts = '')
         #wpgv-giftitems.loading:after {
             content: url(' . $custom_loader . ') !important;
         }
+        /* Reset list style for any lists inside gift items UI */
+        .wpgv-items ul,
+        .wpgv-according-categories ul,
+        .wpgv-according-category ul,
+        .wpgv-items-wrap ul {
+            list-style: none !important;
+            margin-left: 0 !important;
+            padding-left: 0 !important;
+        }
+        .wpgv-items li,
+        .wpgv-according-category li {
+            list-style: none !important;
+        }
     </style>';
 
     $html .= '<div class="wpgv-giftitem-wrapper"><form id="wpgv-giftitems" name="wpgv_giftitems" method="post" action="' . home_url($wp->request) . '" enctype="multipart/form-data">
@@ -311,8 +324,66 @@ function wpgv_giftitems_shortcode($atts = '')
                 <div class="wpgv-form-fields" id="wpgv-message">
                     <label for="message">' . __('Personal Message (Optional)', 'gift-voucher') . ' (' . __('Max: 250 Characters', 'gift-voucher') . ')</label>
                     <span class="error">' . __('Please enter no more than 250 characters.', 'gift-voucher') . '</span>
-                    <textarea name="message" id="message" class="form-field" maxlength="250"></textarea>
-                    <div class="maxchar"></div>
+                                        <textarea name="message" id="message" class="form-field" maxlength="250"></textarea>
+                                        <div class="maxchar"></div>';
+
+        // prepare border color and zebra backgrounds for quote items
+        $voucher_brcolor = get_option('wpgv_voucher_border_color') ? get_option('wpgv_voucher_border_color') : '81c6a9';
+        $voucher_brcolor_hex = ltrim($voucher_brcolor, '#');
+        if (strlen($voucher_brcolor_hex) === 3) {
+                $voucher_brcolor_hex = $voucher_brcolor_hex[0] . $voucher_brcolor_hex[0]
+                        . $voucher_brcolor_hex[1] . $voucher_brcolor_hex[1]
+                        . $voucher_brcolor_hex[2] . $voucher_brcolor_hex[2];
+        }
+        $r = hexdec(substr($voucher_brcolor_hex, 0, 2));
+        $g = hexdec(substr($voucher_brcolor_hex, 2, 2));
+        $b = hexdec(substr($voucher_brcolor_hex, 4, 2));
+        $li_bg1 = "background-color: rgba($r,$g,$b,0.08);";
+        $li_bg2 = "background-color: rgba($r,$g,$b,0.16);";
+
+        // Load quotes (JSON)
+        $quotes_raw = get_option('wpgv_quotes', '');
+        $quotes = array();
+        if (!empty($quotes_raw)) {
+                $decoded = json_decode($quotes_raw, true);
+                if (is_array($decoded)) {
+                        $quotes = $decoded;
+                }
+        }
+        $has_quotes = !empty($quotes);
+
+        $html .= '<div class="voucher-quotes" id="wpgv-voucher-quotes" style="font-size: 12px;margin: 5px 0 0; font-style: italic;' . ($has_quotes ? '' : ' display:none;') . '">
+                        <span>' . __('Quotes:', 'gift-voucher') . '</span>
+                        <style>
+                            /* spacing and hover effect for message suggestions */
+                            #wpgv-giftitems .voucher-quotes ul li {
+                                margin: 5px 0;
+                                cursor: pointer;
+                            }
+                            #wpgv-giftitems .voucher-quotes ul li:hover {
+                                box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+                            }
+                            #wpgv-giftitems .voucher-quotes .show-more-quotes {
+                                display: inline-block; margin-top: 6px; font-style: normal; cursor: pointer; color: #0073aa;
+                            }
+                            #wpgv-giftitems .voucher-quotes .show-more-quotes:hover {
+                                text-decoration: underline;
+                            }
+                        </style>
+                        <ul style="margin: 5px 0 0 18px; padding: 0;">';
+        if (!empty($quotes)) {
+                $total_quotes = count($quotes);
+                foreach ($quotes as $i => $qtext) {
+                        $zebra = ($i % 2 === 0) ? $li_bg1 : $li_bg2;
+                        $hidden = ($i >= 5) ? 'display:none;' : '';
+                        $html .= '<li class="quote-item" style="' . $zebra . ' ' . $hidden . ' padding: 4px 6px; border-left: 3px solid #' . $voucher_brcolor_hex . '; border-radius: 3px; cursor: pointer;">' . esc_html($qtext) . '</li>';
+                }
+        }
+        $html .= '</ul>';
+        if (!empty($quotes) && $total_quotes > 5) {
+                $html .= '<a href="javascript:;" class="show-more-quotes" data-shown="5" data-step="5">' . __('Show more', 'gift-voucher') . '</a>';
+        }
+        $html .= '</div>
                 </div>
                 <div class="wpgv-buttons">
                     <button type="button" data-next="step3" class="next-button">' . __('Continue', 'gift-voucher') . '</button>

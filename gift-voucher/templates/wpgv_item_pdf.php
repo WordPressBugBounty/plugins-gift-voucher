@@ -1,4 +1,5 @@
 <?php
+if (!defined('ABSPATH')) exit; // Prevent direct access
 /*
  * Template Name: PDF Viewer Page Template
  * Description: A Page Template for pdf viewer.

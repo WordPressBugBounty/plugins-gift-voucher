@@ -26,3 +26,23 @@ function redeemVoucher(voucher_id) {
 		alert('Got this from the server: ' + response);
 	});
 }
+
+(function () {
+	var container = document.getElementById('wpgv-quotes-list');
+	var addBtn = document.getElementById('wpgv-add-quote');
+	if (!container || !addBtn) { return; }
+	addBtn.addEventListener('click', function () {
+		var div = document.createElement('div');
+		div.className = 'wpgv-quote-row';
+		div.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:6px;';
+		div.innerHTML = '<input type="text" name="wpgv_quotes_item[]" value="" class="regular-text" style="flex:1;" />' +
+			'<button class="button wpgv-remove-quote" type="button">&times;</button>';
+		container.appendChild(div);
+	});
+	container.addEventListener('click', function (e) {
+		if (e.target && e.target.classList.contains('wpgv-remove-quote')) {
+			var row = e.target.closest('.wpgv-quote-row');
+			if (row) { row.remove(); }
+		}
+	});
+})();

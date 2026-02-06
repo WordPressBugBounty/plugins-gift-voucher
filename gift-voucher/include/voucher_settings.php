@@ -90,6 +90,17 @@ if (isset($_POST['submit'])) {
 		$voucher_styles = array_map('sanitize_text_field', wp_unslash($_POST['voucher_style']));
 	}
 
+	$quotes_items = isset($_POST['wpgv_quotes_item']) && is_array($_POST['wpgv_quotes_item']) ? (array) $_POST['wpgv_quotes_item'] : array();
+	$quotes_clean = array();
+	if (!empty($quotes_items)) {
+		foreach ($quotes_items as $q) {
+			$q = sanitize_text_field(wp_unslash($q));
+			if ($q !== '') {
+				$quotes_clean[] = $q;
+			}
+		}
+	}
+
 	$check = $wpdb->update(
 		$setting_table_name,
 		array(
@@ -161,6 +172,12 @@ if (isset($_POST['submit'])) {
 	update_option('wpgv_invoice_mail_enable', $invoice_mail_enable);
 	update_option('wpgv_leftside_notice', $leftside_notice);
 
+	if (!empty($quotes_clean)) {
+		update_option('wpgv_quotes', wp_json_encode($quotes_clean));
+	} else {
+		update_option('wpgv_quotes', wp_json_encode(array()));
+	}
+
 	if ($stripe && !get_option('wpgv_stripesuccesspage')) {
 		$stripeSuccessPage = array(
 			'post_title'    => 'Stripe Payment Success Page',
@@ -175,7 +192,7 @@ if (isset($_POST['submit'])) {
 		update_option('wpgv_stripesuccesspage', $stripeSuccessPage_id);
 	}
 	$settype = 'updated';
-	$setmessage = __('Your Settings Saved Successfully.', 'gift-voucher');
+	$setmessage = esc_html__('Your Settings Saved Successfully.', 'gift-voucher');
 	add_settings_error(
 		'wooenc_settings_updated',
 		esc_attr('settings_updated'),
@@ -263,6 +280,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 						<a class="nav-tab" href="#payment"><?php echo esc_html_e('Payment Settings', 'gift-voucher') ?></a>
 						<a class="nav-tab" href="#email"><?php echo esc_html_e('Email Settings', 'gift-voucher') ?></a>
 						<a class="nav-tab" href="#custom"><?php echo esc_html_e('Custom CSS', 'gift-voucher') ?></a>
+						<a class="nav-tab" href="#quotes"><?php echo esc_html__('Quotes', 'gift-voucher') ?></a>
 					</div>
 					<form method="post" name="voucher-settings" id="voucher-settings" action="<?php echo esc_url(admin_url('admin.php')); ?>?page=voucher-setting">
 						<input type="hidden" name="action" value="<?php echo esc_attr('save_voucher_settings_option'); ?>" />
@@ -508,12 +526,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 								<!-- Select number format -->
 								<tr>
 									<th scope="row">
-										<label for="select_number_format"><?php echo __('Select number format', 'gift-voucher'); ?></label>
+										<label for="select_number_format"><?php echo esc_html__('Select number format', 'gift-voucher'); ?></label>
 									</th>
 									<td>
 										<select name="select_number_format" id="template_col" class="regular-text">
-											<option value="comma" <?php echo ($wpgv_select_number_format == 'comma') ? 'selected' : ''; ?>>1,000.00 (<?php echo __('comma-separated', 'gift-voucher'); ?>)</option>
-											<option value="dot" <?php echo ($wpgv_select_number_format == 'dot') ? 'selected' : ''; ?>>1.000,00 (<?php echo __('dot-separated', 'gift-voucher'); ?>)</option>
+											<option value="comma" <?php echo ($wpgv_select_number_format == 'comma') ? 'selected' : ''; ?>>1,000.00 (<?php echo esc_html__('comma-separated', 'gift-voucher'); ?>)</option>
+											<option value="dot" <?php echo ($wpgv_select_number_format == 'dot') ? 'selected' : ''; ?>>1.000,00 (<?php echo esc_html__('dot-separated', 'gift-voucher'); ?>)</option>
 										</select>
 									</td>
 								</tr>
@@ -1138,7 +1156,56 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 								</tr>
 							</tbody>
 						</table>
-						<p class="submit"><?php submit_button(__('Save Settings', 'gift-voucher'), 'primary', 'submit', false); ?></p>
+
+						<?php
+						// Load quotes option for UI
+						$quotes_option_raw = get_option('wpgv_quotes', '');
+						$quotes_option = array();
+						if (!empty($quotes_option_raw)) {
+							$decoded = json_decode($quotes_option_raw, true);
+							if (is_array($decoded)) {
+								$quotes_option = $decoded;
+							}
+						}
+						?>
+						<table class="form-table tab-content" id="quotes">
+							<tbody>
+								<tr>
+									<th colspan="2" style="padding-bottom:0;padding-top: 0;">
+										<h3><?php echo esc_html__('Quotes (Suggestions for message)', 'gift-voucher'); ?></h3>
+										<p class="description"><?php echo esc_html__('Manage the list of quotes shown under the Description field on the frontend.', 'gift-voucher'); ?></p>
+									</th>
+								</tr>
+								<tr>
+									<th scope="row">
+										<label><?php echo esc_html__('Quotes List', 'gift-voucher'); ?></label>
+										<p class="description"><?php echo esc_html__('Add, remove or edit quotes.', 'gift-voucher'); ?></p>
+									</th>
+									<td>
+										<div id="wpgv-quotes-list">
+											<?php if (!empty($quotes_option)) : ?>
+												<?php foreach ($quotes_option as $idx => $q) : ?>
+													<div class="wpgv-quote-row" style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+														<input type="text" name="wpgv_quotes_item[]" value="<?php echo esc_attr($q); ?>" class="regular-text" style="flex:1;" />
+														<button class="button wpgv-remove-quote" type="button">&times;</button>
+													</div>
+												<?php endforeach; ?>
+											<?php else : ?>
+												<div class="wpgv-quote-row" style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+													<input type="text" name="wpgv_quotes_item[]" value="" class="regular-text" style="flex:1;" />
+													<button class="button wpgv-remove-quote" type="button">&times;</button>
+												</div>
+											<?php endif; ?>
+										</div>
+										<p>
+											<button class="button button-secondary" type="button" id="wpgv-add-quote"><?php echo esc_html__('Add Quote', 'gift-voucher'); ?></button>
+										</p>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+
+						<p class="submit"><?php submit_button(esc_html__('Save Settings', 'gift-voucher'), 'primary', 'submit', false); ?></p>
 					</form>
 				</div>
 			</div>

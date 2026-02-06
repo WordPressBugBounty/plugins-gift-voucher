@@ -25,6 +25,12 @@ class WPGIFT_Nag
 	{
 
 		if (isset($_GET[WPGIFT_ADMIN_NOTICE_KEY]) && current_user_can('install_plugins')) {
+			// Require a valid nonce for any action that modifies state / user meta
+			// (prevents CSRF / accidental external triggers).
+			if (empty($_GET['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'wpgv_hide_notice')) {
+				// Bad request — stop processing. Use wp_die with a generic message.
+				wp_die( esc_html__('Invalid request.', 'gift-voucher') );
+			}
 			// Add user meta
 			global $current_user;
 			add_user_meta($current_user->ID, WPGIFT_ADMIN_NOTICE_KEY, '1', true);
@@ -46,8 +52,9 @@ class WPGIFT_Nag
 			} else {
 				$redirect_url = sanitize_url('http://' . $host . $path . $query_string);
 			}
-			// Redirect
-			wp_redirect($redirect_url);
+			// Redirect: use wp_safe_redirect so redirect targets are validated by WP.
+			// We pass the raw URL to the safe redirect helper and still call exit() afterwards.
+			wp_safe_redirect( esc_url_raw( $redirect_url ) );
 			exit;
 		}
 	}
@@ -135,6 +142,20 @@ class WPGIFT_Nag
 	{
 
 		$query_params = $this->get_admin_querystring_array();
-		$query_string = esc_html('?' . http_build_query(array_merge($query_params, array(WPGIFT_ADMIN_NOTICE_KEY => '1'))));
+			// Build a nonce protected URL that will toggle the hide-notice cookie.
+			$redirect_params = array_merge($query_params, array(WPGIFT_ADMIN_NOTICE_KEY => '1'));
+			$raw_url = add_query_arg($redirect_params, admin_url('admin.php'));
+			// Add nonce for 'wpgv_hide_notice' action to the URL
+			$url_with_nonce = wp_nonce_url($raw_url, 'wpgv_hide_notice');
+			$query_string = esc_html($url_with_nonce);
+
+			// Output admin notice (HTML escape everything). The hide link uses
+			// the same nonce action we verify above.
+			printf(
+				'<div class="notice notice-info is-dismissible"><p>%s <a href="%s">%s</a></p></div>',
+				esc_html__('Thanks for using Gift Cards plugin. You can hide this message if you like.', 'gift-voucher'),
+				esc_url($url_with_nonce),
+				esc_html__('Hide this notice', 'gift-voucher')
+			);
 	}
 }

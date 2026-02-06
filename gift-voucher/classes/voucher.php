@@ -189,21 +189,50 @@ if (!class_exists('WPGV_Voucher_List')) :
 				$voucher_code = '1';
 			}
 
-			$where_clause = " WHERE `order_type` = %s";
-			$params       = [($itemorder) ? 'items' : 'vouchers'];
+			$order_type = ($itemorder) ? 'items' : 'vouchers';
 
-			if ($search && $voucher_code) {
-				$where_clause .= " AND (`couponcode` = %s OR `shipping_email` = %s)";
-				array_push($params, $voucher_code, $search_email);
+			// Build query based on conditions
+			if ($search && $voucher_code && $page === 'redeem-voucher') {
+				// Both search and redeem-voucher page
+				$result = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_list WHERE `order_type` = %s AND (`couponcode` = %s OR `shipping_email` = %s) AND (`couponcode` = %s OR `shipping_email` = %s)",
+						$order_type,
+						$voucher_code,
+						$search_email,
+						$voucher_code,
+						$search_email
+					)
+				);
+			} elseif ($search && $voucher_code) {
+				// Search only
+				$result = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_list WHERE `order_type` = %s AND (`couponcode` = %s OR `shipping_email` = %s)",
+						$order_type,
+						$voucher_code,
+						$search_email
+					)
+				);
+			} elseif ($page === 'redeem-voucher') {
+				// Redeem-voucher page only
+				$result = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_list WHERE `order_type` = %s AND (`couponcode` = %s OR `shipping_email` = %s)",
+						$order_type,
+						$voucher_code,
+						$search_email
+					)
+				);
+			} else {
+				// Base query only
+				$result = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_list WHERE `order_type` = %s",
+						$order_type
+					)
+				);
 			}
-
-			if ($page === 'redeem-voucher') {
-				$where_clause .= " AND (`couponcode` = %s OR `shipping_email` = %s)";
-				array_push($params, $voucher_code, $search_email);
-			}
-
-			$result = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_list {$where_clause}", ...$params));
-
 
 			return $result;
 		}

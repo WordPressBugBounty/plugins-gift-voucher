@@ -32,6 +32,17 @@ jQuery(document).ready(function ($) {
         $paynowbtnspan = $("#paynowbtn span"),
         $totalpricespan = $("#totalprice span");
 
+    // Ensure any lists inside the gift items UI don't show bullets or left padding
+    try {
+        $('.wpgv-items, .wpgv-items-wrap, .wpgv-according-categories, .wpgv-according-category').find('ul').css({
+            'list-style': 'none',
+            'margin-left': '0',
+            'padding-left': '0'
+        }).addClass('wpgv-no-list');
+    } catch (e) {
+        // ignore
+    }
+
     $('.wpgv-according-category:not(:first-child)').addClass('catclose');
     $('.wpgv-giftitem-wrapper .wpgv_preview-box:not(:nth-child(2))').addClass('mailhidden');
     $('.wpgv-according-category:not(:first-child) .wpgv-items').slideUp();
@@ -364,4 +375,30 @@ jQuery(document).ready(function ($) {
             return false;
         }
     });
+
+    // Quotes click-to-fill and progressive "show more" for gift items message textarea
+    try {
+        var $quotesWrap = $('#wpgv-giftitems .voucher-quotes');
+
+        $quotesWrap.on('click', 'li.quote-item', function () {
+            var text = $(this).text();
+            $('#message').val(text).trigger('input').trigger('change').trigger('keyup');
+        });
+
+        $quotesWrap.on('click', '.show-more-quotes', function (e) {
+            e.preventDefault();
+            var $btn = $(this);
+            var shown = parseInt($btn.data('shown')) || 5;
+            var step = parseInt($btn.data('step')) || 5;
+            var $hidden = $quotesWrap.find('li.quote-item:hidden');
+            $hidden.slice(0, step).fadeIn();
+            shown += step;
+            $btn.data('shown', shown);
+            if ($quotesWrap.find('li.quote-item:hidden').length === 0) {
+                $btn.hide();
+            }
+        });
+    } catch (e) {
+        // ignore if quotes area not present
+    }
 });

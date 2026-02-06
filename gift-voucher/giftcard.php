@@ -279,52 +279,78 @@ add_action('wp_ajax_nopriv_voucher_slider_template', 'getTemplateVoucherSlider')
 // function select template voucher
 function getSelectTemplateVoucher()
 {
+    // Return JSON using WP helpers so the response is consistent for AJAX consumers (and nopriv users)
     $setting_options = get_data_settings_voucher();
+
+    // Basic localized labels
     $giftto = __('Gift To', 'gift-voucher');
     $giftfrom = __('Gift From', 'gift-voucher');
-    //$date_of = __('Date of Expiry', 'gift-voucher');
-    $date_of = __('Date', 'gift-voucher');
+    $date_of_label = __('Date', 'gift-voucher');
     $counpon = __('Coupon', 'gift-voucher');
-    $voucher_id = !empty($_POST['voucher_id']) ? sanitize_text_field(wp_unslash($_POST['voucher_id'])) : 0;
+
+    // Sanitize incoming voucher id
+    $voucher_id = isset($_POST['voucher_id']) ? intval(wp_unslash($_POST['voucher_id'])) : 0;
+
+    // Defaults from settings
     $web = !empty($setting_options->pdf_footer_url) ? $setting_options->pdf_footer_url : get_site_url();
-    $email = !empty($setting_options->pdf_footer_email) ? $setting_options->pdf_footer_email : get_option('admin_email');;
-    $company_name = !empty($setting_options->company_name) ? $setting_options->company_name : get_bloginfo('name');;
-    // check expiry
-    $wpgv_hide_expiry = get_option('wpgv_hide_expiry') ? get_option('wpgv_hide_expiry') : 'yes';
-    $wpgv_expiry_date_format = get_option('wpgv_expiry_date_format') ? get_option('wpgv_expiry_date_format') : 'd.m.Y';
-    $voucher_expiry_value = !empty(esc_html(get_post_meta($voucher_id, 'wpgv_customize_template_voucher_expiry_value', true))) ? esc_html(get_post_meta($voucher_id, 'wpgv_customize_template_voucher_expiry_value', true)) : $setting_options->voucher_expiry; // format day and number
-    if ($wpgv_hide_expiry == 'no') {
+    $email = !empty($setting_options->pdf_footer_email) ? $setting_options->pdf_footer_email : get_option('admin_email');
+    $company_name = !empty($setting_options->company_name) ? $setting_options->company_name : get_bloginfo('name');
+
+    // Expiry handling
+    $wpgv_hide_expiry = get_option('wpgv_hide_expiry', 'yes');
+    $wpgv_expiry_date_format = get_option('wpgv_expiry_date_format', 'd.m.Y');
+    $voucher_expiry_value = $setting_options->voucher_expiry;
+    if ($voucher_id > 0) {
+        $meta_val = get_post_meta($voucher_id, 'wpgv_customize_template_voucher_expiry_value', true);
+        if ($meta_val !== '') {
+            $voucher_expiry_value = esc_html($meta_val);
+        }
+    }
+
+    if ($wpgv_hide_expiry === 'no') {
         $expiryDate = __('No Expiry', 'gift-voucher');
     } else {
-        $expiryDate = ($setting_options->voucher_expiry_type == 'days')
-            ? gmdate($wpgv_expiry_date_format, strtotime('+' . $voucher_expiry_value . ' days', time())) . PHP_EOL
-            : $voucher_expiry_value;
+        if (!empty($setting_options->voucher_expiry_type) && $setting_options->voucher_expiry_type === 'days') {
+            $expiryDate = gmdate($wpgv_expiry_date_format, strtotime('+' . $voucher_expiry_value . ' days', time()));
+        } else {
+            $expiryDate = $voucher_expiry_value;
+        }
     }
-    $wpgv_leftside_notice = (get_option('wpgv_leftside_notice') != '') ? get_option('wpgv_leftside_notice') : __('Cash payment is not possible. The terms and conditions apply.', 'gift-voucher');
 
-    //WPGIFT__PLUGIN_URL
-    $select_template = esc_html(get_post_meta($voucher_id, 'wpgv_customize_template_template-style', true));
-    $title_template = str_replace(".png", ".svg", $select_template);
+    $wpgv_leftside_notice = get_option('wpgv_leftside_notice', __('Cash payment is not possible. The terms and conditions apply.', 'gift-voucher'));
 
-    //$images_template = !empty(get_post_meta( $voucher_id, 'wpgv_customize_template_image', true )) ? get_post_meta( $voucher_id, 'wpgv_customize_template_image', true ) : WPGIFT__PLUGIN_URL.'/assets/img/template-images/'.$title_template;
-    $images_template = WPGIFT__PLUGIN_URL . '/assets/img/templates/svg/' . $title_template;
-    $name_template = str_replace(".png", ".json", $select_template);
-    $json = WPGIFT__PLUGIN_URL . '/assets/img/templates/json/' . $name_template;
-    $response = wp_remote_get($json);
+    // Determine template and JSON path (only if voucher_id provided)
+    $json_data = array();
+    $images_template = '';
+    if ($voucher_id > 0) {
+        $select_template = get_post_meta($voucher_id, 'wpgv_customize_template_template-style', true);
+        $select_template = is_string($select_template) ? esc_html($select_template) : '';
+        $title_template = str_replace('.png', '.svg', $select_template);
+        $images_template = WPGIFT__PLUGIN_URL . '/assets/img/templates/svg/' . $title_template;
+        $name_template = str_replace('.png', '.json', $select_template);
+        $json_url = WPGIFT__PLUGIN_URL . '/assets/img/templates/json/' . $name_template;
 
-    if (is_wp_error($response)) {
-        $json = '';
-    } else {
-        $json = wp_remote_retrieve_body($response);
-
-        $json_data = json_decode($json, true);
+        if (!empty($json_url)) {
+            $response = wp_remote_get($json_url, array('timeout' => 5));
+            if (!is_wp_error($response)) {
+                $body = wp_remote_retrieve_body($response);
+                $decoded = json_decode($body, true);
+                if (is_array($decoded)) {
+                    $json_data = $decoded;
+                }
+            } else {
+                // Log remote fetch errors for debugging but don't expose internal details to the client
+                error_log('wpgv: failed to fetch template json at ' . $json_url . ' - ' . $response->get_error_message());
+            }
+        }
     }
+
     $result = array(
         'url' => $images_template,
-        'currency' => $setting_options->currency,
+        'currency' => isset($setting_options->currency) ? $setting_options->currency : '',
         'giftto' => $giftto,
         'giftfrom' => $giftfrom,
-        'date_of' => $date_of,
+        'date_of' => $date_of_label,
         'company_name' => $company_name,
         'email' => $email,
         'web' => $web,
@@ -333,8 +359,8 @@ function getSelectTemplateVoucher()
         'counpon' => $counpon,
         'json' => $json_data,
     );
-    echo json_encode($result);
-    wp_die();
+
+    wp_send_json_success($result);
 }
 add_action('wp_ajax_ajax_select_voucher_template', 'getSelectTemplateVoucher');
 add_action('wp_ajax_nopriv_ajax_select_voucher_template', 'getSelectTemplateVoucher');
@@ -342,29 +368,93 @@ add_action('wp_ajax_nopriv_ajax_select_voucher_template', 'getSelectTemplateVouc
 function set_up_gift_voucher()
 {
     $setting_options = get_data_settings_voucher();
-    $html = '<div class="voucher-template-input price-voucher">
-        <label>' . __('Gift Value', 'gift-voucher') . '</label>
-        <div class="price-template-voucher">
-            <span class="currencySymbol"> ' . $setting_options->currency . ' </span>
-            <input type="number" name="voucher_price_value" id="voucher_price_value" class="input-info-voucher" value="">
-        </div>
-        <span class="error-input">' . __('This field is required.', 'gift-voucher') . '</span>
+    $html  = '<div class="voucher-template-input price-voucher">
+    <label>' . __('Gift Value', 'gift-voucher') . '</label>
+    <div class="price-template-voucher">
+        <span class="currencySymbol"> ' . $setting_options->currency . ' </span>
+        <input type="number" name="voucher_price_value" id="voucher_price_value" class="input-info-voucher" value="">
     </div>
-    <div class="voucher-template-input">
-        <label>' . __('Gift To', 'gift-voucher') . '</label>
-        <input maxlength="30" value="" id="voucher_gift_to" placeholder="' . __('Gift To', 'gift-voucher') . '" name="voucher_gift_to" type="text" class="input-info-voucher">
-        <span class="error-input">' . __('This field is required.', 'gift-voucher') . '</span>
-    </div>
-    <div class="voucher-template-input">
-        <label>' . __('Gift From', 'gift-voucher') . '</label>
-        <input maxlength="30" value="" id="voucher_gift_from" placeholder="' . __('Gift From', 'gift-voucher') . '" name="voucher_gift_from" type="text" class="input-info-voucher">
-        <span class="error-input">' . __('This field is required.', 'gift-voucher') . '</span>
-    </div>
-    <div class="voucher-template-input">
+    <span class="error-input">' . __('This field is required.', 'gift-voucher') . '</span>
+</div>';
+
+    $html .= '<div class="voucher-template-input">
+    <label>' . __('Gift To', 'gift-voucher') . '</label>
+    <input maxlength="30" value="" id="voucher_gift_to" placeholder="' . __('Gift To', 'gift-voucher') . '" name="voucher_gift_to" type="text" class="input-info-voucher">
+    <span class="error-input">' . __('This field is required.', 'gift-voucher') . '</span>
+</div>';
+
+    $html .= '<div class="voucher-template-input">
+    <label>' . __('Gift From', 'gift-voucher') . '</label>
+    <input maxlength="30" value="" id="voucher_gift_from" placeholder="' . __('Gift From', 'gift-voucher') . '" name="voucher_gift_from" type="text" class="input-info-voucher">
+    <span class="error-input">' . __('This field is required.', 'gift-voucher') . '</span>
+</div>';
+
+    $voucher_brcolor = get_option('wpgv_voucher_border_color') ? get_option('wpgv_voucher_border_color') : '1371ff';
+    $voucher_brcolor_hex = ltrim($voucher_brcolor, '#');
+    if (strlen($voucher_brcolor_hex) === 3) {
+        $voucher_brcolor_hex = $voucher_brcolor_hex[0] . $voucher_brcolor_hex[0]
+            . $voucher_brcolor_hex[1] . $voucher_brcolor_hex[1]
+            . $voucher_brcolor_hex[2] . $voucher_brcolor_hex[2];
+    }
+    $r = hexdec(substr($voucher_brcolor_hex, 0, 2));
+    $g = hexdec(substr($voucher_brcolor_hex, 2, 2));
+    $b = hexdec(substr($voucher_brcolor_hex, 4, 2));
+    $li_bg1 = "background-color: rgba($r,$g,$b,0.08);";
+    $li_bg2 = "background-color: rgba($r,$g,$b,0.16);";
+
+    // Load quotes (JSON) early so we can decide visibility
+    $quotes_raw = get_option('wpgv_quotes', '');
+    $quotes = array();
+    if (!empty($quotes_raw)) {
+        $decoded = json_decode($quotes_raw, true);
+        if (is_array($decoded)) {
+            $quotes = $decoded;
+        }
+    }
+    $has_quotes = !empty($quotes);
+
+    $html .= '<div class="voucher-template-input">
         <label>' . __('Description (Max: 250 Characters)', 'gift-voucher') . '</label>
         <textarea maxlength="250" value="" id="voucher_description" placeholder="' . __('Description (Max: 250 Characters)', 'gift-voucher') . '" name="voucher_description" class="input-info-voucher"></textarea>
         <div class="maxchar"></div>
+        <div class="voucher-quotes" id="voucher-quotes" style="font-size: 12px;margin: 5px 0 0; font-style: italic;' . ($has_quotes ? '' : ' display:none;') . '">
+            <span>' . __('Quotes:', 'gift-voucher') . '</span>
+            <style>
+              /* spacing and hover effect for voucher description suggestions */
+              #giftvoucher-template .voucher-quotes ul li {
+                margin: 5px 0;
+                cursor: pointer;
+              }
+              #giftvoucher-template .voucher-quotes ul li:hover {
+                box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+              }
+              #giftvoucher-template .voucher-quotes .show-more-quotes {
+                display: inline-block; margin-top: 6px; font-style: normal; cursor: pointer; color: #0073aa;
+              }
+              #giftvoucher-template .voucher-quotes .show-more-quotes:hover {
+                text-decoration: underline;
+              }
+            </style>
+            <ul style="margin: 5px 0 0 18px; padding: 0;">
+            ';
+    if (!empty($quotes)) {
+        $total_quotes = count($quotes);
+        foreach ($quotes as $i => $qtext) {
+            $zebra = ($i % 2 === 0) ? $li_bg1 : $li_bg2;
+            $hidden = ($i >= 5) ? 'display:none;' : '';
+            $html .= '<li class="quote-item" style="' . $zebra . ' ' . $hidden . ' padding: 4px 6px; border-left: 3px solid #' . $voucher_brcolor_hex . '; border-radius: 3px; cursor: pointer;">' . esc_html($qtext) . '</li>';
+        }
+    }
+    $html .= '
+            </ul>
+';
+    if (!empty($quotes) && $total_quotes > 5) {
+        $html .= '<a href="javascript:;" class="show-more-quotes" data-shown="5" data-step="5">' . __('Show more', 'gift-voucher') . '</a>';
+    }
+    $html .= '
+        </div>
     </div>';
+
     return $html;
 }
 // function get payment
@@ -582,7 +672,15 @@ function format_categories_function()
     ));
     if (!empty($category_voucher)) {
         foreach ($category_voucher as $key => $category) {
-            $html .= '<li class="category-nav-item"><a class="category-voucher-item" data-category-id=' . $category->term_id . '>' . $category->name . '</a></li>';
+            // Support both WP_Term objects and term arrays
+            if (is_object($category)) {
+                $cat_id = isset($category->term_id) ? $category->term_id : '';
+                $cat_name = isset($category->name) ? $category->name : '';
+            } else {
+                $cat_id = isset($category['term_id']) ? $category['term_id'] : '';
+                $cat_name = isset($category['name']) ? $category['name'] : '';
+            }
+            $html .= '<li class="category-nav-item"><a class="category-voucher-item" data-category-id="' . esc_attr($cat_id) . '">' . esc_html($cat_name) . '</a></li>';
         }
     }
     $html .= '</ul>

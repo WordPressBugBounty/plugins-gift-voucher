@@ -20,6 +20,53 @@ jQuery(document).ready(function ($) {
     //show step
     changeStepVoucher(step_template);
 
+    // Fill voucher description when clicking on suggestion items
+    jQuery(document).on('click', '#giftvoucher-template .voucher-description-suggestions li', function (e) {
+        e.preventDefault();
+        var text = jQuery(this).text().trim();
+        if (!text) return;
+        voucher_description.val(text).trigger('input').trigger('change').trigger('keyup');
+        // Optional: mark active item
+        jQuery('#giftvoucher-template .voucher-description-suggestions li').removeClass('active');
+        jQuery(this).addClass('active');
+    });
+
+    // Fill voucher description when clicking on new quotes items
+    jQuery(document).on('click', '#giftvoucher-template .voucher-quotes li', function (e) {
+        e.preventDefault();
+        var text = jQuery(this).text().trim();
+        if (!text) return;
+        voucher_description.val(text).trigger('input').trigger('change').trigger('keyup');
+        // highlight active in quotes list
+        jQuery('#giftvoucher-template .voucher-quotes li').removeClass('active');
+        jQuery(this).addClass('active');
+    });
+
+    // Show more quotes (reveal 5 per click)
+    jQuery(document).on('click', '#giftvoucher-template .voucher-quotes .show-more-quotes', function (e) {
+        e.preventDefault();
+        var $btn = jQuery(this);
+        var step = parseInt($btn.data('step'), 10) || 5;
+        var shown = parseInt($btn.data('shown'), 10) || 5;
+        var $container = $btn.closest('.voucher-quotes');
+        var $items = $container.find('li.quote-item');
+        var total = $items.length;
+
+        // Determine range to show: next [shown, shown+step)
+        var nextMax = Math.min(shown + step, total);
+        $items.each(function (idx) {
+            if (idx < nextMax) {
+                jQuery(this).show();
+            }
+        });
+
+        // Update counter, hide button if all visible
+        $btn.data('shown', nextMax);
+        if (nextMax >= total) {
+            $btn.hide();
+        }
+    });
+
     function sliderVoucherTemplate(number_slider) {
         var number = parseInt(number_slider);
         if (jQuery('#slider-giftvoucher-template .slider-voucher-template').hasClass('slick-initialized')) {
@@ -153,19 +200,35 @@ jQuery(document).ready(function ($) {
             },
             success: function (results) {
 
-                var data = JSON.parse(results);
-                imagesGiftCard = data.url;
-                currency = data.currency;
-                giftto = data.giftto;
-                giftfrom = data.giftfrom;
-                date_of = data.date_of;
-                company_name = data.company_name;
-                email = data.email;
-                website = data.web;
-                expiryDate = data.expiryDate;
-                notice = data.leftside_notice;
-                counpon_label = data.counpon;
-                json = data.json;
+                // Accept both WordPress-standard JSON (object with {success: true, data: {...}})
+                // and legacy stringified JSON. Keep backwards compatibility.
+                var payload;
+                if (typeof results === 'object' && results !== null) {
+                    // WP returns {success: true, data: {...}}
+                    payload = results.data ? results.data : results;
+                } else if (typeof results === 'string') {
+                    try {
+                        payload = JSON.parse(results);
+                    } catch (e) {
+                        // fallback: treat as empty
+                        payload = {};
+                    }
+                } else {
+                    payload = {};
+                }
+
+                imagesGiftCard = payload.url || '';
+                currency = payload.currency || '';
+                giftto = payload.giftto || '';
+                giftfrom = payload.giftfrom || '';
+                date_of = payload.date_of || '';
+                company_name = payload.company_name || '';
+                email = payload.email || '';
+                website = payload.web || '';
+                expiryDate = payload.expiryDate || '';
+                notice = payload.leftside_notice || '';
+                counpon_label = payload.counpon || '';
+                json = payload.json || {};
 
                 changeStepVoucher(step_voucher + 1);
                 var couponcode = Math.floor(1000000000000000 + Math.random() * 9000000000000000);

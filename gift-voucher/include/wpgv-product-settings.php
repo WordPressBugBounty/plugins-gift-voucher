@@ -131,6 +131,8 @@ if ($options->is_woocommerce_enable) {
                 echo '</div>';
 
                 ?>
+                <!-- Nonce for saving Gift Voucher product meta -->
+                <input type="hidden" name="_wpgv_nonce" id="_wpgv_nonce" value="<?php echo esc_attr(wp_create_nonce('wpgv_save_product_meta')); ?>">
                 <input type="hidden" name="wpgv_product_id" id="wpgv_product_id" value="<?php echo esc_attr($post_id); ?>">
                 <input type="button" value="Add" name="wpgv-add-price-button" id="wpgv-add-price-button" class="button button-primary">
 

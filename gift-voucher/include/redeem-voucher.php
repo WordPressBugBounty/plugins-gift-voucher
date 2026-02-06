@@ -32,6 +32,10 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
                 add_action('woocommerce_checkout_create_order', array($this, 'woocommerce_checkout_create_order'), 10, 2);
                 add_filter('woocommerce_paypal_args', array($this, 'woocommerce_paypal_args'), 10, 2);
                 add_filter('woocommerce_payment_complete_order_status', array($this, 'filter_woocommerce_payment_complete_order_status_gift_voucher'), 10, 3);
+
+                // Temporary: log status changes for Stripe orders to trace who sets order status
+                add_action('woocommerce_order_status_changed', array($this, 'wpgv_log_order_status_change'), 10, 4);
+
                 add_action('wp_ajax_nopriv_wpgv-gift-voucher-redeem', array($this, 'wpgv_ajax_redeem'));
                 add_action('wp_ajax_wpgv-gift-voucher-redeem', array($this, 'wpgv_ajax_redeem'));
 
@@ -139,18 +143,84 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
             WC()->session->set(WPGIFT_SESSION_KEY, $session_data);
         }
         // checking status order payment  stripe
-        function filter_woocommerce_payment_complete_order_status_gift_voucher($var, $order_id, $instance)
+        function filter_woocommerce_payment_complete_order_status_gift_voucher($status, $order_id, $instance)
         {
-            if (! $order_id) {
+            // Keep the original status if no order ID is provided (e.g., email previews)
+            if ( empty( $order_id ) ) {
+                return $status;
+            }
+
+            $order = wc_get_order( $order_id );
+
+            // Ensure we have a valid order object before calling methods on it
+            if ( ! $order || ! $order instanceof WC_Order ) {
+                return $status;
+            }
+
+            // Debug logging when WP_DEBUG enabled
+            if ( defined('WP_DEBUG') && WP_DEBUG ) {
+                $items = array();
+                foreach ( $order->get_items() as $item ) {
+                    $p = $item->get_product();
+                    $items[] = array(
+                        'product_id' => $item->get_product_id(),
+                        'is_virtual' => $p ? ( method_exists( $p, 'is_virtual' ) ? $p->is_virtual() : null ) : null,
+                        'is_downloadable' => $p ? ( method_exists( $p, 'is_downloadable' ) ? $p->is_downloadable() : null ) : null,
+                        'quantity' => $item->get_quantity(),
+                    );
+                }
+                error_log('WPGV_STATUS_DEBUG: order_id=' . $order_id . ', status_in=' . $status . ', payment_method=' . $order->get_payment_method() . ', needs_shipping=' . ( $order->needs_shipping() ? '1' : '0' ) . ', items=' . json_encode( $items ));
+            }
+
+            // Only adjust for Stripe payments
+            if ( $order->get_payment_method() !== 'stripe' ) {
+                return $status;
+            }
+
+            // Only override when WooCommerce intends to mark as 'completed'.
+            // This avoids forcing 'processing' in contexts like preview or for digital-only orders.
+            if ( $status !== 'completed' ) {
+                return $status;
+            }
+
+            // Determine whether the order requires shipping (i.e., has any non-virtual, non-downloadable product)
+            $needs_processing = false;
+            foreach ( $order->get_items() as $item ) {
+                $product = $item->get_product();
+                if ( $product && ! $product->is_virtual() && ! $product->is_downloadable() ) {
+                    $needs_processing = true;
+                    break;
+                }
+            }
+
+            if ( $needs_processing ) {
+                return 'processing';
+            }
+
+            return $status;
+        }
+
+        // Temporary logger to capture who/what sets order status for Stripe orders
+        function wpgv_log_order_status_change($order_id, $old_status, $new_status, $order)
+        {
+            if (! $order || ! $order instanceof WC_Order) {
                 return;
             }
-            $order = wc_get_order($order_id);
-            if ($order->get_payment_method() == 'stripe') {
-                return 'processing';
-            } else {
-                return $var;
+
+            $pm = $order->get_payment_method();
+            if ( strpos( $pm, 'stripe' ) === false ) {
+                return;
             }
+
+            $bt = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
+            $callers = array();
+            foreach ( $bt as $b ) {
+                $callers[] = (isset($b['function']) ? $b['function'] : '') . (isset($b['class']) ? ' in ' . $b['class'] : '');
+            }
+
+            error_log('WPGV_STATUS_CHANGE: order=' . $order_id . ', old=' . $old_status . ', new=' . $new_status . ', pm=' . $pm . ', callers=' . json_encode($callers));
         }
+
         // Ensure we have the right total, even after recalculations and such.
         function woocommerce_update_order($order_id)
         {
