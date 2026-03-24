@@ -2,8 +2,8 @@
 Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
-Tested up to: 6.9.1
-Stable tag: 4.6.4
+Tested up to: 6.9.4
+Stable tag: 4.6.5
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -224,6 +224,10 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.6.5 - Released: March 24, 2026 =
+* Feature: Add admin PDF regeneration support in Free plugin for both modern (Konva) and standard (style1) vouchers.
+* fix: address deprecated warnings in gift-voucher admin menu (View Voucher Details) while keeping view-detail action functional on WP 6.9.4.
 
 = Version 4.6.4 - Released: February 05, 2026 =
 * Fix: Prevent WooCommerce email preview fatal. Ensure payment-complete filter returns original status for empty $order_id and validate WC_Order before calling methods to avoid preview crashes. (Files: include/redeem-voucher.php)

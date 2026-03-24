@@ -17,6 +17,7 @@ class WPGiftVoucherAdminPages
 	{
 		add_filter('set-screen-option', array(__CLASS__, 'set_screen'), 10, 3);
 		add_action('admin_menu', array($this, 'plugin_menu'));
+		add_action('admin_enqueue_scripts', array($this, 'hide_voucher_details_menu'));
 		add_action('admin_enqueue_scripts', array($this, 'admin_register_assets'));
 	}
 
@@ -26,13 +27,28 @@ class WPGiftVoucherAdminPages
 	}
 
 	/**
+	 * Hide View Voucher Details from sidebar menu but keep functionality
+	 */
+	public function hide_voucher_details_menu()
+	{
+		echo '<style>
+			#adminmenu a[href*="page=view-voucher-details"],
+			.wp-submenu a[href*="page=view-voucher-details"],
+			.wp-submenu a[href*="page=new-voucher-template"] {
+				display: none !important;
+			}
+		</style>';
+	}
+
+	/**
 	 * Admin CSS and JS Files
 	 */
 	function admin_register_assets($hook)
 	{
 		wp_enqueue_style('wp-color-picker');
 		wp_enqueue_style('voucher-style', WPGIFT__PLUGIN_URL . '/assets/css/admin-style.css');
-		wp_enqueue_script('voucher-script', WPGIFT__PLUGIN_URL  . '/assets/js/admin-script.js', array('wp-color-picker'), '1.0.0', true);
+		wp_enqueue_script('konva-js', WPGIFT__PLUGIN_URL . '/assets/js/konva.min.js', array('jquery'), 'v8.0.4', true);
+		wp_enqueue_script('voucher-script', WPGIFT__PLUGIN_URL  . '/assets/js/admin-script.js', array('wp-color-picker', 'konva-js'), '1.0.0', true);
 		wp_localize_script('voucher-script', 'WPGiftAjax', array('ajaxurl' => admin_url('admin-ajax.php')));
 	}
 
@@ -42,12 +58,13 @@ class WPGiftVoucherAdminPages
 	public function plugin_menu()
 	{
 		add_menu_page('Gift Vouchers', 'Gift Vouchers', 'read', 'wpgv-gift-cards', '', 'dashicons-tickets-alt', 25);
-		add_submenu_page('wpgv-gift-cards', 'Item Categories', 'Item Categories', 'edit_posts', 'edit-tags.php?taxonomy=wpgv_voucher_category&post_type=wpgv_voucher_product', false);
-		add_submenu_page('wpgv-gift-cards', 'Voucher Categories', 'Gift Cards Categories', 'edit_posts', 'edit-tags.php?taxonomy=category_voucher_template&post_type=voucher_template', false);
+		add_submenu_page('wpgv-gift-cards', 'Item Categories', 'Item Categories', 'edit_posts', 'edit-tags.php?taxonomy=wpgv_voucher_category&post_type=wpgv_voucher_product', '');
+		add_submenu_page('wpgv-gift-cards', 'Voucher Categories', 'Gift Cards Categories', 'edit_posts', 'edit-tags.php?taxonomy=category_voucher_template&post_type=voucher_template', '');
 		$templatehook = add_submenu_page('wpgv-gift-cards', __('Voucher Templates', 'gift-voucher'), __('Voucher Templates', 'gift-voucher'), 'manage_options', 'voucher-templates', array($this, 'voucher_template'));
-		add_submenu_page(NULL, __('Add New Template', 'gift-voucher'), __('Add New Template', 'gift-voucher'), 'manage_options', 'new-voucher-template', array($this, 'new_voucher_template'));
+		add_submenu_page('wpgv-gift-cards', __('Add New Template', 'gift-voucher'), __('Add New Template', 'gift-voucher'), 'manage_options', 'new-voucher-template', array($this, 'new_voucher_template'));
 
-		add_submenu_page(NULL, __('View Voucher Details', 'gift-voucher'), __('View Voucher Details', 'gift-voucher'), 'manage_options', 'view-voucher-details', array($this, 'view_voucher_details'));
+		// Create page for viewing voucher details (will be hidden from sidebar but accessible via URL/action buttons)
+		add_submenu_page('wpgv-gift-cards', __('View Voucher Details', 'gift-voucher'), __('View Voucher Details', 'gift-voucher'), 'manage_options', 'view-voucher-details', array($this, 'view_voucher_details'));
 
 		add_submenu_page('wpgv-gift-cards', __('Settings', 'gift-voucher'), __('Settings', 'gift-voucher'), 'manage_options', 'voucher-setting', array($this, 'voucher_settings'));
 		$hook = add_submenu_page('wpgv-gift-cards', __('Gift Voucher Orders', 'gift-voucher'), __('Gift Voucher Orders', 'gift-voucher'), 'manage_options', 'vouchers-lists', array($this, 'voucher_list'));

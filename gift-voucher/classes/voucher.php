@@ -532,20 +532,63 @@ if (!class_exists('WPGV_Voucher_List')) :
 				);
 				$send_mail = $this->row_actions($actions, true);
 			}
+
+			// Regenerate PDF button (modern and standard orders)
+			$regenerate_pdf_btn = '';
+			$template_info = array('kind' => 'unknown', 'template_id' => 0);
+			if (function_exists('wpgv_get_voucher_template_kind')) {
+				$template_info = wpgv_get_voucher_template_kind((object) $item);
+			}
+			$is_modern_order = ($template_info['kind'] === 'modern');
+			$is_standard_order = in_array($template_info['kind'], array('standard_list', 'standard_grid'), true);
+
+			if ($item['payment_status'] === 'Paid' && $is_modern_order) {
+				$regen_nonce = wp_create_nonce('wpgv_regen_modern_pdf_' . $item['id']);
+				$regenerate_pdf_btn = '<div style="margin-top:4px;">'
+					. '<button type="button" class="button button-small wpgv-regen-pdf-btn" '
+					. 'data-voucher-id="' . absint($item['id']) . '" '
+					. 'data-nonce="' . esc_attr($regen_nonce) . '" '
+					. 'style="background:#f7b600;color:#000;border-radius:unset;border:none;">'
+					. esc_html__('Regenerate PDF', 'gift-voucher')
+					. '</button>'
+					. '<span class="wpgv-regen-pdf-msg" style="display:none;margin-left:6px;font-size:12px;"></span>'
+					. '</div>';
+			} elseif ($item['payment_status'] === 'Paid' && $is_standard_order) {
+				$regen_nonce = wp_create_nonce('wpgv_regen_standard_pdf_' . $item['id']);
+				$regenerate_pdf_btn = '<div style="margin-top:4px;">'
+					. '<button type="button" class="button button-small wpgv-regen-standard-pdf-btn" '
+					. 'data-voucher-id="' . absint($item['id']) . '" '
+					. 'data-nonce="' . esc_attr($regen_nonce) . '" '
+					. 'style="background:#f7b600;color:#000;border-radius:unset;border:none;">'
+					. esc_html__('Regenerate PDF', 'gift-voucher')
+					. '</button>'
+					. '<span class="wpgv-regen-standard-pdf-msg" style="display:none;margin-left:6px;font-size:12px;"></span>'
+					. '</div>';
+			}
+
 			$arr = array(
 				'div' => array(
 					'class' => array(),
+					'style' => array(),
 				),
 				'span' => array(
 					'class' => array(),
+					'style' => array(),
 				),
 				'a' => array(
 					'href' => array(),
 					'class' => array(),
 				),
+				'button' => array(
+					'type' => array(),
+					'class' => array(),
+					'data-voucher-id' => array(),
+					'data-nonce' => array(),
+					'style' => array(),
+				),
 				'strong' => array(),
 			);
-			return wp_kses_post($mark_used, $arr) . wp_kses_post($send_mail, $arr) . wp_kses_post($mark_paid, $arr);
+			return wp_kses_post($mark_used, $arr) . wp_kses_post($send_mail, $arr) . wp_kses_post($mark_paid, $arr) . wp_kses_post($regenerate_pdf_btn, $arr);
 		}
 
 		/**
