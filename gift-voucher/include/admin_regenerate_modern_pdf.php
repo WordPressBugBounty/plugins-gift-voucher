@@ -167,11 +167,31 @@ function wpgv_admin_get_voucher_regen_data_func()
                 foreach ($child['children'] as $item) {
                     if (!isset($item['attrs']['id'])) continue;
                     switch ($item['attrs']['id']) {
-                        case 'giftto_label':            $giftto     = __($item['attrs']['text'] ?? $giftto, 'gift-voucher');     break;
-                        case 'giftfrom_label':          $giftfrom   = __($item['attrs']['text'] ?? $giftfrom, 'gift-voucher');   break;
-                        case 'giftcard_date_gift_label':$date_of    = __($item['attrs']['text'] ?? $date_of, 'gift-voucher');    break;
-                        case 'giftcard_counpon_label':  $counpon    = __($item['attrs']['text'] ?? $counpon, 'gift-voucher');    break;
-                        case 'giftcard_monney_label':   $value_text = __($item['attrs']['text'] ?? $value_text, 'gift-voucher'); break;
+                        case 'giftto_label':
+                            if (isset($item['attrs']['text']) && is_string($item['attrs']['text']) && $item['attrs']['text'] !== '') {
+                                $giftto = sanitize_text_field($item['attrs']['text']);
+                            }
+                            break;
+                        case 'giftfrom_label':
+                            if (isset($item['attrs']['text']) && is_string($item['attrs']['text']) && $item['attrs']['text'] !== '') {
+                                $giftfrom = sanitize_text_field($item['attrs']['text']);
+                            }
+                            break;
+                        case 'giftcard_date_gift_label':
+                            if (isset($item['attrs']['text']) && is_string($item['attrs']['text']) && $item['attrs']['text'] !== '') {
+                                $date_of = sanitize_text_field($item['attrs']['text']);
+                            }
+                            break;
+                        case 'giftcard_counpon_label':
+                            if (isset($item['attrs']['text']) && is_string($item['attrs']['text']) && $item['attrs']['text'] !== '') {
+                                $counpon = sanitize_text_field($item['attrs']['text']);
+                            }
+                            break;
+                        case 'giftcard_monney_label':
+                            if (isset($item['attrs']['text']) && is_string($item['attrs']['text']) && $item['attrs']['text'] !== '') {
+                                $value_text = sanitize_text_field($item['attrs']['text']);
+                            }
+                            break;
                     }
                 }
             }

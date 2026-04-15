@@ -7,12 +7,12 @@ namespace Composer\Autoload;
 class ComposerStaticInit82bff7107904ea7e6378ce516a65a5c8
 {
     public static $prefixLengthsPsr4 = array (
-        'S' => 
+        'S' =>
         array (
-            'Sample\\' => 7,
             'Stripe\\' => 7,
+            'Sample\\' => 7,
         ),
-        'P' => 
+        'P' =>
         array (
             'PayPalHttp\\' => 11,
             'PayPalCheckoutSdk\\' => 18,
@@ -20,19 +20,19 @@ class ComposerStaticInit82bff7107904ea7e6378ce516a65a5c8
     );
 
     public static $prefixDirsPsr4 = array (
-        'Sample\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/paypal/paypal-checkout-sdk/samples',
-        ),
-        'Stripe\\' => 
+        'Stripe\\' =>
         array (
             0 => __DIR__ . '/..' . '/stripe/stripe-php/lib',
         ),
-        'PayPalHttp\\' => 
+        'Sample\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/paypal/paypal-checkout-sdk/samples',
+        ),
+        'PayPalHttp\\' =>
         array (
             0 => __DIR__ . '/..' . '/paypal/paypalhttp/lib/PayPalHttp',
         ),
-        'PayPalCheckoutSdk\\' => 
+        'PayPalCheckoutSdk\\' =>
         array (
             0 => __DIR__ . '/..' . '/paypal/paypal-checkout-sdk/lib/PayPalCheckoutSdk',
         ),
@@ -40,6 +40,7 @@ class ComposerStaticInit82bff7107904ea7e6378ce516a65a5c8
 
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'FPDF' => __DIR__ . '/..' . '/setasign/fpdf/fpdf.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

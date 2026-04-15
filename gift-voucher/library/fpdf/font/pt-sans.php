@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 $type = 'TrueType';
 $name = 'PTSans-Regular';
 $desc = array('Ascent'=>750,'Descent'=>-250,'CapHeight'=>700,'Flags'=>32,'FontBBox'=>'[-355 -245 1093 994]','ItalicAngle'=>0,'StemV'=>70,'MissingWidth'=>750);

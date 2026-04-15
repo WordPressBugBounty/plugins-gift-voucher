@@ -38,6 +38,8 @@ class CurlClient implements ClientInterface
 
     protected $defaultOptions;
 
+    protected $randomGenerator;
+
     protected $userAgentInfo;
 
     protected $enablePersistentConnections = true;

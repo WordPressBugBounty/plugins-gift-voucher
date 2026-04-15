@@ -25,12 +25,14 @@ if ($voucher_options->order_type == 'vouchers') {
 	$template_options = $wpdb->get_row(
 		$wpdb->prepare("SELECT * FROM $template_table WHERE id = %d", $template_id)
 	);
-	$images = $template_options->image_style ? json_decode($template_options->image_style) : ['', '', ''];
-	$image_attributes = wp_get_attachment_image_src($images[0], 'voucher-medium');
+	$image_style = (is_object($template_options) && !empty($template_options->image_style)) ? $template_options->image_style : '';
+	$images = !empty($image_style) ? json_decode($image_style, true) : array();
+	$image_id = (is_array($images) && isset($images[0])) ? absint($images[0]) : 0;
+	$image_attributes = $image_id ? wp_get_attachment_image_src($image_id, 'voucher-medium') : false;
 } else {
 	$item_id = absint($voucher_options->item_id);
-	$style_image = esc_html(get_post_meta($item_id, 'style1_image', true));
-	$image_attributes = wp_get_attachment_image_src($style_image, 'voucher-medium');
+	$style_image = absint(get_post_meta($item_id, 'style1_image', true));
+	$image_attributes = $style_image ? wp_get_attachment_image_src($style_image, 'voucher-medium') : false;
 }
 
 ?>

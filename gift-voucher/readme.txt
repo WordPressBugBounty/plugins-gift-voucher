@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
 Tested up to: 6.9.4
-Stable tag: 4.6.5
+Stable tag: 4.6.6
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -224,6 +224,14 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.6.6 - Released: April 15, 2026 =
+* Fix: Resolve Plugin Check i18n error `WordPress.WP.I18n.NonSingularStringLiteralText` in modern PDF admin regeneration by removing dynamic strings from translation calls and using sanitized JSON labels.
+* Fix: Prevent admin warning `Attempt to read property "image_style" on null` in voucher details with null-safe template/image handling (compatible with WordPress 6.9.4 and PHP > 8.2.0).
+* Security/Standards: Add missing direct file access protection (`if ( ! defined( 'ABSPATH' ) ) { exit; }`) to all flagged plugin files in `include/`, `languages/`, `library/fpdf/`, and `library/tfpdf/`.
+* Fix: Resolve Stripe Payment Success Page deprecated notices on WordPress 6.9.4 and PHP > 8.2.0 by applying compatibility updates in bundled `vendor/stripe/stripe-php` sources.
+* Update: Upgrade PayPal SDK dependencies to `paypal/paypal-checkout-sdk` 1.0.2 and `paypal/paypalhttp` 1.0.1 (composer metadata/lock refreshed).
+* Fix: Resolve PayPal success-page deprecated warning `Creation of dynamic property ...::$curlCls` on PHP > 8.2.0 by declaring `curlCls` in `vendor/paypal/paypalhttp/lib/PayPalHttp/HttpClient.php`.
 
 = Version 4.6.5 - Released: March 24, 2026 =
 * Feature: Add admin PDF regeneration support in Free plugin for both modern (Konva) and standard (style1) vouchers.

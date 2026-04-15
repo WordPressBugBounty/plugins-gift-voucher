@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 $type = 'TrueType';
 $name = 'ArialGreek';
 $desc = array('Ascent'=>728,'Descent'=>-210,'CapHeight'=>728,'Flags'=>32,'FontBBox'=>'[-66 -210 1006 860]','ItalicAngle'=>0,'StemV'=>70,'MissingWidth'=>750);

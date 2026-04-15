@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 $type = 'TrueType';
 $name = 'PlayfairDisplay-Regular';
 $desc = array('Ascent'=>1082,'Descent'=>-251,'CapHeight'=>708,'Flags'=>32,'FontBBox'=>'[-668 -241 1211 1156]','ItalicAngle'=>0,'StemV'=>70,'MissingWidth'=>562);

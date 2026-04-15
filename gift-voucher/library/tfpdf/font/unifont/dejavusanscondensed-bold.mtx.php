@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 $name='DejaVuSansCondensed-Bold';
 $type='TTF';
 $desc=array (

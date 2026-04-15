@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 $type = 'TrueType';
 $name = 'DejaVuLGCSans';
 $desc = array('Ascent'=>760,'Descent'=>-240,'CapHeight'=>760,'Flags'=>32,'FontBBox'=>'[-1021 -463 1793 1232]','ItalicAngle'=>0,'StemV'=>70,'MissingWidth'=>600);

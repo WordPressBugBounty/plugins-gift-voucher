@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 /*******************************************************************************
  * Utility to generate font definition files                                    *
  *                                                                              *

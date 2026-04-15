@@ -50,6 +50,7 @@ class Collection extends StripeObject implements \IteratorAggregate
         unset($this->filters['ending_before']);
     }
 
+    #[\ReturnTypeWillChange]
     public function offsetGet($k)
     {
         if (is_string($k)) {
@@ -108,6 +109,7 @@ class Collection extends StripeObject implements \IteratorAggregate
      * @return \ArrayIterator An iterator that can be used to iterate
      *    across objects in the current page.
      */
+    #[\ReturnTypeWillChange]
     public function getIterator()
     {
         return new \ArrayIterator($this->data);

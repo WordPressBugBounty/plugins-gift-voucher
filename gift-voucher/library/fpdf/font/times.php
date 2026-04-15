@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 $type = 'Core';
 $name = 'Times-Roman';
 $up = -100;

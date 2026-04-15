@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 // Optionally define the filesystem path to your system fonts
 // otherwise tFPDF will use [path to tFPDF]/font/unifont/ directory
 // define("_SYSTEM_TTFONTS", "C:/Windows/Fonts/");

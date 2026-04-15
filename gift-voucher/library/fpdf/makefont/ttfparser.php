@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 /*******************************************************************************
 * Class to parse and subset TrueType fonts                                     *
 *                                                                              *

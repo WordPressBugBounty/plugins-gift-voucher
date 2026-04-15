@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 $license = get_option('wpgv_license_key');
 $status  = get_option('wpgv_license_status');
 ?>

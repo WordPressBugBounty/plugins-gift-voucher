@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 $rangeid=122;
 $prevcid=126;
 $prevwidth=754;
