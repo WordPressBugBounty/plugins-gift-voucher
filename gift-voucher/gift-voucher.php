@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.6.6
+ * Version: 4.6.7
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -38,7 +38,7 @@ if (!ob_get_level()) {
   });
 }
 
-define('WPGIFT_VERSION', '4.6.6');
+define('WPGIFT_VERSION', '4.6.7');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -90,11 +90,10 @@ add_action('init', function() {
 
   require_once(WPGIFT__PLUGIN_DIR . '/vendor/autoload.php');
   require_once(WPGIFT__PLUGIN_DIR . '/vendor/sofort/payment/sofortLibSofortueberweisung.inc.php');
-  require_once(WPGIFT__PLUGIN_DIR . '/classes/rotation.php');
   require_once(WPGIFT__PLUGIN_DIR . '/admin.php');
   require_once(WPGIFT__PLUGIN_DIR . '/front.php');
   require_once(WPGIFT__PLUGIN_DIR . '/giftitems.php');
-  require_once(WPGIFT__PLUGIN_DIR . '/classes/fpdf.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/include/pdf-wrapper.php');
   require_once(WPGIFT__PLUGIN_DIR . '/classes/voucher.php');
   require_once(WPGIFT__PLUGIN_DIR . '/classes/template.php');
   require_once(WPGIFT__PLUGIN_DIR . '/classes/page_template.php');
@@ -770,66 +769,6 @@ function wpgv_em($word)
   return trim($word);
 }
 
-/**
- * Convert UTF-8 text to ANSI for PDF compatibility
- * Removes emoji and non-Latin characters but preserves common special chars
- * @param string $text UTF-8 text that may contain emoji
- * @return string Text safe for FPDF rendering
- */
-function wpgv_text_to_pdf_safe($text)
-{
-  // First, try to convert to windows-1252 (Latin-1 Extended)
-  // This preserves more characters than pure ASCII
-  $text = html_entity_decode(wp_strip_all_tags(stripslashes($text)), ENT_NOQUOTES, 'UTF-8');
-
-  // Remove emoji and other Unicode symbols
-  // This regex removes most emoji and special Unicode characters
-  $text = preg_replace('/[\x{1F300}-\x{1F9FF}]/u', '', $text);  // Emoji ranges
-  $text = preg_replace('/[\x{2600}-\x{27BF}]/u', '', $text);    // Miscellaneous symbols
-  $text = preg_replace('/[\x{FE00}-\x{FE0F}]/u', '', $text);    // Variation selectors
-  $text = preg_replace('/[\x{200B}-\x{200D}]/u', '', $text);    // Zero-width characters
-
-  // Replace characters that won't be representable in CP1252 with ASCII equivalents
-  // Do this BEFORE iconv so FPDF (which expects CP1252 core fonts) receives safe bytes.
-  $pre_map = array(
-    // Czech/Slovak
-    'č' => 'c', 'Č' => 'C', 'š' => 's', 'Š' => 'S', 'ž' => 'z', 'Ž' => 'Z',
-    'ř' => 'r', 'Ř' => 'R', 'ď' => 'd', 'Ď' => 'D', 'ť' => 't', 'Ť' => 'T',
-    'ň' => 'n', 'Ň' => 'N', 'ě' => 'e', 'Ě' => 'E', 'ů' => 'u', 'Ů' => 'U',
-    // Polish
-    'ł' => 'l', 'Ł' => 'L', 'ą' => 'a', 'Ą' => 'A', 'ę' => 'e', 'Ę' => 'E',
-    'ś' => 's', 'Ś' => 'S', 'ź' => 'z', 'Ź' => 'Z', 'ż' => 'z', 'Ż' => 'Z',
-    // Misc Latin accents -> base letters
-    'á' => 'a', 'Á' => 'A', 'ć' => 'c', 'Ć' => 'C',
-    'é' => 'e', 'É' => 'E', 'í' => 'i', 'Í' => 'I', 'ó' => 'o', 'Ó' => 'O',
-    'ú' => 'u', 'Ú' => 'U', 'ý' => 'y', 'Ý' => 'Y',
-  );
-
-  // Currency/symbol fallbacks not in CP1252
-  $symbol_map = array(
-    '₪' => 'ILS',
-    '₱' => 'PHP',
-    '฿' => 'THB',
-    '₫' => 'VND',
-    '₩' => 'KRW'
-  );
-
-  $text = strtr($text, $pre_map);
-  $text = strtr($text, $symbol_map);
-
-  // Now convert to CP1252 which FPDF core fonts expect.
-  if (function_exists('iconv')) {
-    $converted = @iconv('UTF-8', 'WINDOWS-1252//TRANSLIT', $text);
-    if ($converted !== false) {
-      $text = $converted;
-    } else {
-      // As a last resort, remove non-ASCII characters
-      $text = preg_replace('/[\x80-\x{10FFFF}]/u', '', $text);
-    }
-  }
-
-  return $text;
-}
 function wpgv_mailvarstr_multiple($string, $setting_options, $voucher_options_results, $voucherpdf_link)
 {
 

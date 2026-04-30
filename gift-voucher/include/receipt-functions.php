@@ -22,36 +22,47 @@ function wpgv_generate_receipt_pdf_for_voucher($voucher_id)
         return false;
     }
 
-    // Variables expected by templates/pdfstyles/receipt.php
-    $for = isset($voucher->from_name) ? $voucher->from_name : '';
-    $from = isset($voucher->to_name) ? $voucher->to_name : '';
-    $email = ($voucher->shipping_email != '') ? $voucher->shipping_email : $voucher->email;
-    $value = isset($voucher->amount) ? $voucher->amount : 0;
-    $code = isset($voucher->couponcode) ? $voucher->couponcode : '';
-    $expiry = isset($voucher->expiry) ? $voucher->expiry : '';
-    $paymentmethod = isset($voucher->pay_method) ? $voucher->pay_method : '';
-    $lastid = $voucher_id;
-    $voucher_options = $voucher; // keep name used in templates
-    $payment_status = isset($voucher->payment_status) ? $voucher->payment_status : __('Not Paid', 'gift-voucher');
+    $receiptupload_dir = wpgv_pdf_get_upload_path($voucher->voucherpdf_link . '-receipt.pdf');
 
-    $upload = wp_upload_dir();
-    $upload_dir = $upload['basedir'];
-    $receiptupload_dir = $upload_dir . '/voucherpdfuploads/' . $voucher->voucherpdf_link . '-receipt.pdf';
+    $template_vars = array(
+        'customer_name' => isset($voucher->from_name) ? $voucher->from_name : '',
+        'recipient_name' => isset($voucher->to_name) ? $voucher->to_name : '',
+        'buyer_email' => ($voucher->shipping_email != '') ? $voucher->shipping_email : $voucher->email,
+        'amount_display' => wpgv_price_format(isset($voucher->amount) ? $voucher->amount : 0),
+        'coupon_code' => isset($voucher->couponcode) ? $voucher->couponcode : '',
+        'expiry_display' => isset($voucher->expiry) ? $voucher->expiry : '',
+        'payment_method' => isset($voucher->pay_method) ? $voucher->pay_method : '',
+        'payment_status' => isset($voucher->payment_status) ? $voucher->payment_status : __('Not Paid', 'gift-voucher'),
+        'order_number' => $voucher_id,
+        'order_date' => gmdate('d.m.Y', strtotime(!empty($voucher->voucheradd_time) ? $voucher->voucheradd_time : current_time('mysql'))),
+        'company_name' => isset($setting_options->company_name) ? $setting_options->company_name : '',
+        'company_email' => isset($setting_options->pdf_footer_email) ? $setting_options->pdf_footer_email : '',
+        'company_website' => isset($setting_options->pdf_footer_url) ? $setting_options->pdf_footer_url : '',
+        'buying_for' => isset($voucher->buying_for) ? $voucher->buying_for : 'someone_else',
+    );
 
-    // Generate receipt PDF using same template as initial creation
-    $receipt = wpgv_create_pdf_safe('P', 'pt', array(595, 900));
-    if ($receipt) {
-        require_once(WPGIFT__PLUGIN_DIR . '/templates/pdfstyles/receipt.php');
+    $html = wpgv_pdf_capture_html_template(WPGIFT__PLUGIN_DIR . '/templates/pdf-html/receipt.php', $template_vars);
+    if (is_wp_error($html)) {
+        return false;
     }
 
-    $wpgv_enable_pdf_saving = get_option('wpgv_enable_pdf_saving') ? get_option('wpgv_enable_pdf_saving') : 0;
-    if ($wpgv_enable_pdf_saving) {
-        $receipt->Output($receiptupload_dir, 'F');
-    } else {
-        $receipt->Output('F', $receiptupload_dir);
+    $receipt = wpgv_pdf_render_html_document($html, array(
+        'engine' => 'dompdf',
+        'paper' => array(0, 0, 595, 900),
+        'orientation' => 'portrait',
+        'default_font' => 'DejaVu Sans',
+        'chroot' => array(
+            str_replace('\\', '/', ABSPATH),
+            str_replace('\\', '/', WPGIFT__PLUGIN_DIR),
+            str_replace('\\', '/', wp_get_upload_dir()['basedir']),
+        ),
+    ));
+
+    if (is_wp_error($receipt)) {
+        return false;
     }
 
-    return true;
+    return wpgv_pdf_output_to_file($receipt, $receiptupload_dir);
 }
 
 /**

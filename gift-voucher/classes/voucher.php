@@ -20,6 +20,53 @@ if (!class_exists('WPGV_Voucher_List')) :
 			));
 		}
 
+		protected static function is_items_view()
+		{
+			return isset($_GET['items']) && sanitize_text_field(wp_unslash($_GET['items'])) === '1';
+		}
+
+		protected static function is_woocommerce_view()
+		{
+			return isset($_GET['woocommerce']) && sanitize_text_field(wp_unslash($_GET['woocommerce'])) === '1';
+		}
+
+		protected static function get_current_order_type_filter()
+		{
+			if (self::is_items_view()) {
+				return 'items';
+			}
+
+			if (self::is_woocommerce_view()) {
+				return 'gift_voucher_product';
+			}
+
+			return 'vouchers';
+		}
+
+		protected static function get_current_view_args()
+		{
+			if (self::is_items_view()) {
+				return array('items' => '1');
+			}
+
+			if (self::is_woocommerce_view()) {
+				return array('woocommerce' => '1');
+			}
+
+			return array();
+		}
+
+		protected static function get_admin_page_url($page, $args = array())
+		{
+			$query_args = array_merge(
+				array('page' => $page),
+				self::get_current_view_args(),
+				$args
+			);
+
+			return add_query_arg($query_args, admin_url('admin.php'));
+		}
+
 		/**
 		 * Retrieve vouchers data from the database
 		 *
@@ -33,7 +80,6 @@ if (!class_exists('WPGV_Voucher_List')) :
 			global $wpdb;
 			$page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : 'vouchers-lists';
 			$search = isset($_GET['search']) ? '%' . $wpdb->esc_like(sanitize_text_field(wp_unslash($_GET['search']))) . '%' : '';
-			$itemorder = isset($_GET['items']) ? sanitize_text_field(wp_unslash($_GET['items'])) : '';
 			$voucher_code = isset($_GET['voucher_code']) ? sanitize_text_field(wp_unslash($_GET['voucher_code'])) : '';
 			$search_email = '';
 			if ($voucher_code && filter_var($voucher_code, FILTER_VALIDATE_EMAIL)) {
@@ -41,7 +87,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 				$voucher_code = '1';
 			}
 
-			$where_clause = $wpdb->prepare(" WHERE `order_type` = %s ", $itemorder ? 'items' : 'vouchers');
+			$where_clause = $wpdb->prepare(" WHERE `order_type` = %s ", self::get_current_order_type_filter());
 
 			if ($page == 'vouchers-lists') {
 				if ($search && $voucher_code) {
@@ -180,59 +226,40 @@ if (!class_exists('WPGV_Voucher_List')) :
 
 			$page         = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
 			$search       = isset($_GET['search']) ? sanitize_text_field(wp_unslash($_GET['search'])) : '';
-			$itemorder    = isset($_GET['items']) ? sanitize_text_field(wp_unslash($_GET['items'])) : '';
 			$voucher_code = isset($_GET['voucher_code']) ? sanitize_text_field(wp_unslash($_GET['voucher_code'])) : '';
-
 			$search_email = '';
-			if (filter_var($voucher_code, FILTER_VALIDATE_EMAIL)) {
-				$search_email = $voucher_code;
-				$voucher_code = '1';
+			$search_code_like = '';
+			$search_email_like = '';
+
+			if ($voucher_code !== '') {
+				$search_code_like = '%' . $wpdb->esc_like($voucher_code) . '%';
+
+				if (filter_var($voucher_code, FILTER_VALIDATE_EMAIL)) {
+					$search_email = $voucher_code;
+					$search_email_like = '%' . $wpdb->esc_like($voucher_code) . '%';
+				}
 			}
 
-			$order_type = ($itemorder) ? 'items' : 'vouchers';
+			$order_type = self::get_current_order_type_filter();
+			$where_clause = $wpdb->prepare(" WHERE `order_type` = %s ", $order_type);
 
-			// Build query based on conditions
-			if ($search && $voucher_code && $page === 'redeem-voucher') {
-				// Both search and redeem-voucher page
-				$result = $wpdb->get_var(
-					$wpdb->prepare(
-						"SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_list WHERE `order_type` = %s AND (`couponcode` = %s OR `shipping_email` = %s) AND (`couponcode` = %s OR `shipping_email` = %s)",
-						$order_type,
-						$voucher_code,
-						$search_email,
-						$voucher_code,
-						$search_email
-					)
+			if ($page === 'vouchers-lists' && $search && $voucher_code !== '') {
+				$where_clause .= $wpdb->prepare(
+					" AND (`couponcode` LIKE %s OR `email` LIKE %s OR `shipping_email` LIKE %s) ",
+					$search_code_like,
+					$search_email_like,
+					$search_email_like
 				);
-			} elseif ($search && $voucher_code) {
-				// Search only
-				$result = $wpdb->get_var(
-					$wpdb->prepare(
-						"SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_list WHERE `order_type` = %s AND (`couponcode` = %s OR `shipping_email` = %s)",
-						$order_type,
-						$voucher_code,
-						$search_email
-					)
-				);
-			} elseif ($page === 'redeem-voucher') {
-				// Redeem-voucher page only
-				$result = $wpdb->get_var(
-					$wpdb->prepare(
-						"SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_list WHERE `order_type` = %s AND (`couponcode` = %s OR `shipping_email` = %s)",
-						$order_type,
-						$voucher_code,
-						$search_email
-					)
-				);
-			} else {
-				// Base query only
-				$result = $wpdb->get_var(
-					$wpdb->prepare(
-						"SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_list WHERE `order_type` = %s",
-						$order_type
-					)
+			} elseif ($page === 'redeem-voucher' && $voucher_code !== '') {
+				$where_clause .= $wpdb->prepare(
+					" AND (`couponcode` = %s OR `email` LIKE %s OR `shipping_email` LIKE %s) ",
+					$voucher_code,
+					$search_email,
+					$search_email
 				);
 			}
+
+			$result = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_list {$where_clause}");
 
 			return $result;
 		}
@@ -242,6 +269,16 @@ if (!class_exists('WPGV_Voucher_List')) :
 		/** Text displayed when no voucher data is available */
 		public function no_items()
 		{
+			if (self::is_items_view()) {
+				esc_html_e('No purchased gift items yet.', 'gift-voucher');
+				return;
+			}
+
+			if (self::is_woocommerce_view()) {
+				esc_html_e('No WooCommerce gift voucher orders yet.', 'gift-voucher');
+				return;
+			}
+
 			esc_html_e('No purchased voucher codes yet.', 'gift-voucher');
 		}
 
@@ -322,8 +359,23 @@ if (!class_exists('WPGV_Voucher_List')) :
 			$delete = wp_create_nonce('delete_voucher');
 			$form = '';
 			$actions = [
-				'order_detail' => sprintf('<a href="?page=%s&action=%s&voucher_id=%s">%s</a>', sanitize_text_field('view-voucher-details'), sanitize_text_field('view_voucher'), sanitize_text_field($item['id']), esc_html(__('View Details', 'gift-voucher'))),
-				'delete' => sprintf('<a class="" href="?page=%s&action=%s&voucher=%s&_wpdelete=%s">%s</a>', sanitize_text_field(wp_unslash($_REQUEST['page'])), sanitize_text_field('delete'), sanitize_text_field(absint($item['id'])), sanitize_text_field($delete), esc_html(__('Delete Voucher', 'gift-voucher'))),
+				'order_detail' => sprintf(
+					'<a href="%s">%s</a>',
+					esc_url(self::get_admin_page_url('view-voucher-details', array(
+						'action' => 'view_voucher',
+						'voucher_id' => absint($item['id']),
+					))),
+					esc_html(__('View Details', 'gift-voucher'))
+				),
+				'delete' => sprintf(
+					'<a class="" href="%s">%s</a>',
+					esc_url(self::get_admin_page_url('vouchers-lists', array(
+						'action' => 'delete',
+						'voucher' => absint($item['id']),
+						'_wpdelete' => $delete,
+					))),
+					esc_html(__('Delete Voucher', 'gift-voucher'))
+				),
 			];
 			$actions = $this->row_actions($actions);
 			$arr = array(
@@ -504,7 +556,15 @@ if (!class_exists('WPGV_Voucher_List')) :
 			$used = wp_create_nonce('used_voucher');
 			if ($item['status'] == 'unused') {
 				$actions = array(
-					'used' => sprintf('<a class="used" href="?page=%s&action=%s&voucher=%s&_wpdelete=%s">%s</a>', sanitize_text_field(wp_unslash($_REQUEST['page'])), sanitize_text_field('used'), sanitize_text_field(absint($item['id'])), sanitize_text_field($used), esc_html(__('Mark as Used', 'gift-voucher'))),
+					'used' => sprintf(
+						'<a class="used" href="%s">%s</a>',
+						esc_url(self::get_admin_page_url('vouchers-lists', array(
+							'action' => 'used',
+							'voucher' => absint($item['id']),
+							'_wpdelete' => $used,
+						))),
+						esc_html(__('Mark as Used', 'gift-voucher'))
+					),
 				);
 				$mark_used = $this->row_actions($actions, true);
 			} else {
@@ -514,7 +574,15 @@ if (!class_exists('WPGV_Voucher_List')) :
 			$paid = wp_create_nonce('paid_voucher');
 			if ($item['payment_status'] != 'Paid') {
 				$actions = array(
-					'paid' => sprintf('<a class="paid" href="?page=%s&action=%s&voucher=%s&_wpdelete=%s">%s</a>', sanitize_text_field(wp_unslash($_REQUEST['page'])), sanitize_text_field('paid'), sanitize_text_field(absint($item['id'])), sanitize_text_field($paid), esc_html(__('Mark as Paid', 'gift-voucher')))
+					'paid' => sprintf(
+						'<a class="paid" href="%s">%s</a>',
+						esc_url(self::get_admin_page_url('vouchers-lists', array(
+							'action' => 'paid',
+							'voucher' => absint($item['id']),
+							'_wpdelete' => $paid,
+						))),
+						esc_html(__('Mark as Paid', 'gift-voucher'))
+					)
 				);
 				$mark_paid = $this->row_actions($actions, true);
 				$send_mail = '';
@@ -523,7 +591,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 				$actions = array(
 					'paid' => sprintf(
 						'<a href="?page=%s&action=%s&voucher=%s&_wpdelete=%s">%s</a>',
-						esc_attr($_REQUEST['page']),
+						esc_attr($_REQUEST['page']) . (self::is_items_view() ? '&items=1' : (self::is_woocommerce_view() ? '&woocommerce=1' : '')),
 						'mail',
 						absint($item['id']),
 						$paid_nonce, // Nonce đúng action
@@ -646,20 +714,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 
 		public static function record_count_giftvouchers_list()
 		{
-			global $wpdb;
-
-			$table_name = $wpdb->prefix . 'giftvouchers_list';
-			$where_clause = '';
-
-			if (isset($_GET['items'])) {
-				$where_clause = " WHERE order_type = 'items'";
-			} else {
-				$where_clause = " WHERE order_type <> 'items'";
-			}
-
-			$count = $wpdb->get_var("SELECT COUNT(*) FROM $table_name $where_clause");
-
-			return $count;
+			return self::record_count();
 		}
 
 		/**
@@ -704,7 +759,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 						}
 					}
 				}
-				wp_safe_redirect(esc_url_raw(add_query_arg([], "admin.php?page=vouchers-lists")));
+				wp_safe_redirect(esc_url_raw(self::get_admin_page_url('vouchers-lists')));
 				exit;
 			}
 			if (in_array($action, ['used', 'paid', 'mail', 'delete'], true)) {
@@ -726,7 +781,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 					}
 				}
 
-				wp_safe_redirect(esc_url_raw(add_query_arg([], "admin.php?page=vouchers-lists")));
+				wp_safe_redirect(esc_url_raw(self::get_admin_page_url('vouchers-lists')));
 				exit;
 			}
 

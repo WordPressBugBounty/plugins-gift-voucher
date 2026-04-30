@@ -19,6 +19,15 @@ $voucher_id = absint($_REQUEST['voucher_id']);
 $voucher_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM $voucher_table WHERE id = %d", $voucher_id));
 $setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
 $activity = $wpdb->get_row("SELECT * FROM $activity_table WHERE voucher_id = $voucher_id AND action = 'create'");
+$return_args = array('page' => 'vouchers-lists');
+
+if (isset($_GET['items']) && sanitize_text_field(wp_unslash($_GET['items'])) === '1') {
+	$return_args['items'] = '1';
+} elseif (isset($_GET['woocommerce']) && sanitize_text_field(wp_unslash($_GET['woocommerce'])) === '1') {
+	$return_args['woocommerce'] = '1';
+}
+
+$return_to_list_url = add_query_arg($return_args, admin_url('admin.php'));
 
 if ($voucher_options->order_type == 'vouchers') {
 	$template_id = absint($voucher_options->template_id);
@@ -29,6 +38,9 @@ if ($voucher_options->order_type == 'vouchers') {
 	$images = !empty($image_style) ? json_decode($image_style, true) : array();
 	$image_id = (is_array($images) && isset($images[0])) ? absint($images[0]) : 0;
 	$image_attributes = $image_id ? wp_get_attachment_image_src($image_id, 'voucher-medium') : false;
+} elseif ($voucher_options->order_type == 'gift_voucher_product') {
+	$product_id = absint($voucher_options->product_id);
+	$image_attributes = $product_id ? wp_get_attachment_image_src(get_post_thumbnail_id($product_id), 'voucher-medium') : false;
 } else {
 	$item_id = absint($voucher_options->item_id);
 	$style_image = absint(get_post_meta($item_id, 'style1_image', true));
@@ -147,7 +159,7 @@ if ($voucher_options->order_type == 'vouchers') {
 				</tr>
 			</tbody>
 		</table><br>
-		<a href="<?php echo esc_url(admin_url('admin.php')); ?>?page=vouchers-lists" class="button button-primary"><?php echo esc_html_e('Back to Vouchers List', 'gift-voucher') ?></a>
+		<a href="<?php echo esc_url($return_to_list_url); ?>" class="button button-primary"><?php echo esc_html_e('Back to Vouchers List', 'gift-voucher') ?></a>
 	</div>
 </div>
 

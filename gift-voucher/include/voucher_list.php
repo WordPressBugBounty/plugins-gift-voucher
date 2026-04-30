@@ -6,6 +6,7 @@ global $wpdb;
 $setting_table 	= $wpdb->prefix . 'giftvouchers_setting';
 $setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
 $items = isset($_GET['items']) ? sanitize_textarea_field($_GET['items']) : '';
+$woocommerce = isset($_GET['woocommerce']) ? sanitize_textarea_field($_GET['woocommerce']) : '';
 $voucher_code = isset($_GET['voucher_code']) ? sanitize_textarea_field($_GET['voucher_code']) : '';
 ?>
 <div class="wrap voucher-page">
@@ -43,6 +44,7 @@ $voucher_code = isset($_GET['voucher_code']) ? sanitize_textarea_field($_GET['vo
 				<form action="<?php echo esc_url(admin_url('admin.php')); ?>">
 					<input type="hidden" name="page" value="<?php echo esc_html("vouchers-lists"); ?>">
 					<?php if ($items): ?><input type="hidden" name="items" value="<?php echo esc_html("1"); ?>"><?php endif; ?>
+					<?php if ($woocommerce): ?><input type="hidden" name="woocommerce" value="<?php echo esc_html("1"); ?>"><?php endif; ?>
 					<input type="hidden" name="search" value="<?php echo esc_html("1"); ?>">
 					<input type="text" name="voucher_code" autocomplete="off" placeholder="<?php echo esc_attr__('Search by Gift voucher code or email', 'gift-voucher'); ?>" value="<?php echo esc_html($voucher_code); ?>" style="width: 400px;">
 					<input type="submit" class="button button-primary" value="<?php echo esc_attr__("Search", 'gift-voucher'); ?>">
@@ -51,8 +53,9 @@ $voucher_code = isset($_GET['voucher_code']) ? sanitize_textarea_field($_GET['vo
 		<?php } ?>
 		<!-- <a href="<?php echo esc_url(admin_url('edit.php')); ?>?post_type=wpgv_voucher_product&page=import-orders" class="button button-primary" style="display: inline-block;padding: 0 10px;float:right;"><?php echo esc_html_e('Import Vouchers', 'gift-voucher') ?></a> -->
 		<h2 class="nav-tab-wrapper">
-			<a class="nav-tab <?php if (!$items): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists"><?php echo esc_html_e('Purchased Voucher Codes', 'gift-voucher') ?></a>
+			<a class="nav-tab <?php if (!$items && !$woocommerce): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists"><?php echo esc_html_e('Purchased Voucher Codes', 'gift-voucher') ?></a>
 			<a class="nav-tab <?php if ($items): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists&items=1"><?php echo esc_html_e('Purchased Items', 'gift-voucher') ?></a>
+			<a class="nav-tab <?php if ($woocommerce): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists&woocommerce=1"><?php echo esc_html_e('WooCommerce Orders', 'gift-voucher') ?></a>
 		</h2>
 		<div id="post-body" class="metabox-holder">
 			<div id="post-body-content">

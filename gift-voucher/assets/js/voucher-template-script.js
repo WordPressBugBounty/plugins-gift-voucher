@@ -908,8 +908,8 @@ jQuery(document).ready(function ($) {
                 pdf.addImage(stage.toDataURL({
                     pixelRatio: 1,
                 }), 'PNG', marginX, marginY, canvasWidth, canvasHeight);
-                pdf.output('dataurlnewwindow');
-                pdf.output('save', 'preview.pdf');
+                var previewPdfUrl = pdf.output('bloburl');
+                window.open(previewPdfUrl, '_blank');
                 if (typeof stage.get('#giftcard_counpon')[0] !== 'undefined') {
                     var giftcard_counpon1 = stage.get('#giftcard_counpon')[0];
                     giftcard_counpon1.text(voucher_couponcode.val());

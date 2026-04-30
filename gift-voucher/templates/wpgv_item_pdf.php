@@ -66,17 +66,39 @@ if ($setting_options->is_style_choose_enable) {
 
 switch ($voucher_style) {
 	case 0:
-		require_once(WPGIFT__PLUGIN_DIR . '/templates/pdfstyles/style1.php');
-		break;
 	case 1:
-		require_once(WPGIFT__PLUGIN_DIR . '/templates/pdfstyles/style2.php');
-		break;
 	case 2:
-		require_once(WPGIFT__PLUGIN_DIR . '/templates/pdfstyles/style3.php');
+		$pdf = wpgv_pdf_render_standard_document(array(
+			'style' => $voucher_style,
+			'formtype' => $formtype,
+			'image_path' => $image,
+			'title' => get_the_title($itemid),
+			'description' => esc_html(get_post_meta($itemid, 'description', true)),
+			'for' => $for,
+			'from' => $from,
+			'buyingfor' => $buyingfor,
+			'currency' => $currency,
+			'expiry' => $expiry,
+			'message' => $message,
+			'code' => $code,
+			'preview' => true,
+			'watermark' => $watermark,
+			'voucher_bgcolor' => $voucher_bgcolor,
+			'voucher_color' => $voucher_color,
+			'footer_url' => isset($setting_options->pdf_footer_url) ? $setting_options->pdf_footer_url : '',
+			'footer_email' => isset($setting_options->pdf_footer_email) ? $setting_options->pdf_footer_email : '',
+			'hide_price' => get_option('wpgv_hide_price_item') ? get_option('wpgv_hide_price_item') : 0,
+			'leftside_notice' => (get_option('wpgv_leftside_notice') != '') ? get_option('wpgv_leftside_notice') : __('Cash payment is not possible. The terms and conditions apply.', 'gift-voucher'),
+			'barcode_enabled' => isset($setting_options->wpgv_barcode_on_voucher) ? $setting_options->wpgv_barcode_on_voucher : 0,
+		));
 		break;
 	default:
-		require_once(WPGIFT__PLUGIN_DIR . '/templates/pdfstyles/style1.php');
+		$pdf = new WP_Error('wpgv_pdf_invalid_style', __('Invalid voucher style selected.', 'gift-voucher'));
 		break;
 }
+
+if (is_wp_error($pdf)) {
+	wp_die(esc_html($pdf->get_error_message()));
+}
 ob_clean();
-$pdf->Output();
+wpgv_pdf_output_to_browser($pdf);

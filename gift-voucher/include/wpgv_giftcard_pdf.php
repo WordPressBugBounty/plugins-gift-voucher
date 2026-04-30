@@ -95,24 +95,26 @@ function wpgv__doajax_gift_card_pdf_save_func()
 	// Nếu cần, bạn có thể lưu URL của thư mục
 	$dirUrl = $upload['baseurl'] . '/voucherpdfuploads/';
 
-	$pdf = new PDF();
-	if (!empty($sizeimage)) {
-		if ($typeGiftCard == 'landscape') {
-			$pdf->AddPage("L", 'a4');
-		} else {
-			$pdf->AddPage('P', 'a4');
-		}
-		$pdf->Image($upload_dir . "giftcard.png", 0, 0, $pdf->GetPageWidth(), $pdf->GetPageHeight());
-	} else {
-		$pdf->AddPage("L");
-		$pdf->centreImage($upload_dir . "giftcard.png");
-	}
 	$curr_time = time();
 	$upload = wp_upload_dir();
 	$upload_dir = $upload['basedir'];
 	$upload_dir = $upload_dir . '/voucherpdfuploads/' . $curr_time . $code . '.pdf';
-	$pdf->output($upload_dir, 'F');
 	$upload_url = $curr_time . $code;
+	require_once WPGIFT__PLUGIN_DIR . '/include/wpgv_giftcard_modern_pdf_helpers.php';
+	$pdf_created = wpgv_generate_modern_giftcard_pdf(
+		0,
+		(object) array(
+			'couponcode' => $code,
+		),
+		intval($idVoucher),
+		null,
+		$image_path,
+		$upload_url
+	);
+	if (!$pdf_created || !file_exists($upload_dir)) {
+		wp_send_json_error(array('message' => 'Unable to create PDF file.'));
+		wp_die();
+	}
 	$wpdb->insert(
 		$voucher_table,
 		array(
@@ -144,6 +146,10 @@ function wpgv__doajax_gift_card_pdf_save_func()
 		array('%s', '%d', '%s', '%s', '%s', '%f', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
 	);
 	$lastid = $wpdb->insert_id;
+	wpgv_save_voucher_pdf_context($lastid, array(
+		'kind' => 'modern',
+		'template_id' => $idVoucher,
+	));
 	WPGV_Gift_Voucher_Activity::record($lastid, 'create', '', 'Voucher ordered by ' . $for . ', Message: ' . $message);
 	$titleVoucher = get_the_title($idVoucher);
 	//shipping as post
@@ -161,14 +167,7 @@ function wpgv__doajax_gift_card_pdf_save_func()
 	$value = $priceVoucher + $priceExtraCharges + $shipping_charges;
 	//Customer Receipt
 	if ($wpgv_customer_receipt) {
-		$upload_dir = $upload['basedir'];
-		$receiptupload_dir = $upload_dir . '/voucherpdfuploads/' . $curr_time . $code . '-receipt.pdf';
-		require_once(WPGIFT__PLUGIN_DIR . '/templates/pdfstyles/receipt.php');
-		if ($wpgv_enable_pdf_saving) {
-			$receipt->Output($receiptupload_dir, 'F');
-		} else {
-			$receipt->Output('F', $receiptupload_dir);
-		}
+		wpgv_generate_receipt_pdf_for_voucher($lastid);
 	}
 	$currency = wpgv_price_format($value);
 	update_post_meta($lastid, 'wpgv_extra_charges', wpgv_price_format($priceExtraCharges));
@@ -334,41 +333,3 @@ function wpgv__doajax_gift_card_pdf_save_func()
 }
 add_action('wp_ajax_nopriv_wpgv_save_gift_card', 'wpgv__doajax_gift_card_pdf_save_func');
 add_action('wp_ajax_wpgv_save_gift_card', 'wpgv__doajax_gift_card_pdf_save_func');
-// PDF
-class PDF extends FPDF
-{
-	const DPI = 96;
-	const MM_IN_INCH = 25.4;
-	const A4_HEIGHT = 297;
-	const A4_WIDTH = 210;
-	const MAX_WIDTH = 800;
-	const MAX_HEIGHT = 500;
-	function pixelsToMM($val)
-	{
-		return $val * self::MM_IN_INCH / self::DPI;
-	}
-	function resizeToFit($imgFilename)
-	{
-		list($width, $height) = getimagesize($imgFilename);
-		$widthScale = self::MAX_WIDTH / $width;
-		$heightScale = self::MAX_HEIGHT / $height;
-		$scale = min($widthScale, $heightScale);
-		return array(
-			round($this->pixelsToMM($scale * $width)),
-			round($this->pixelsToMM($scale * $height))
-		);
-	}
-	function centreImage($img)
-	{
-		list($width, $height) = $this->resizeToFit($img);
-		// you will probably want to swap the width/height
-		// around depending on the page's orientation
-		$this->Image(
-			$img,
-			(self::A4_HEIGHT - $width) / 2,
-			(self::A4_WIDTH - $height) / 2,
-			$width,
-			$height
-		);
-	}
-}

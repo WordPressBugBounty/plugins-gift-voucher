@@ -9,17 +9,35 @@ class ComposerStaticInit82bff7107904ea7e6378ce516a65a5c8
     public static $prefixLengthsPsr4 = array (
         'S' =>
         array (
+            'Svg\\' => 4,
             'Stripe\\' => 7,
             'Sample\\' => 7,
+            'Sabberworm\\CSS\\' => 15,
         ),
         'P' =>
         array (
             'PayPalHttp\\' => 11,
             'PayPalCheckoutSdk\\' => 18,
         ),
+        'M' =>
+        array (
+            'Masterminds\\' => 12,
+        ),
+        'F' =>
+        array (
+            'FontLib\\' => 8,
+        ),
+        'D' =>
+        array (
+            'Dompdf\\' => 7,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
+        'Svg\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/phenx/php-svg-lib/src/Svg',
+        ),
         'Stripe\\' =>
         array (
             0 => __DIR__ . '/..' . '/stripe/stripe-php/lib',
@@ -27,6 +45,10 @@ class ComposerStaticInit82bff7107904ea7e6378ce516a65a5c8
         'Sample\\' =>
         array (
             0 => __DIR__ . '/..' . '/paypal/paypal-checkout-sdk/samples',
+        ),
+        'Sabberworm\\CSS\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/sabberworm/php-css-parser/src',
         ),
         'PayPalHttp\\' =>
         array (
@@ -36,10 +58,23 @@ class ComposerStaticInit82bff7107904ea7e6378ce516a65a5c8
         array (
             0 => __DIR__ . '/..' . '/paypal/paypal-checkout-sdk/lib/PayPalCheckoutSdk',
         ),
+        'Masterminds\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/masterminds/html5/src',
+        ),
+        'FontLib\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/phenx/php-font-lib/src/FontLib',
+        ),
+        'Dompdf\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/dompdf/dompdf/src',
+        ),
     );
 
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'Dompdf\\Cpdf' => __DIR__ . '/..' . '/dompdf/dompdf/lib/Cpdf.php',
         'FPDF' => __DIR__ . '/..' . '/setasign/fpdf/fpdf.php',
     );
 

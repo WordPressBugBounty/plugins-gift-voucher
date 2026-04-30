@@ -59,17 +59,35 @@ function wc_wpgv_voucher_pdf_save_func($value, $for, $from, $email, $shipping_em
     if ($image == "") {
         $image = get_option('wpgv_demoimageurl_voucher');
     }
-    if ($setting_options->is_order_form_enable == 1) {
-        require(WPGIFT__PLUGIN_DIR . '/templates/pdfstyles/style1.php');
-    } else {
-        require(WPGIFT__PLUGIN_DIR . '/templates/pdfstyles/style1-remove.php');
+    $pdf = wpgv_pdf_render_standard_document(array(
+        'style' => 0,
+        'formtype' => $formtype,
+        'image_path' => $image,
+        'title' => get_the_title($product_id),
+        'description' => '',
+        'for' => $for,
+        'from' => $from,
+        'buyingfor' => $buyingfor,
+        'currency' => $currency,
+        'expiry' => $expiry,
+        'message' => $message,
+        'code' => $code,
+        'preview' => false,
+        'voucher_bgcolor' => $voucher_bgcolor,
+        'voucher_color' => $voucher_color,
+        'footer_url' => isset($setting_options->pdf_footer_url) ? $setting_options->pdf_footer_url : '',
+        'footer_email' => isset($setting_options->pdf_footer_email) ? $setting_options->pdf_footer_email : '',
+        'hide_price' => 0,
+        'leftside_notice' => (get_option('wpgv_leftside_notice') != '') ? get_option('wpgv_leftside_notice') : __('Cash payment is not possible. The terms and conditions apply.', 'gift-voucher'),
+        'barcode_enabled' => isset($setting_options->wpgv_barcode_on_voucher) ? $setting_options->wpgv_barcode_on_voucher : 0,
+        'compact_mode' => intval($setting_options->is_order_form_enable) !== 1,
+    ));
+
+    if (is_wp_error($pdf)) {
+        return false;
     }
 
-    if ($wpgv_enable_pdf_saving) {
-        $pdf->Output($upload_dir, 'F');
-    } else {
-        $pdf->Output('F', $upload_dir);
-    }
+    wpgv_pdf_output_to_file($pdf, $upload_dir);
 
 
 
@@ -103,6 +121,11 @@ function wc_wpgv_voucher_pdf_save_func($value, $for, $from, $email, $shipping_em
     );
 
     $lastid = $wpdb->insert_id;
+    wpgv_save_voucher_pdf_context($lastid, array(
+        'kind' => 'standard_grid',
+        'template_id' => $product_id,
+        'style' => 0,
+    ));
 
     WPGV_Gift_Voucher_Activity::record($lastid, 'create', '', 'Voucher ordered by ' . $for . ', Message: ' . $message);
     WPGV_Gift_Voucher_Activity::record($lastid, 'firsttransact', $value, 'Voucher payment added from gift voucher product');
@@ -121,6 +144,10 @@ function wc_wpgv_voucher_pdf_save_func($value, $for, $from, $email, $shipping_em
     $currency = wpgv_price_format($value);
     update_post_meta($lastid, 'wpgv_extra_charges', $wpgv_add_extra_charges);
     update_post_meta($lastid, 'wpgv_total_payable_amount', $currency);
+
+    if ($wpgv_customer_receipt) {
+        wpgv_generate_receipt_pdf_for_voucher($lastid);
+    }
 
     $voucher_table     = $wpdb->prefix . 'giftvouchers_list';
     $setting_table     = $wpdb->prefix . 'giftvouchers_setting';

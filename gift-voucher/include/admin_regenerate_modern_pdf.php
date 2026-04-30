@@ -4,20 +4,26 @@ if (!defined('ABSPATH')) exit;
 /**
  * Determine voucher template type for regeneration.
  *
- * Supported mapping (as requested):
+ * Supported mapping:
  * - order_type = gift_voucher_product:
- *   + product_id && order_id && template_id == 0 => standard_grid (style1)
- *   + product_id && order_id && template_id > 0 => modern (Konva)
- * - order_type = items => standard_list (style1)
+ *   + product_id && order_id && template_id == 0 => standard_grid
+ *   + product_id && order_id && template_id > 0 => modern
+ * - order_type = items => standard_list
  * - order_type = vouchers:
- *   + template_id post_type == voucher_template => modern (Konva)
- *   + template_id post_type == wpgv_voucher_product => standard_grid (style1)
- *   + template_id post_type == post => standard_list (style1)
+ *   + template_id post_type == voucher_template => modern
+ *   + template_id row in giftvouchers_template => standard_list
  */
 function wpgv_get_voucher_template_kind($voucher_data)
 {
     if (!$voucher_data || empty($voucher_data->order_type)) {
         return array('kind' => 'unknown', 'template_id' => 0);
+    }
+
+    if (!empty($voucher_data->id) && function_exists('wpgv_get_saved_voucher_pdf_context')) {
+        $saved_context = wpgv_get_saved_voucher_pdf_context($voucher_data->id);
+        if ($saved_context['kind'] !== 'unknown' && intval($saved_context['template_id']) > 0) {
+            return $saved_context;
+        }
     }
 
     $order_type  = $voucher_data->order_type;
@@ -49,15 +55,16 @@ function wpgv_get_voucher_template_kind($voucher_data)
             if ($post_type === 'voucher_template') {
                 return array('kind' => 'modern', 'template_id' => $template_id);
             }
-            if ($post_type === 'wpgv_voucher_product') {
-                return array('kind' => 'standard_grid', 'template_id' => $template_id);
-            }
-            if ($post_type === 'post') {
+
+            global $wpdb;
+            $template_table = $wpdb->prefix . 'giftvouchers_template';
+            $standard_template_id = intval($wpdb->get_var($wpdb->prepare("SELECT id FROM $template_table WHERE id = %d", $template_id)));
+            if ($standard_template_id > 0) {
                 return array('kind' => 'standard_list', 'template_id' => $template_id);
             }
         }
         if ($item_id > 0) {
-            return array('kind' => 'standard_grid', 'template_id' => $item_id);
+            return array('kind' => 'standard_list', 'template_id' => $item_id);
         }
     }
 
@@ -94,7 +101,7 @@ function wpgv_admin_get_voucher_regen_data_func()
     $template_info = wpgv_get_voucher_template_kind($voucher_data);
     if ($template_info['kind'] !== 'modern') {
         wp_send_json_error(array(
-            'message' => __('Not a modern order. Standard vouchers can be regenerated using the standard PDF engine (style1).', 'gift-voucher'),
+            'message' => __('Not a modern order. Use the standard voucher PDF regeneration flow instead.', 'gift-voucher'),
             'kind'    => $template_info['kind'],
         ));
     }
@@ -268,7 +275,7 @@ function wpgv_admin_regenerate_modern_pdf_func()
     $template_info = wpgv_get_voucher_template_kind($voucher_data);
     if ($template_info['kind'] !== 'modern') {
         wp_send_json_error(array(
-            'message' => __('This is not a Giftcard Modern order. For standard vouchers use style1 PDF generation.', 'gift-voucher'),
+            'message' => __('This is not a modern gift card order. Use the standard voucher PDF regeneration flow instead.', 'gift-voucher'),
             'kind'    => $template_info['kind'],
         ));
     }
