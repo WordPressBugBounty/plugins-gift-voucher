@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
 Tested up to: 6.9.4
-Stable tag: 4.6.7
+Stable tag: 4.6.8
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -225,10 +225,16 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 
 == Changelog ==
 
-= Version 4.6.7 - Released: April 30, 2026 =
+= Version 4.6.8 - Released: April 30, 2026 =
 * Update: Migrate the full server-side PDF generation pipeline from FPDF to Dompdf for standard vouchers, gift items, WooCommerce voucher products, customer receipts, and modern gift card PDF creation/regeneration.
 * Update: Replace legacy coordinate-based PDF drawing with centralized Dompdf helpers and HTML/CSS templates, including Code128 SVG barcode rendering, UTF-8 output with `DejaVu Sans`, and managed Dompdf runtime directories inside `voucherpdfuploads`.
 * Update: Improve PDF preview and regeneration by rendering standard voucher/item previews through Dompdf, storing voucher template/style context for later reuse, and regenerating standard PDFs with their saved style while keeping receipt regeneration in sync.
+* Fix: Make the plugin upgrade routine idempotent so updates no longer trigger duplicate-column database errors on existing installs.
+* Fix: Correct legacy schema upgrade handling for footer email/settings columns on older databases during plugin updates.
+* Fix: Guard legacy schema checks when plugin tables are missing so interrupted installs/updates do not trigger extra database warnings.
+
+= Version 4.6.7 - Released: April 30, 2026 =
+* Fix PHPCS EscapeOutput warnings in FPDF library
 
 = Version 4.6.6 - Released: April 15, 2026 =
 * Fix: Resolve Plugin Check i18n error `WordPress.WP.I18n.NonSingularStringLiteralText` in modern PDF admin regeneration by removing dynamic strings from translation calls and using sanitized JSON labels.

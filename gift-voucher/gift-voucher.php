@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.6.7
+ * Version: 4.6.8
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -38,7 +38,7 @@ if (!ob_get_level()) {
   });
 }
 
-define('WPGIFT_VERSION', '4.6.7');
+define('WPGIFT_VERSION', '4.6.8');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -62,15 +62,32 @@ define('WPGV_MESSAGE_META_KEY', 'wpgv_message');
 if (!class_exists('WP_List_Table')) {
   require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
 }
+function wpgv_db_table_exists($table_name)
+{
+  global $wpdb;
+
+  return (bool) $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($table_name)));
+}
+
+function wpgv_db_column_exists($table_name, $column_name)
+{
+  global $wpdb;
+
+  if (!wpgv_db_table_exists($table_name)) {
+    return false;
+  }
+
+  return (bool) $wpdb->get_var("SHOW COLUMNS FROM `{$table_name}` LIKE '{$column_name}'");
+}
+
 function wpgv_is_woocommerce_enable()
 {
   global $wpdb;
   // Defensive: during activation/upgrade the plugin tables may not exist yet.
   // Check for the settings table before querying it to avoid warnings / output.
   $table_name = $wpdb->prefix . 'giftvouchers_setting';
-  $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $wpdb->esc_like($table_name)));
 
-  if (!$table_exists) {
+  if (!wpgv_db_table_exists($table_name)) {
     // Table doesn't exist yet (activation / install context). Treat WooCommerce as disabled so
     // the conditional requires below won't include admin front-end files that may produce output.
     return false;
@@ -142,52 +159,44 @@ add_action('init', function () {
 add_action('admin_init', function () {
 
   global $wpdb;
+  $giftvouchers_list = $wpdb->prefix . 'giftvouchers_list';
+  $giftvouchers_setting = $wpdb->prefix . 'giftvouchers_setting';
 
+  if (wpgv_db_table_exists($giftvouchers_list)) {
+    if (!wpgv_db_column_exists($giftvouchers_list, 'check_send_mail')) {
+      $wpdb->query("ALTER TABLE `{$giftvouchers_list}` ADD check_send_mail VARCHAR(30) NOT NULL DEFAULT 'unsent'");
+    }
 
-  $column_exists_list = $wpdb->get_results("SHOW COLUMNS FROM `{$wpdb->prefix}giftvouchers_list` LIKE 'check_send_mail'");
+    if (!wpgv_db_column_exists($giftvouchers_list, 'product_id')) {
+      $wpdb->query("ALTER TABLE `{$giftvouchers_list}` ADD product_id BIGINT(20) UNSIGNED DEFAULT NULL");
+    }
 
-  if (empty($column_exists_list)) {
-    $wpdb->query("ALTER TABLE `{$wpdb->prefix}giftvouchers_list` ADD check_send_mail VARCHAR(30) NOT NULL DEFAULT 'unsent'");
+    if (!wpgv_db_column_exists($giftvouchers_list, 'order_id')) {
+      $wpdb->query("ALTER TABLE `{$giftvouchers_list}` ADD order_id BIGINT(20) UNSIGNED DEFAULT NULL");
+    }
+
+    if (!wpgv_db_column_exists($giftvouchers_list, 'note_order')) {
+      $wpdb->query("ALTER TABLE `{$giftvouchers_list}` ADD note_order VARCHAR(255) NOT NULL");
+    }
   }
 
-  $column_exists_product_id = $wpdb->get_results("SHOW COLUMNS FROM `{$wpdb->prefix}giftvouchers_list` LIKE 'product_id'");
+  if (wpgv_db_table_exists($giftvouchers_setting)) {
+    if (!wpgv_db_column_exists($giftvouchers_setting, 'is_order_form_enable')) {
+      $wpdb->query("ALTER TABLE `{$giftvouchers_setting}` ADD is_order_form_enable TINYINT(1) DEFAULT 1");
+    }
 
-  if (empty($column_exists_product_id)) {
-    $wpdb->query("ALTER TABLE `{$wpdb->prefix}giftvouchers_list` ADD product_id BIGINT(20) UNSIGNED DEFAULT NULL");
-  }
+    if (wpgv_db_column_exists($giftvouchers_setting, 'portrait_mode_templates')) {
+      $portrait_mode_templates = $wpdb->get_var("SELECT portrait_mode_templates FROM `{$giftvouchers_setting}` LIMIT 1");
 
-  $column_exists_order_id = $wpdb->get_results("SHOW COLUMNS FROM `{$wpdb->prefix}giftvouchers_list` LIKE 'order_id'");
+      if (empty($portrait_mode_templates) || $portrait_mode_templates === '0') {
+        $template_portail = 'template-voucher-portail-1.png, template-voucher-portail-2.png, template-voucher-portail-6.png';
 
-  if (empty($column_exists_order_id)) {
-    $wpdb->query("ALTER TABLE `{$wpdb->prefix}giftvouchers_list` ADD order_id BIGINT(20) UNSIGNED DEFAULT NULL");
-  }
-
-  $column_exists_note_order = $wpdb->get_results("SHOW COLUMNS FROM `{$wpdb->prefix}giftvouchers_list` LIKE 'note_order'");
-
-  if (empty($column_exists_note_order)) {
-    $wpdb->query("ALTER TABLE `{$wpdb->prefix}giftvouchers_list` ADD note_order VARCHAR(255) NOT NULL");
-  }
-
-
-  $column_exists_setting = $wpdb->get_results("SHOW COLUMNS FROM `{$wpdb->prefix}giftvouchers_setting` LIKE 'is_order_form_enable'");
-
-  if (empty($column_exists_setting)) {
-    $wpdb->query("ALTER TABLE `{$wpdb->prefix}giftvouchers_setting` ADD is_order_form_enable TINYINT(1) DEFAULT 1");
-  }
-
-  $column_exists_portrait = $wpdb->get_results("SHOW COLUMNS FROM `{$wpdb->prefix}giftvouchers_setting` LIKE 'portrait_mode_templates'");
-
-  if (!empty($column_exists_portrait)) {
-    $portrait_mode_templates = $wpdb->get_var("SELECT portrait_mode_templates FROM `{$wpdb->prefix}giftvouchers_setting` LIMIT 1");
-
-    if (empty($portrait_mode_templates) || $portrait_mode_templates === '0') {
-      $template_portail = 'template-voucher-portail-1.png, template-voucher-portail-2.png, template-voucher-portail-6.png';
-
-      $wpdb->query($wpdb->prepare("
-            UPDATE `{$wpdb->prefix}giftvouchers_setting`
+        $wpdb->query($wpdb->prepare("
+            UPDATE `{$giftvouchers_setting}`
             SET portrait_mode_templates = %s
             WHERE portrait_mode_templates = '' OR portrait_mode_templates IS NULL OR portrait_mode_templates = '0'
         ", $template_portail));
+      }
     }
   }
 
@@ -553,7 +562,7 @@ function wpgv_upgrade_completed($upgrader_object, $options)
   // The path to our plugin's main file
   $our_plugin = plugin_basename(__FILE__);
   // If an update has taken place and the updated type is plugins and the plugins element exists
-  if ($options['action'] == 'update' && $options['type'] == 'plugin' && isset($options['plugins'])) {
+  if (isset($options['action'], $options['type']) && $options['action'] == 'update' && $options['type'] == 'plugin' && isset($options['plugins'])) {
     // Iterate through the plugins being updated and check if ours is there
     foreach ($options['plugins'] as $plugin) {
       if ($plugin == $our_plugin) {
@@ -580,39 +589,65 @@ function wpgv_upgrade_completed($upgrader_object, $options)
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($giftvouchers_activity_sql);
 
-        $wpdb->query("ALTER TABLE $giftvouchers_template ADD image_style varchar(100) DEFAULT NULL");
-        $wpdb->query("ALTER TABLE $giftvouchers_setting ADD is_woocommerce_enable int(1) DEFAULT 0");
-        $wpdb->query("ALTER TABLE $giftvouchers_setting ADD post_shipping int(1) DEFAULT 0");
-        $wpdb->query("ALTER TABLE $giftvouchers_setting ADD preview_button int(1) DEFAULT 1");
-        $wpdb->query("ALTER TABLE $giftvouchers_setting ADD pdf_footer_url varchar(255) DEFAULT NULL");
-        $wpdb->query("ALTER TABLE $giftvouchers_setting ADD is_woocommerce_enable varchar(255) DEFAULT NULL");
-        $wpdb->query("ALTER TABLE $giftvouchers_setting ADD is_style_choose_enable int(1) DEFAULT 0");
-        $wpdb->query("ALTER TABLE $giftvouchers_setting ADD voucher_style varchar(100) DEFAULT NULL");
-        $wpdb->query("ALTER TABLE $giftvouchers_setting ADD currency varchar(10) DEFAULT NULL");
+        $table_exists = function ($table) use ($wpdb) {
+          return (bool) $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table));
+        };
 
-        $wpdb->query("ALTER TABLE $giftvouchers_list ADD check_send_mail varchar(30) NOT NULL DEFAULT 'unsent'");
+        $column_exists = function ($table, $column) use ($wpdb, $table_exists) {
+          if (!$table_exists($table)) {
+            return false;
+          }
 
-        $wpdb->query("ALTER TABLE $giftvouchers_setting ADD currency_code varchar(10) DEFAULT NULL");
+          return (bool) $wpdb->get_row("SHOW COLUMNS FROM `$table` LIKE '$column'");
+        };
 
-        $wpdb->query("ALTER TABLE $giftvouchers_setting MODIFY COLUMN stripe_publishable_key varchar(255) DEFAULT NULL;");
-        $wpdb->query("ALTER TABLE $giftvouchers_setting MODIFY COLUMN stripe_secret_key varchar(255) DEFAULT NULL;");
+        $add_column_if_not_exists = function ($table, $column, $sql) use ($column_exists, $wpdb) {
+          if (!$column_exists($table, $column)) {
+            $wpdb->query($sql);
+          }
+        };
 
-        $orders = $wpdb->get_results("SELECT id,from_name,amount FROM $giftvouchers_list WHERE id NOT IN (SELECT voucher_id FROM $giftvouchers_activity) AND `status` = 'unused' AND `payment_status` = 'Paid'");
+        $modify_column_if_exists = function ($table, $column, $sql) use ($column_exists, $wpdb) {
+          if ($column_exists($table, $column)) {
+            $wpdb->query($sql);
+          }
+        };
 
-        foreach ($orders as $order) {
-          WPGV_Gift_Voucher_Activity::record($order->id, 'create', '', 'Voucher ordered by ' . $order->from_name);
-          WPGV_Gift_Voucher_Activity::record($order->id, 'transaction', $order->amount, 'Voucher payment recieved.');
+        $add_column_if_not_exists($giftvouchers_template, 'image_style', "ALTER TABLE $giftvouchers_template ADD image_style varchar(100) DEFAULT NULL");
+        $add_column_if_not_exists($giftvouchers_setting, 'is_woocommerce_enable', "ALTER TABLE $giftvouchers_setting ADD is_woocommerce_enable int(1) DEFAULT 0");
+        $add_column_if_not_exists($giftvouchers_setting, 'post_shipping', "ALTER TABLE $giftvouchers_setting ADD post_shipping int(1) DEFAULT 0");
+        $add_column_if_not_exists($giftvouchers_setting, 'preview_button', "ALTER TABLE $giftvouchers_setting ADD preview_button int(1) DEFAULT 1");
+        $add_column_if_not_exists($giftvouchers_setting, 'pdf_footer_url', "ALTER TABLE $giftvouchers_setting ADD pdf_footer_url varchar(255) DEFAULT NULL");
+        $add_column_if_not_exists($giftvouchers_setting, 'pdf_footer_email', "ALTER TABLE $giftvouchers_setting ADD pdf_footer_email varchar(255) DEFAULT NULL");
+        $add_column_if_not_exists($giftvouchers_setting, 'is_style_choose_enable', "ALTER TABLE $giftvouchers_setting ADD is_style_choose_enable int(1) DEFAULT 0");
+        $add_column_if_not_exists($giftvouchers_setting, 'voucher_style', "ALTER TABLE $giftvouchers_setting ADD voucher_style varchar(100) DEFAULT NULL");
+        $add_column_if_not_exists($giftvouchers_setting, 'currency', "ALTER TABLE $giftvouchers_setting ADD currency varchar(10) DEFAULT NULL");
+        $add_column_if_not_exists($giftvouchers_setting, 'currency_code', "ALTER TABLE $giftvouchers_setting ADD currency_code varchar(10) DEFAULT NULL");
+        $add_column_if_not_exists($giftvouchers_list, 'check_send_mail', "ALTER TABLE $giftvouchers_list ADD check_send_mail varchar(30) NOT NULL DEFAULT 'unsent'");
+
+        $modify_column_if_exists($giftvouchers_setting, 'stripe_publishable_key', "ALTER TABLE $giftvouchers_setting MODIFY COLUMN stripe_publishable_key varchar(255) DEFAULT NULL;");
+        $modify_column_if_exists($giftvouchers_setting, 'stripe_secret_key', "ALTER TABLE $giftvouchers_setting MODIFY COLUMN stripe_secret_key varchar(255) DEFAULT NULL;");
+
+        if ($table_exists($giftvouchers_list) && $table_exists($giftvouchers_activity)) {
+          $orders = $wpdb->get_results("SELECT id,from_name,amount FROM $giftvouchers_list WHERE id NOT IN (SELECT voucher_id FROM $giftvouchers_activity) AND `status` = 'unused' AND `payment_status` = 'Paid'");
+
+          foreach ($orders as $order) {
+            WPGV_Gift_Voucher_Activity::record($order->id, 'create', '', 'Voucher ordered by ' . $order->from_name);
+            WPGV_Gift_Voucher_Activity::record($order->id, 'transaction', $order->amount, 'Voucher payment recieved.');
+          }
         }
 
-        $templates = $wpdb->get_results("SELECT id,image FROM $giftvouchers_template WHERE `image_style` IS NULL");
-        foreach ($templates as $template) {
-          $wpdb->update(
-            $giftvouchers_template,
-            array(
-              'image_style' => '["' . $template->image . '","",""]',
-            ),
-            array('id' => $template->id)
-          );
+        if ($table_exists($giftvouchers_template) && $column_exists($giftvouchers_template, 'image_style')) {
+          $templates = $wpdb->get_results("SELECT id,image FROM $giftvouchers_template WHERE `image_style` IS NULL");
+          foreach ($templates as $template) {
+            $wpdb->update(
+              $giftvouchers_template,
+              array(
+                'image_style' => '["' . $template->image . '","",""]',
+              ),
+              array('id' => $template->id)
+            );
+          }
         }
 
         $items = get_posts(array('posts_per_page' => -1, 'post_type' => 'wpgv_voucher_product'));
@@ -673,9 +708,7 @@ function wpgv_do_output_buffer()
   global $wpdb;
   $giftvouchers_list = $wpdb->prefix . 'giftvouchers_list';
 
-  $column_exists = $wpdb->get_results("SHOW COLUMNS FROM `$giftvouchers_list` LIKE 'check_send_mail'");
-  if (empty($column_exists)) {
-
+  if (wpgv_db_table_exists($giftvouchers_list) && !wpgv_db_column_exists($giftvouchers_list, 'check_send_mail')) {
     $wpdb->query("ALTER TABLE $giftvouchers_list ADD check_send_mail varchar(30) NOT NULL DEFAULT 'unsent'");
   }
 }

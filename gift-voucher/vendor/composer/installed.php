@@ -7,7 +7,7 @@
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => true,
+        'dev' => false,
     ),
     'versions' => array(
         '__root__' => array(
@@ -79,15 +79,6 @@
             'reference' => 'd8e916507b88e389e26d4ab03c904a082aa66bb9',
             'type' => 'library',
             'install_path' => __DIR__ . '/../sabberworm/php-css-parser',
-            'aliases' => array(),
-            'dev_requirement' => false,
-        ),
-        'setasign/fpdf' => array(
-            'pretty_version' => '1.8.2',
-            'version' => '1.8.2.0',
-            'reference' => 'd77904018090c17dc9f3ab6e944679a7a47e710a',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../setasign/fpdf',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
