@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
 Tested up to: 6.9.4
-Stable tag: 4.6.8
+Stable tag: 4.6.9
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -224,6 +224,9 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.6.9 - Released: May 07, 2026 =
+* Fix: Align the `[wpgv_giftitems]` PDF preview/save flow with `[wpgv_giftvoucher]` so when `Can customers choose voucher styles?` is set to `No`, item PDFs always use standard style `0` with `style1_image` instead of reading the JSON-encoded `voucher_style` setting.
 
 = Version 4.6.8 - Released: April 30, 2026 =
 * Update: Migrate the full server-side PDF generation pipeline from FPDF to Dompdf for standard vouchers, gift items, WooCommerce voucher products, customer receipts, and modern gift card PDF creation/regeneration.

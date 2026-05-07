@@ -58,7 +58,7 @@ if ($setting_options->is_style_choose_enable) {
 	$image_attributes = get_attached_file($style_image);
 	$image = ($image_attributes) ? $image_attributes : get_option('wpgv_demoimageurl_item');
 } else {
-	$voucher_style = $setting_options->voucher_style;
+	$voucher_style = 0;
 	$style_image = esc_html(get_post_meta($itemid, 'style1_image', true));
 	$image_attributes = get_attached_file($style_image);
 	$image = ($image_attributes) ? $image_attributes : get_option('wpgv_demoimageurl_item');
