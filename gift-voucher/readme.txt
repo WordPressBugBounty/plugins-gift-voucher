@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
 Tested up to: 6.9.4
-Stable tag: 4.6.9
+Stable tag: 4.7.0
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -224,6 +224,15 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.7.0 - Released: May 15, 2026 =
+* Security: Harden voucher, gift item, and modern gift card payment flows so public success URLs can no longer mark unpaid orders as paid without verified payment capture.
+* Security: Add per-order protected `orderkey` validation to payment success and cancel flows, bind PayPal completion to the correct internal order, and block arbitrary public order cancellation.
+* Fix: Clean up orphaned voucher orders, activities, and generated files when PayPal, Stripe, or Sofort initialization fails instead of leaving unpaid records behind.
+* Fix: Correct gift card checkout nonce validation, modern gift card PayPal return handling, and several PHP warnings/deprecated notices in the `[wpgv_giftcard]` purchase flow.
+* Fix: Restrict `check_send_mail` updates to the current order only and prevent duplicate mail-processing side effects on unrelated voucher rows.
+* Improvement: Extend `Create Plugin's Default Pages` to include Stripe Payment Success and Voucher Balance Check pages, reuse existing published pages when available, and avoid duplicate page creation.
+* Fix: Limit plugin admin assets/scripts to plugin-specific admin screens to avoid interfering with the WordPress page editor.
 
 = Version 4.6.9 - Released: May 07, 2026 =
 * Fix: Align the `[wpgv_giftitems]` PDF preview/save flow with `[wpgv_giftvoucher]` so when `Can customers choose voucher styles?` is set to `No`, item PDFs always use standard style `0` with `style1_image` instead of reading the JSON-encoded `voucher_style` setting.

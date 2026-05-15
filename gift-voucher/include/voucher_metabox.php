@@ -457,10 +457,15 @@ class Template_Voucher
    */
   public function admin_footer()
   {
+    $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+    if (!$screen || empty($screen->post_type) || 'voucher_template' !== $screen->post_type) {
+      return;
+    }
+
   ?><script>
       // https://codestag.com/how-to-use-wordpress-3-5-media-uploader-in-theme-options/
       jQuery(document).ready(function($) {
-        if (typeof wp.media !== 'undefined') {
+        if (typeof wp.media !== 'undefined' && wp.media.editor) {
           var _custom_media = true,
             _orig_send_attachment = wp.media.editor.send.attachment;
           $('.rational-metabox-media').click(function(e) {

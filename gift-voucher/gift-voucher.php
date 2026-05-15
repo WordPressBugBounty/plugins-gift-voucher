@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.6.9
+ * Version: 4.7.0
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -38,7 +38,7 @@ if (!ob_get_level()) {
   });
 }
 
-define('WPGIFT_VERSION', '4.6.9');
+define('WPGIFT_VERSION', '4.7.0');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -969,6 +969,98 @@ function wpgv_price_format($price)
   return $currency;
 }
 
+function wpgv_find_existing_public_page($post_title, $post_content = '', $page_template = '')
+{
+  global $wpdb;
+
+  $posts_table = $wpdb->posts;
+  $postmeta_table = $wpdb->postmeta;
+
+  $post_title = sanitize_text_field($post_title);
+  $post_content = is_string($post_content) ? trim($post_content) : '';
+  $page_template = sanitize_text_field($page_template);
+
+  if ($page_template !== '' && $post_title !== '') {
+    $existing_id = $wpdb->get_var(
+      $wpdb->prepare(
+        "SELECT p.ID
+        FROM $posts_table p
+        INNER JOIN $postmeta_table pm ON p.ID = pm.post_id
+        WHERE p.post_type = 'page'
+          AND p.post_status = 'publish'
+          AND p.post_title = %s
+          AND pm.meta_key = '_wp_page_template'
+          AND pm.meta_value = %s
+        LIMIT 1",
+        $post_title,
+        $page_template
+      )
+    );
+
+    if ($existing_id) {
+      return absint($existing_id);
+    }
+  }
+
+  if ($post_content !== '') {
+    $existing_id = $wpdb->get_var(
+      $wpdb->prepare(
+        "SELECT ID
+        FROM $posts_table
+        WHERE post_type = 'page'
+          AND post_status = 'publish'
+          AND post_content = %s
+        LIMIT 1",
+        $post_content
+      )
+    );
+
+    if ($existing_id) {
+      return absint($existing_id);
+    }
+  }
+
+  if ($post_title !== '') {
+    $existing_id = $wpdb->get_var(
+      $wpdb->prepare(
+        "SELECT ID
+        FROM $posts_table
+        WHERE post_type = 'page'
+          AND post_status = 'publish'
+          AND post_title = %s
+        LIMIT 1",
+        $post_title
+      )
+    );
+
+    if ($existing_id) {
+      return absint($existing_id);
+    }
+  }
+
+  return 0;
+}
+
+function wpgv_create_or_reuse_public_page($page_args, $page_template = '')
+{
+  $post_title = isset($page_args['post_title']) ? $page_args['post_title'] : '';
+  $post_content = isset($page_args['post_content']) ? $page_args['post_content'] : '';
+
+  $page_id = wpgv_find_existing_public_page($post_title, $post_content, $page_template);
+
+  if (!$page_id) {
+    $page_id = wp_insert_post($page_args, '');
+  }
+
+  $page_id = absint($page_id);
+
+  if ($page_id && $page_template !== '') {
+    update_post_meta($page_id, '_wp_page_template', $page_template);
+  }
+
+  return $page_id;
+}
+
 function wpgv_create_plugin_pages()
 {
 
@@ -1030,13 +1122,37 @@ function wpgv_create_plugin_pages()
     'comment_status' => 'closed',
     'ping_status'    => 'closed',
   );
-  $lastpageIds[0] = wp_insert_post($voucherPage, '');
-  $lastpageIds[1] = wp_insert_post($giftItemsPage, '');
-  $lastpageIds[2] = wp_insert_post($voucherPDFPage, '');
-  $lastpageIds[3] = wp_insert_post($giftItemPDFPage, '');
-  $lastpageIds[4] = wp_insert_post($voucherSuccessPage, '');
-  $lastpageIds[5] = wp_insert_post($voucherCancelPage, '');
-  $lastpageIds[6] = wp_insert_post($giftCardPage, '');
+  $stripeSuccessPage = array(
+    'post_title'    => 'Stripe Payment Success Page',
+    'post_content'  => '[wpgv_stripesuccesspage]',
+    'post_status'   => 'publish',
+    'post_author'   => strval(wp_get_current_user()->ID),
+    'post_type'     => 'page',
+    'comment_status' => 'closed',
+    'ping_status'    => 'closed',
+  );
+  $voucherBalancePage = array(
+    'post_title'    => 'Voucher Balance Check',
+    'post_content'  => '[wpgv-check-voucher-balance]',
+    'post_status'   => 'publish',
+    'post_author'   => strval(wp_get_current_user()->ID),
+    'post_type'     => 'page',
+    'comment_status' => 'closed',
+    'ping_status'    => 'closed',
+  );
+  $lastpageIds[0] = wpgv_create_or_reuse_public_page($voucherPage);
+  $lastpageIds[1] = wpgv_create_or_reuse_public_page($giftItemsPage);
+  $lastpageIds[2] = wpgv_create_or_reuse_public_page($voucherPDFPage, 'wpgv_voucher_pdf.php');
+  $lastpageIds[3] = wpgv_create_or_reuse_public_page($giftItemPDFPage, 'wpgv_item_pdf.php');
+  $lastpageIds[4] = wpgv_create_or_reuse_public_page($voucherSuccessPage);
+  $lastpageIds[5] = wpgv_create_or_reuse_public_page($voucherCancelPage);
+  $lastpageIds[6] = wpgv_create_or_reuse_public_page($giftCardPage);
+  $lastpageIds[7] = wpgv_create_or_reuse_public_page($stripeSuccessPage);
+  $lastpageIds[8] = wpgv_create_or_reuse_public_page($voucherBalancePage);
+
+  if (!empty($lastpageIds[7])) {
+    update_option('wpgv_stripesuccesspage', $lastpageIds[7]);
+  }
 
   $lastCategoryID = wp_insert_term(
     'Demo Category',
@@ -1062,13 +1178,9 @@ function wpgv_create_plugin_pages()
 
   if (!$lastpageIds[2])
     wp_die('Error creating template page');
-  else
-    update_post_meta($lastpageIds[2], '_wp_page_template', 'wpgv_voucher_pdf.php');
 
   if (!$lastpageIds[3])
     wp_die('Error creating template page');
-  else
-    update_post_meta($lastpageIds[3], '_wp_page_template', 'wpgv_item_pdf.php');
 
   return array($lastpageIds);
 }

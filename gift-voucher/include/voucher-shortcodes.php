@@ -18,66 +18,82 @@ function wpgv_voucher_successful_shortcode()
 		$voucher_options = $wpdb->get_row(
 			$wpdb->prepare("SELECT * FROM $voucher_table WHERE id = %d", $voucheritem)
 		);
+		if (!$voucher_options) {
+			return '<div class="error"><p>' . esc_html__('This URL is invalid. You can not access this page directly.', 'gift-voucher') . '</p></div>';
+		}
+		$request_order_key = isset($_GET['orderkey']) ? sanitize_text_field(wp_unslash($_GET['orderkey'])) : '';
+		if (!wpgv_is_valid_voucher_order_key($voucheritem, $request_order_key)) {
+			return '<div class="error"><p>' . esc_html__('This URL is invalid. You can not access this page directly.', 'gift-voucher') . '</p></div>';
+		}
+		$is_per_invoice_request = isset($_GET['per_invoice']) && absint($_GET['per_invoice']) === 1;
+		$is_per_invoice_order = $voucher_options->pay_method === 'Per Invoice';
+		$payment_verified = $voucher_options->payment_status === 'Paid';
 		$check_send_mail = $voucher_options->check_send_mail;
 
 		if ((strtotime($voucher_options->voucheradd_time) + 3600) < strtotime(current_time('mysql'))) {
-			return '<div class="error"><p>' . esc_html_e('This URL is invalid. You can not access this page directly.', 'gift-voucher') . '</p></div>';
+			return '<div class="error"><p>' . esc_html__('This URL is invalid. You can not access this page directly.', 'gift-voucher') . '</p></div>';
 		}
-		if (isset($_GET['per_invoice']) && absint($_GET['per_invoice']) == 1) {
-		} else {
+		if ($is_per_invoice_order && !$is_per_invoice_request) {
+			return '<div class="error"><p>' . esc_html__('This payment has not been verified yet. Please use the original confirmation link.', 'gift-voucher') . '</p></div>';
+		}
 
-			$voucherrow = $wpdb->get_row(
-				$wpdb->prepare(
-					"SELECT * FROM {$wpdb->prefix}giftvouchers_list WHERE id = %d AND pay_method <> 'Per Invoice'",
-					$voucheritem
-				)
-			);
+		if (!$is_per_invoice_order && !$payment_verified) {
+			if ($voucher_options->pay_method === 'Paypal' && isset($_GET['token'])) {
+				require_once(WPGIFT__PLUGIN_DIR . '/vendor/autoload.php');
+				require_once(WPGIFT__PLUGIN_DIR . '/include/PayPalAuth.php');
+				$paypal_order_id = sanitize_text_field(get_post_meta($voucheritem, 'wpgv_paypal_order_id', true));
+				$paypal_token = sanitize_text_field(wp_unslash($_GET['token']));
 
-			if ($voucherrow) {
-				$wpdb->update(
-					$voucher_table,
-					array(
-						'payment_status' 	=> 'Paid',
-						'voucheradd_time'	=> current_time('mysql')
-					),
-					array('id' => $voucheritem),
-					array(
-						'%s'
-					),
-					array('%d')
-				);
-				if (isset($_GET['token']) && isset($_GET['PayerID']) && $voucherrow->payment_status != 'Paid') {
-					require_once(WPGIFT__PLUGIN_DIR . '/vendor/autoload.php');
-					require_once(WPGIFT__PLUGIN_DIR . '/include/PayPalAuth.php');
-					session_start();
-					$client = PayPalAuth::client();
-					// Here, OrdersCaptureRequest() creates a POST request to /v2/checkout/orders
-					// $response->result->id gives the orderId of the order created above
-					$request = new OrdersCaptureRequest($_SESSION["paypal_order_id"]);
-					$request->prefer('return=representation');
-					$result_getId = null;
-					try {
-						// Call API with your client and get a response for your call
-
-						$response = $client->execute($request);
-
-						$result_getId = $response->result->id;
-					} catch (HttpException $ex) {
-
-						echo esc_html($ex->statusCode);
-						print_r($ex->getMessage());
-					}
-
-					update_post_meta($voucheritem, 'wpgv_paypal_payment_key', $result_getId, true);
-					update_post_meta($voucheritem, 'wpgv_paypal_mode_for_transaction', (!$setting_options->test_mode) ? 'Livemode' : 'Testmode', true);
+				if ($paypal_order_id === '' || !hash_equals($paypal_order_id, $paypal_token)) {
+					return '<div class="error"><p>' . esc_html__('Payment has not been verified yet. Please complete the payment process first.', 'gift-voucher') . '</p></div>';
 				}
-				WPGV_Gift_Voucher_Activity::record($voucheritem, 'firsttransact', $voucherrow->amount, 'Voucher payment recieved.');
+
+				$client = PayPalAuth::client();
+				$request = new OrdersCaptureRequest($paypal_order_id);
+				$request->prefer('return=representation');
+				$result_getId = null;
+
+				try {
+					$response = $client->execute($request);
+					$result_getId = isset($response->result->id) ? $response->result->id : null;
+					$paypal_status = isset($response->result->status) ? strtoupper($response->result->status) : '';
+
+					if ($paypal_status === 'COMPLETED') {
+						$wpdb->update(
+							$voucher_table,
+							array(
+								'payment_status' 	=> 'Paid',
+								'voucheradd_time'	=> current_time('mysql')
+							),
+							array('id' => $voucheritem),
+							array(
+								'%s',
+								'%s'
+							),
+							array('%d')
+						);
+
+						update_post_meta($voucheritem, 'wpgv_paypal_payment_key', $result_getId, true);
+						update_post_meta($voucheritem, 'wpgv_paypal_mode_for_transaction', (!$setting_options->test_mode) ? 'Livemode' : 'Testmode', true);
+						WPGV_Gift_Voucher_Activity::record($voucheritem, 'firsttransact', $voucher_options->amount, 'Voucher payment recieved.');
+
+						$voucher_options->payment_status = 'Paid';
+						$voucher_options->voucheradd_time = current_time('mysql');
+						$payment_verified = true;
+					}
+				} catch (Exception $ex) {
+					return '<div class="error"><p>' . esc_html__('Payment verification failed. Please contact us if you have already been charged.', 'gift-voucher') . '</p></div>';
+				}
+			}
+
+			if (!$payment_verified) {
+				return '<div class="error"><p>' . esc_html__('Payment has not been verified yet. This page cannot complete the order directly.', 'gift-voucher') . '</p></div>';
 			}
 		}
 
 		$customer_receipt = (get_option('wpgv_customer_receipt') != '') ? get_option('wpgv_customer_receipt') : 0;
 
-		if (isset($_GET['per_invoice']) && absint($_GET['per_invoice']) == 1 && $customer_receipt == 0) {
+		if ($is_per_invoice_request && $customer_receipt == 0) {
 			// Mail not send
 
 			$upload = wp_upload_dir();
@@ -110,7 +126,7 @@ function wpgv_voucher_successful_shortcode()
 			$emailsubject = get_option('wpgv_emailsubject') ? get_option('wpgv_emailsubject') : 'Order Confirmation - Your Order with {company_name} (Voucher Order No: {order_number} ) has been successfully placed!';
 			$recipientemailsubject = get_option('wpgv_recipientemailsubject') ? get_option('wpgv_recipientemailsubject') : 'Gift Voucher - Your have received voucher from {company_name}';
 			$recipientemailbody = get_option('wpgv_recipientemailbody') ? get_option('wpgv_recipientemailbody') : '<p>Dear <strong>{recipient_name}</strong>,</p><p>You have received gift voucher from <strong>{customer_name}</strong>.</p><p>You can download the voucher from {pdf_link}.</p><p>- For any clarifications please feel free to email us at {sender_email}.</p><p><strong>Warm Regards, <br /></strong> <strong>{company_name}<br />{website_url}</strong></p>';
-			if (isset($_GET['per_invoice']) && absint($_GET['per_invoice']) == 1) {
+			if ($is_per_invoice_request) {
 				$emailbody = get_option('wpgv_emailbodyperinvoice') ? get_option('wpgv_emailbodyperinvoice') : '<p>Dear <strong>{customer_name}</strong>,</p><p>Order successfully placed.</p><p>We are pleased to confirm your order no {order_number}</p><p>Thank you for shopping with <strong>{company_name}</strong>!</p><p>You can download the voucher from {pdf_link}.</p><p>You will pay us directly into bank. Our bank details are below:</p><p><strong>Account Number: </strong>XXXXXXXXXXXX<br /><strong>Bank Code: </strong>XXXXXXXX</p><p>- For any clarifications please feel free to email us at {sender_email}.</p><p><strong>Warm Regards, <br /></strong> <strong>{company_name}<br />{website_url}</strong></p>';
 			} else {
 				$emailbody = get_option('wpgv_emailbody') ? get_option('wpgv_emailbody') : '<p>Dear <strong>{customer_name}</strong>,</p><p>Order successfully placed.</p><p>We are pleased to confirm your order no {order_number}</p><p>Thank you for shopping with <strong>{company_name}</strong>!</p><p>You can download the voucher from {pdf_link}.</p><p>- For any clarifications please feel free to email us at {sender_email}.</p><p><strong>Warm Regards, <br /></strong> <strong>{company_name}<br />{website_url}</strong></p>';
@@ -152,7 +168,7 @@ function wpgv_voucher_successful_shortcode()
 			$successpagemessage = get_option('wpgv_successpagemessage') ? get_option('wpgv_successpagemessage') : 'We have got your order! <br>E-Mail Sent Successfully to %s';
 
 
-			if (isset($_GET['per_invoice']) && absint($_GET['per_invoice']) == 1) {
+			if ($is_per_invoice_request) {
 				$return .= $setting_options->bank_info;
 			}
 			if ($mail_sent == 1) {
@@ -165,7 +181,7 @@ function wpgv_voucher_successful_shortcode()
 				$headersadmin .= 'Reply-to: ' . $voucher_options->from_name . ' <' . $voucher_options->email . '>' . "\r\n";
 				if ($check_send_mail === 'unsent') {
 					wp_mail($toadmin, $subadmin, $bodyadmin, $headersadmin, $attachments);
-					update_check_send_mail('sent');
+					update_check_send_mail($voucheritem, 'sent');
 				}
 			} else {
 				if ($check_send_mail === 'unsent') {
@@ -176,7 +192,7 @@ function wpgv_voucher_successful_shortcode()
 			}
 		}
 	} else {
-		return '<div class="error"><p>' . esc_html_e('This URL is invalid. You can not access this page directly.', 'gift-voucher') . '</p></div>';
+		return '<div class="error"><p>' . esc_html__('This URL is invalid. You can not access this page directly.', 'gift-voucher') . '</p></div>';
 	}
 	return $return;
 }
@@ -190,8 +206,21 @@ function wpgv_voucher_cancel_shortcode()
 	$voucher_table 	= $wpdb->prefix . 'giftvouchers_list';
 	if (isset($_GET['voucheritem'])) {
 		$cancelpagemessage = get_option('wpgv_cancelpagemessage') ? get_option('wpgv_cancelpagemessage') : 'You cancelled your order. Please place your order again from <a href="' . esc_url(get_site_url() . "/gift-voucher") . '">here</a>.';
-		$voucheritem = sanitize_text_field($_GET['voucheritem']);
-		$wpdb->delete($voucher_table, array('id' => $voucheritem), array('%d'));
+		$voucheritem = absint($_GET['voucheritem']);
+		$request_order_key = isset($_GET['orderkey']) ? sanitize_text_field(wp_unslash($_GET['orderkey'])) : '';
+		$voucher_options = $wpdb->get_row(
+			$wpdb->prepare("SELECT * FROM $voucher_table WHERE id = %d", $voucheritem)
+		);
+
+		if (!$voucher_options || !wpgv_is_valid_voucher_order_key($voucheritem, $request_order_key)) {
+			return '<div class="error"><p>' . esc_html__('This URL is invalid. You can not access this page directly.', 'gift-voucher') . '</p></div>';
+		}
+
+		if ($voucher_options->payment_status === 'Paid') {
+			return '<div class="error"><p>' . esc_html__('Paid orders can not be cancelled from this page.', 'gift-voucher') . '</p></div>';
+		}
+
+		wpgv_cleanup_failed_voucher_order($voucheritem, $voucher_options->voucherpdf_link);
 		$return .= stripslashes($cancelpagemessage);
 	}
 	return $return;
@@ -209,6 +238,7 @@ function wpgv_stripe_success_page_shortcode()
 	//check whether stripe token is not empty
 	if (!empty($_GET['sessionid'])) {
 		$orderid = absint($_GET['voucheritem']);
+		$request_order_key = isset($_GET['orderkey']) ? sanitize_text_field(wp_unslash($_GET['orderkey'])) : '';
 
 		$voucher_options = $wpdb->get_row(
 			$wpdb->prepare(
@@ -216,9 +246,12 @@ function wpgv_stripe_success_page_shortcode()
 				$orderid
 			)
 		);
+		if (!$voucher_options || !wpgv_is_valid_voucher_order_key($orderid, $request_order_key)) {
+			return '<div class="error"><p>' . esc_html__('This URL is invalid. You can not access this page directly.', 'gift-voucher') . '</p></div>';
+		}
 		$check_send_mail = $voucher_options->check_send_mail;
 		if ((strtotime($voucher_options->voucheradd_time) + 3600) < strtotime(current_time('mysql'))) {
-			return '<div class="error"><p>' . esc_html_e('This URL is invalid. You can not access this page directly.', 'gift-voucher') . '</p></div>';
+			return '<div class="error"><p>' . esc_html__('This URL is invalid. You can not access this page directly.', 'gift-voucher') . '</p></div>';
 		}
 
 		//include Stripe PHP library
@@ -327,7 +360,7 @@ function wpgv_stripe_success_page_shortcode()
 					$headersadmin .= 'Reply-to: ' . $voucher_options->from_name . ' <' . $voucher_options->email . '>' . "\r\n";
 					if ($check_send_mail === 'unsent') {
 						wp_mail($toadmin, $subadmin, $bodyadmin, $headersadmin, $attachments);
-						update_check_send_mail('sent');
+						update_check_send_mail($orderid, 'sent');
 					}
 				} else {
 					if ($check_send_mail === 'unsent') {
@@ -351,12 +384,18 @@ function wpgv_stripe_success_page_shortcode()
 add_shortcode('wpgv_stripesuccesspage', 'wpgv_stripe_success_page_shortcode');
 
 
-function update_check_send_mail($new_status)
+function update_check_send_mail($voucher_id, $new_status)
 {
 	global $wpdb;
 
 	$voucher_table = $wpdb->prefix . 'giftvouchers_list';
-	$wpdb->query($wpdb->prepare("UPDATE $voucher_table SET check_send_mail = %s", $new_status));
+	$wpdb->update(
+		$voucher_table,
+		array('check_send_mail' => $new_status),
+		array('id' => absint($voucher_id)),
+		array('%s'),
+		array('%d')
+	);
 }
 
 

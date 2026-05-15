@@ -188,7 +188,7 @@ if (isset($_POST['submit'])) {
 			'comment_status' => 'closed',
 			'ping_status'    => 'closed',
 		);
-		$stripeSuccessPage_id = wp_insert_post($stripeSuccessPage, '');
+		$stripeSuccessPage_id = wpgv_create_or_reuse_public_page($stripeSuccessPage);
 		update_option('wpgv_stripesuccesspage', $stripeSuccessPage_id);
 	}
 	$settype = 'updated';
@@ -245,9 +245,22 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 ?>
 		<div class="wrap wpgiftv-settings">
 			<h1><?php esc_html_e('Pages Created', 'gift-voucher'); ?></h1>
-			<p><?php esc_html_e('Created total 6 plugin pages. These pages can be viewed in Pages Menu:', 'gift-voucher'); ?></p>
 			<?php
 			$createdpages = wpgv_create_plugin_pages();
+			$page_count = is_array($createdpages[0]) ? count($createdpages[0]) : 0;
+			?>
+			<p>
+				<?php
+				echo esc_html(
+					sprintf(
+						/* translators: %d: number of created plugin pages */
+						__('Prepared total %d plugin pages. Existing published pages were reused when available. These pages can be viewed in Pages Menu:', 'gift-voucher'),
+						$page_count
+					)
+				);
+				?>
+			</p>
+			<?php
 			foreach ($createdpages[0] as $page) {
 				$permalink = get_permalink($page);
 				echo '<a href="' . esc_url($permalink) . '">' . esc_html($permalink) . '</a>';

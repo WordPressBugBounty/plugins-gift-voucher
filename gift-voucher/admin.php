@@ -2,6 +2,80 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
+if (!function_exists('wpgv_is_plugin_admin_screen')) {
+	/**
+	 * Check whether the current admin request belongs to this plugin's own screens.
+	 *
+	 * @param WP_Screen|null $screen Optional screen object.
+	 * @return bool
+	 */
+	function wpgv_is_plugin_admin_screen($screen = null)
+	{
+		if (!is_admin()) {
+			return false;
+		}
+
+		if (null === $screen && function_exists('get_current_screen')) {
+			$screen = get_current_screen();
+		}
+
+		$current_page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+		$current_post_type = isset($_GET['post_type']) ? sanitize_key(wp_unslash($_GET['post_type'])) : '';
+		$current_taxonomy = isset($_GET['taxonomy']) ? sanitize_key(wp_unslash($_GET['taxonomy'])) : '';
+
+		$allowed_pages = array(
+			'wpgv-gift-cards',
+			'voucher-templates',
+			'new-voucher-template',
+			'view-voucher-details',
+			'voucher-setting',
+			'vouchers-lists',
+		);
+		$allowed_post_types = array(
+			'voucher_template',
+			'wpgv_voucher_product',
+		);
+		$allowed_taxonomies = array(
+			'wpgv_voucher_category',
+			'category_voucher_template',
+		);
+
+		if ($current_page && in_array($current_page, $allowed_pages, true)) {
+			return true;
+		}
+
+		if ($current_post_type && in_array($current_post_type, $allowed_post_types, true)) {
+			return true;
+		}
+
+		if ($current_taxonomy && in_array($current_taxonomy, $allowed_taxonomies, true)) {
+			return true;
+		}
+
+		if (!$screen) {
+			return false;
+		}
+
+		if (!empty($screen->post_type) && in_array($screen->post_type, $allowed_post_types, true)) {
+			return true;
+		}
+
+		if (!empty($screen->taxonomy) && in_array($screen->taxonomy, $allowed_taxonomies, true)) {
+			return true;
+		}
+
+		if (!empty($screen->id)) {
+			foreach ($allowed_pages as $allowed_page) {
+				if (false !== strpos($screen->id, $allowed_page)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+}
+
 /**
  * WPGiftVoucherAdminPages Class for add Admin Pages in Menu
  */
@@ -45,6 +119,10 @@ class WPGiftVoucherAdminPages
 	 */
 	function admin_register_assets($hook)
 	{
+		if (!wpgv_is_plugin_admin_screen()) {
+			return;
+		}
+
 		wp_enqueue_style('wp-color-picker');
 		wp_enqueue_style('voucher-style', WPGIFT__PLUGIN_URL . '/assets/css/admin-style.css');
 		wp_enqueue_script('konva-js', WPGIFT__PLUGIN_URL . '/assets/js/konva.min.js', array('jquery'), 'v8.0.4', true);

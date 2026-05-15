@@ -789,6 +789,88 @@ function wpgv_get_saved_voucher_pdf_context($voucher_id)
     );
 }
 
+function wpgv_create_voucher_order_key($voucher_id)
+{
+    $voucher_id = intval($voucher_id);
+    if ($voucher_id <= 0) {
+        return '';
+    }
+
+    $order_key = wp_generate_password(20, false, false);
+    update_post_meta($voucher_id, 'wpgv_order_key', $order_key);
+
+    return $order_key;
+}
+
+function wpgv_get_voucher_order_key($voucher_id)
+{
+    return sanitize_text_field(get_post_meta(intval($voucher_id), 'wpgv_order_key', true));
+}
+
+function wpgv_is_valid_voucher_order_key($voucher_id, $provided_key)
+{
+    $stored_key = wpgv_get_voucher_order_key($voucher_id);
+    $provided_key = sanitize_text_field($provided_key);
+
+    if ($stored_key === '' || $provided_key === '') {
+        return false;
+    }
+
+    return hash_equals($stored_key, $provided_key);
+}
+
+function wpgv_cleanup_failed_voucher_order($voucher_id, $voucher_pdf_link = '')
+{
+    global $wpdb;
+
+    $voucher_id = intval($voucher_id);
+    if ($voucher_id <= 0) {
+        return false;
+    }
+
+    $voucher_table = $wpdb->prefix . 'giftvouchers_list';
+    $activity_table = $wpdb->prefix . 'giftvouchers_activity';
+
+    $wpdb->delete($activity_table, array('voucher_id' => $voucher_id), array('%d'));
+    $wpdb->delete($voucher_table, array('id' => $voucher_id), array('%d'));
+
+    $meta_keys = array(
+        'wpgv_pdf_style',
+        'wpgv_pdf_template_kind',
+        'wpgv_pdf_source_id',
+        'wpgv_total_payable_amount',
+        'wpgv_extra_charges',
+        'wpgv_order_key',
+        'wpgv_paypal_order_id',
+        'wpgv_paypal_payment_key',
+        'wpgv_paypal_mode_for_transaction',
+        'wpgv_stripe_session_key',
+        'wpgv_stripe_mode_for_transaction',
+    );
+
+    foreach ($meta_keys as $meta_key) {
+        delete_post_meta($voucher_id, $meta_key);
+    }
+
+    $voucher_pdf_link = sanitize_file_name($voucher_pdf_link);
+    if ($voucher_pdf_link !== '') {
+        $upload = wp_upload_dir();
+        $pdf_dir = trailingslashit($upload['basedir']) . 'voucherpdfuploads/';
+        $files = array(
+            $pdf_dir . $voucher_pdf_link . '.pdf',
+            $pdf_dir . $voucher_pdf_link . '-receipt.pdf',
+        );
+
+        foreach ($files as $file_path) {
+            if (file_exists($file_path)) {
+                wp_delete_file($file_path);
+            }
+        }
+    }
+
+    return true;
+}
+
 function wpgv_get_standard_pdf_args_for_voucher($voucher_data, $style = null)
 {
     if (!$voucher_data || empty($voucher_data->order_type)) {

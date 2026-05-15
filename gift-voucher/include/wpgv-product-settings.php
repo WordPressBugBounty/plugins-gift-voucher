@@ -150,6 +150,11 @@ if ($options->is_woocommerce_enable) {
 
             function wpgv_update_price_javascript()
             {
+                $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+                if (!$screen || empty($screen->post_type) || 'product' !== $screen->post_type) {
+                    return;
+                }
+
                 ?>
         <style type="text/css">
             .wpgv-tag {

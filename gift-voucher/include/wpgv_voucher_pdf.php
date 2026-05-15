@@ -155,6 +155,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 		'template_id' => $template,
 		'style' => $voucher_style,
 	));
+	$order_key = wpgv_create_voucher_order_key($lastid);
 	WPGV_Gift_Voucher_Activity::record($lastid, 'create', '', 'Voucher ordered by ' . $for . ', Message: ' . $message);
 
 	$shipping_charges = 0;
@@ -182,9 +183,9 @@ function wpgv__doajax_voucher_pdf_save_func()
 	$currency = wpgv_price_format($value);
 	update_post_meta($lastid, 'wpgv_total_payable_amount', $currency);
 
-	$success_url = get_site_url() . '/voucher-payment-successful/?voucheritem=' . $lastid;
-	$cancel_url = get_site_url() . '/voucher-payment-cancel/?voucheritem=' . $lastid;
-	$notify_url = get_site_url() . '/voucher-payment-successful/?voucheritem=' . $lastid;
+	$success_url = get_site_url() . '/voucher-payment-successful/?voucheritem=' . $lastid . '&orderkey=' . rawurlencode($order_key);
+	$cancel_url = get_site_url() . '/voucher-payment-cancel/?voucheritem=' . $lastid . '&orderkey=' . rawurlencode($order_key);
+	$notify_url = get_site_url() . '/voucher-payment-successful/?voucheritem=' . $lastid . '&orderkey=' . rawurlencode($order_key);
 
 	$wpgv_paypal_client_id = get_option('wpgv_paypal_client_id') ? get_option('wpgv_paypal_client_id') : '';
 	$wpgv_paypal_secret_key = get_option('wpgv_paypal_secret_key') ? get_option('wpgv_paypal_secret_key') : '';
@@ -192,12 +193,14 @@ function wpgv__doajax_voucher_pdf_save_func()
 	if ($paymentmethod == 'Paypal') {
 		if (empty($wpgv_paypal_client_id) || empty($wpgv_paypal_secret_key)) {
 			$error_message = "PayPal Client ID or Secret Key are both empty.";
+			wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
 			wp_send_json_error(array('message' => $error_message));
 		} else {
 			require_once(WPGIFT__PLUGIN_DIR . '/vendor/autoload.php');
 			require_once(WPGIFT__PLUGIN_DIR . '/include/PayPalAuth.php');
 			if (!PayPalAuth::isCredentialsValid()) {
 				$error_message = "PayPal Client ID or Secret Key is invalid or the PayPal Mode is not compatible with the provided credentials.";
+				wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
 				wp_send_json_error(array('message' => $error_message));
 			} else {
 				$client = PayPalAuth::client();
@@ -221,8 +224,8 @@ function wpgv__doajax_voucher_pdf_save_func()
 				try {
 					// Call API with your client and get a response for your call
 					$response = $client->execute($request);
-					session_start();
-					$_SESSION["paypal_order_id"] = strval($response->result->id);
+					$paypal_order_id = strval($response->result->id);
+					update_post_meta($lastid, 'wpgv_paypal_order_id', $paypal_order_id);
 					// If call returns body in response, you can get the deserialized version from the result attribute of the response
 					// Initialize an empty approve_link variable
 					$approve_link = '';
@@ -238,11 +241,12 @@ function wpgv__doajax_voucher_pdf_save_func()
 					if (!empty($approve_link)) {
 						wp_send_json_success(array('message' => "PayPal valid.", 'approve_link' => $approve_link));
 					} else {
+						wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
 						wp_send_json_error(array('message' => "No PayPal approve link found."));
 					}
 				} catch (HttpException $ex) {
-					echo esc_html($ex->statusCode);
-					print_r($ex->getMessage());
+					wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
+					wp_send_json_error(array('message' => "PayPal order creation failed."));
 				}
 			}
 		}
@@ -263,6 +267,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 		if ($Sofortueberweisung->isError()) {
 			//SOFORT-API didn't accept the data
 			$error_message = "Sofort is invalid.";
+			wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
 			wp_send_json_error(array('message' => $error_message));
 		} else {
 			//buyer must be redirected to $paymentUrl else payment cannot be successfully completed!
@@ -272,6 +277,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 	} elseif ($paymentmethod == 'Stripe') {
 		if (empty($setting_options->stripe_publishable_key) || empty($setting_options->stripe_secret_key)) {
 			$error_message = "Stripe Publishable key or Stripe Secret Key are both empty.";
+			wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
 			wp_send_json_error(array('message' => $error_message));
 		} else {
 			$stripesuccesspageurl = get_option('wpgv_stripesuccesspage');
@@ -288,48 +294,53 @@ function wpgv__doajax_voucher_pdf_save_func()
 			\Stripe\Stripe::setApiKey($stripe['secret_key']);
 
 			//fix new
-			if ($is_stripe_ideal_enable == 1) {
-				$session = \Stripe\Checkout\Session::create([
-					'payment_method_types' => ['card', 'ideal'],
-					'line_items' => [[
-						'price_data' => [
-							'currency' => $setting_options->currency_code,
-							'unit_amount' => $camount,
-							'product_data' => [
-								'name' => $template_options->title,
-								'images' => [wp_sanitize_redirect($stripeimage)],
+			try {
+				if ($is_stripe_ideal_enable == 1) {
+					$session = \Stripe\Checkout\Session::create([
+						'payment_method_types' => ['card', 'ideal'],
+						'line_items' => [[
+							'price_data' => [
+								'currency' => $setting_options->currency_code,
+								'unit_amount' => $camount,
+								'product_data' => [
+									'name' => $template_options->title,
+									'images' => [wp_sanitize_redirect($stripeimage)],
+								],
 							],
-						],
-						'quantity' => 1,
-					]],
-					'mode' => 'payment',
-					'success_url' => get_page_link($stripesuccesspageurl) . '/?voucheritem=' . $lastid . '&sessionid={CHECKOUT_SESSION_ID}',
-					'cancel_url' => $cancel_url,
-				]);
-			} else {
+							'quantity' => 1,
+						]],
+						'mode' => 'payment',
+						'success_url' => get_page_link($stripesuccesspageurl) . '/?voucheritem=' . $lastid . '&orderkey=' . rawurlencode($order_key) . '&sessionid={CHECKOUT_SESSION_ID}',
+						'cancel_url' => $cancel_url,
+					]);
+				} else {
 
-				$session = \Stripe\Checkout\Session::create([
-					'payment_method_types' => ['card'],
-					'line_items' => [[
-						'price_data' => [
-							'currency' => $setting_options->currency_code,
-							'unit_amount' => $camount,
-							'product_data' => [
-								'name' => $template_options->title,
-								'images' => [wp_sanitize_redirect($stripeimage)],
+					$session = \Stripe\Checkout\Session::create([
+						'payment_method_types' => ['card'],
+						'line_items' => [[
+							'price_data' => [
+								'currency' => $setting_options->currency_code,
+								'unit_amount' => $camount,
+								'product_data' => [
+									'name' => $template_options->title,
+									'images' => [wp_sanitize_redirect($stripeimage)],
+								],
 							],
-						],
-						'quantity' => 1,
-					]],
-					'mode' => 'payment',
-					'success_url' => get_page_link($stripesuccesspageurl) . '/?voucheritem=' . $lastid . '&sessionid={CHECKOUT_SESSION_ID}',
-					'cancel_url' => $cancel_url,
-				]);
+							'quantity' => 1,
+						]],
+						'mode' => 'payment',
+						'success_url' => get_page_link($stripesuccesspageurl) . '/?voucheritem=' . $lastid . '&orderkey=' . rawurlencode($order_key) . '&sessionid={CHECKOUT_SESSION_ID}',
+						'cancel_url' => $cancel_url,
+					]);
+				}
+
+				$stripesuccesspageurl = get_option('wpgv_stripesuccesspage');
+				$stripeemail = ($email) ? $email : $shipping_email;
+				wp_send_json_success(array('message' => "Stripe valid.", 'approve_link' => $session->url));
+			} catch (Exception $ex) {
+				wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
+				wp_send_json_error(array('message' => "Stripe session creation failed."));
 			}
-
-			$stripesuccesspageurl = get_option('wpgv_stripesuccesspage');
-			$stripeemail = ($email) ? $email : $shipping_email;
-			wp_send_json_success(array('message' => "Stripe valid.", 'approve_link' => $session->url));
 		}
 	} elseif ($paymentmethod == 'Per Invoice') {
 		wp_send_json_success(array('message' => "Per Invoice valid.", 'approve_link' => $success_url . '&per_invoice=1'));
