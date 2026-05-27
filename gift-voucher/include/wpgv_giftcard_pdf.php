@@ -27,13 +27,11 @@ function wpgv__doajax_gift_card_pdf_save_func()
 	//get data ajax
 	$buying_for = 'someone_else';
 	$idVoucher = isset($_POST['idVoucher']) ? absint(base64_decode(wp_unslash($_POST['idVoucher']))) : 0;
-	$priceExtraCharges = isset($_POST['priceExtraCharges']) ? sanitize_text_field(base64_decode(wp_unslash($_POST['priceExtraCharges']))) : '';
 	$priceVoucher = isset($_POST['priceVoucher']) ? sanitize_text_field(base64_decode(wp_unslash($_POST['priceVoucher']))) : '';
 	$from = isset($_POST['giftTo']) ? sanitize_text_field(base64_decode(wp_unslash($_POST['giftTo']))) : '';
 	$for = isset($_POST['giftFrom']) ? sanitize_text_field(base64_decode(wp_unslash($_POST['giftFrom']))) : '';
 	$message = isset($_POST['giftDescription']) ? sanitize_textarea_field(base64_decode(wp_unslash($_POST['giftDescription']))) : '';
 	$email = isset($_POST['giftEmail']) ? sanitize_text_field(base64_decode(wp_unslash($_POST['giftEmail']))) : '';
-	$code = isset($_POST['couponcode']) ? sanitize_text_field(base64_decode(wp_unslash($_POST['couponcode']))) : '';
 	$shipping_email = isset($_POST['recipientEmail']) ? sanitize_text_field(base64_decode(wp_unslash($_POST['recipientEmail']))) : '';
 	$shipping = isset($_POST['nameShipping']) ? sanitize_text_field(base64_decode(wp_unslash($_POST['nameShipping']))) : '';
 	$check_shipping = isset($_POST['type_shipping']) ? sanitize_text_field(base64_decode(wp_unslash($_POST['type_shipping']))) : '';
@@ -51,7 +49,24 @@ function wpgv__doajax_gift_card_pdf_save_func()
 	// check exp
 	$wpgv_hide_expiry = get_option('wpgv_hide_expiry') ? get_option('wpgv_hide_expiry') : 'yes';
 	$wpgv_expiry_date_format = get_option('wpgv_expiry_date_format') ? get_option('wpgv_expiry_date_format') : 'd.m.Y';
-	$wpgv_add_extra_charges = get_option('wpgv_add_extra_charges_voucher') ? get_option('wpgv_add_extra_charges_voucher') : 0;
+	$wpgv_add_extra_charges = wpgv_get_configured_extra_charge('wpgv_add_extra_charges_voucher');
+	$priceVoucher = wpgv_validate_public_voucher_amount($priceVoucher, $setting_options);
+	if (is_wp_error($priceVoucher)) {
+		wp_send_json_error(array('message' => $priceVoucher->get_error_message()));
+		wp_die();
+	}
+
+	$code = wpgv_generate_unique_couponcode();
+	if (is_wp_error($code)) {
+		wp_send_json_error(array('message' => $code->get_error_message()));
+		wp_die();
+	}
+
+	$shipping_charges = wpgv_get_shipping_charge_amount($check_shipping, $shipping_method, $setting_options);
+	if (is_wp_error($shipping_charges)) {
+		wp_send_json_error(array('message' => $shipping_charges->get_error_message()));
+		wp_die();
+	}
 
 	$voucher_id = $idVoucher;
 	$template_options = $idVoucher ? get_post($idVoucher) : null;
@@ -80,26 +95,64 @@ function wpgv__doajax_gift_card_pdf_save_func()
 		$wp_filesystem->mkdir($upload_dir, 0755);
 	}
 
-	$image = isset($_POST['urlImage']) ? sanitize_text_field(base64_decode(wp_unslash($_POST['urlImage']))) : '';
-	$image = str_replace('data:image/png;base64,', '', $image);
+	$raw_canvas_image = isset($_POST['urlImage']) ? base64_decode(wp_unslash($_POST['urlImage']), true) : '';
+	if (!is_string($raw_canvas_image) || $raw_canvas_image === '') {
+		wp_send_json_error(array('message' => 'Invalid gift card image payload.'));
+		wp_die();
+	}
+
+	if (!preg_match('/^data:image\/(png|jpeg|jpg);base64,/', $raw_canvas_image, $image_type_match)) {
+		wp_send_json_error(array('message' => 'Invalid gift card image format.'));
+		wp_die();
+	}
+
+	$image_extension = strtolower($image_type_match[1]) === 'jpeg' ? 'jpg' : strtolower($image_type_match[1]);
+	$image = substr($raw_canvas_image, strpos($raw_canvas_image, ',') + 1);
 	$image = str_replace(' ', '+', $image);
-	$image = base64_decode($image);
+	$image = base64_decode($image, true);
+	if ($image === false || $image === '') {
+		wp_send_json_error(array('message' => 'Unable to decode gift card image.'));
+		wp_die();
+	}
+
+	$max_image_bytes = defined('MB_IN_BYTES') ? 5 * MB_IN_BYTES : 5242880;
+	if (strlen($image) > $max_image_bytes) {
+		wp_send_json_error(array('message' => 'Gift card image is too large.'));
+		wp_die();
+	}
 
 	// Ghi nội dung vào file bằng WP_Filesystem
-	$image_path = $upload_dir . "giftcard.png";
+	$image_filename = 'giftcard-' . time() . '-' . wp_generate_password(12, false, false) . '.' . $image_extension;
+	$image_path = $upload_dir . $image_filename;
 	$wp_filesystem->put_contents($image_path, $image, FS_CHMOD_FILE);
+	if (!$wp_filesystem->exists($image_path)) {
+		wp_send_json_error(array('message' => 'Unable to store gift card image.'));
+		wp_die();
+	}
 
 	// Lấy kích thước hình ảnh
 	$sizeimage = getimagesize($image_path);
+	if ($sizeimage === false || empty($sizeimage['mime']) || !in_array($sizeimage['mime'], array('image/png', 'image/jpeg'), true)) {
+		$wp_filesystem->delete($image_path);
+		wp_send_json_error(array('message' => 'Invalid gift card image content.'));
+		wp_die();
+	}
+
+	if (($sizeimage[0] ?? 0) > 5000 || ($sizeimage[1] ?? 0) > 5000) {
+		$wp_filesystem->delete($image_path);
+		wp_send_json_error(array('message' => 'Gift card image dimensions are too large.'));
+		wp_die();
+	}
 
 	// Nếu cần, bạn có thể lưu URL của thư mục
 	$dirUrl = $upload['baseurl'] . '/voucherpdfuploads/';
+	$image_url = $dirUrl . $image_filename;
 
 	$curr_time = time();
 	$upload = wp_upload_dir();
 	$upload_dir = $upload['basedir'];
-	$upload_dir = $upload_dir . '/voucherpdfuploads/' . $curr_time . $code . '.pdf';
-	$upload_url = $curr_time . $code;
+	$upload_url = wpgv_sanitize_voucher_pdf_basename($curr_time . $code);
+	$upload_dir = $upload_dir . '/voucherpdfuploads/' . $upload_url . '.pdf';
 	require_once WPGIFT__PLUGIN_DIR . '/include/wpgv_giftcard_modern_pdf_helpers.php';
 	$pdf_created = wpgv_generate_modern_giftcard_pdf(
 		0,
@@ -154,24 +207,13 @@ function wpgv__doajax_gift_card_pdf_save_func()
 	WPGV_Gift_Voucher_Activity::record($lastid, 'create', '', 'Voucher ordered by ' . $for . ', Message: ' . $message);
 	$titleVoucher = $template_title ? $template_title : get_the_title($idVoucher);
 	//shipping as post
-	$shipping_charges = 0;
-	if ($check_shipping != 'shipping_as_email') {
-		$preshipping_methods = explode(',', $setting_options->shipping_method);
-		foreach ($preshipping_methods as $method) {
-			$preshipping_method = explode(':', $method);
-			if (trim(stripslashes($preshipping_method[1])) == trim(stripslashes($shipping_method))) {
-				$shipping_charges = trim($preshipping_method[0]);
-				break;
-			}
-		}
-	}
-	$value = $priceVoucher + $priceExtraCharges + $shipping_charges;
+	$value = $priceVoucher + $wpgv_add_extra_charges + $shipping_charges;
 	//Customer Receipt
 	if ($wpgv_customer_receipt) {
 		wpgv_generate_receipt_pdf_for_voucher($lastid);
 	}
 	$currency = wpgv_price_format($value);
-	update_post_meta($lastid, 'wpgv_extra_charges', wpgv_price_format($priceExtraCharges));
+	update_post_meta($lastid, 'wpgv_extra_charges', wpgv_price_format($wpgv_add_extra_charges));
 	update_post_meta($lastid, 'wpgv_total_payable_amount', $currency);
 	$success_url = get_site_url() . '/voucher-payment-successful/?voucheritem=' . $lastid . '&orderkey=' . rawurlencode($order_key);
 	$cancel_url = get_site_url() . '/voucher-payment-cancel/?voucheritem=' . $lastid . '&orderkey=' . rawurlencode($order_key);
@@ -272,7 +314,7 @@ function wpgv__doajax_gift_card_pdf_save_func()
 			wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
 			wp_send_json_error(array('message' => $error_message));
 		} else {
-			$stripeimage = $dirUrl . "giftcard.png";
+			$stripeimage = $image_url;
 			$stripesuccesspageurl = get_option('wpgv_stripesuccesspage');
 
 			//set api key

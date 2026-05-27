@@ -40,7 +40,7 @@ function wpgv_checkout_redeem_gift_voucher(redeemButton) {
         cardNumber.focus();
     	return true;
     }
-    jQuery.post(frontend_ajax_object.ajaxurl, {'action': 'wpgv-gift-voucher-redeem', 'voucher_code': cardNumber.val()}, function( result ) {
+    jQuery.post(frontend_ajax_object.ajaxurl, {'action': 'wpgv-gift-voucher-redeem', 'voucher_code': cardNumber.val(), 'nonce': frontend_ajax_object.gift_voucher_session_nonce}, function( result ) {
         if (result.success) {
             // We could hook into the cart's ajax calls, but for now we'll just reload.
             window.location = window.location.pathname;
@@ -63,7 +63,7 @@ function wpgv_checkout_redeem_gift_voucher(redeemButton) {
 function wpgv_bind_remove_link(removeButton) {
     var cardNumber = removeButton.attr('data-gift-voucher');
 
-	jQuery.post(frontend_ajax_object.ajaxurl, {'action': 'wpgv-gift-voucher-remove', 'voucher_code': cardNumber}, function( result ) {
+	jQuery.post(frontend_ajax_object.ajaxurl, {'action': 'wpgv-gift-voucher-remove', 'voucher_code': cardNumber, 'nonce': frontend_ajax_object.gift_voucher_session_nonce}, function( result ) {
 		window.location = window.location.pathname;
 	}).fail(function(xhr, textStatus, errorThrown) {
 		if (errorThrown) {

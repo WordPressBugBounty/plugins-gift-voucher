@@ -35,8 +35,11 @@ function wpgv_admin_regenerate_standard_pdf_func()
         wp_send_json_error(array('message' => __('Template id is invalid for standard voucher.', 'gift-voucher')));
     }
 
-    $pdf_filename_base = sanitize_file_name($voucher_data->voucherpdf_link ? $voucher_data->voucherpdf_link : ($voucher_id . '-' . time()));
-    $pdf_file_path = wpgv_pdf_get_upload_path($pdf_filename_base . '.pdf');
+    $pdf_filename_base = wpgv_sanitize_voucher_pdf_basename($voucher_data->voucherpdf_link ? $voucher_data->voucherpdf_link : ($voucher_id . '-' . time()));
+    if ($pdf_filename_base === '') {
+        $pdf_filename_base = wpgv_sanitize_voucher_pdf_basename($voucher_id . '-' . time());
+    }
+    $pdf_file_path = wpgv_get_voucher_pdf_path($pdf_filename_base);
     $style_choice = wpgv_get_voucher_pdf_style($voucher_id, 0);
 
     $pdf_args = wpgv_get_standard_pdf_args_for_voucher($voucher_data, $style_choice);

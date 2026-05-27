@@ -167,7 +167,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 
 			$upload = wp_upload_dir();
 			$upload_dir = $upload['basedir'];
-			$attachments[0] = $upload_dir . '/voucherpdfuploads/' . $result->voucherpdf_link . '.pdf';
+			$attachments[0] = wpgv_get_voucher_pdf_path($result->voucherpdf_link);
 			$headers = 'Content-type: text/html;charset=utf-8' . "\r\n";
 			$headers .= 'From: ' . $setting_options->sender_name . ' <' . $setting_options->sender_email . '>' . "\r\n";
 			$headers .= 'Reply-to: ' . $setting_options->sender_name . ' <' . $setting_options->sender_email . '>' . "\r\n";
@@ -190,7 +190,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 
 			$recipientmail_sent = wp_mail($emailto, $recipientemailsubject, $recipientemailbody, $headers, $attachments);
 
-			$attachments[1] = $upload_dir . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '-receipt.pdf';
+			$attachments[1] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link, '-receipt');
 
 			/* Buyer Mail */
 			$buyersub = wpgv_mailvarstr($emailsubject, $setting_options, $result);
@@ -686,12 +686,18 @@ if (!class_exists('WPGV_Voucher_List')) :
 		 */
 		function column_receipt($item)
 		{
-			$url_upload = wp_get_upload_dir();
-			$baseurl = $url_upload['baseurl'];
-			$voucher = '<a href="' . $baseurl . '/voucherpdfuploads/' . $item['voucherpdf_link'] . '.pdf" title="click to show voucher" target="_blank"><img src="' . esc_url(WPGIFT__PLUGIN_URL . '/assets/img/pdf.png') . '"></a>';
+			$pdf_url = wpgv_get_voucher_pdf_url(isset($item['voucherpdf_link']) ? $item['voucherpdf_link'] : '');
+			if ($pdf_url === '') {
+				return '';
+			}
+
+			$voucher = '<a href="' . esc_url($pdf_url) . '" title="click to show voucher" target="_blank" rel="noopener noreferrer"><img src="' . esc_url(WPGIFT__PLUGIN_URL . '/assets/img/pdf.png') . '"></a>';
 
 			if ($item['payment_status'] == 'Paid') {
-				$voucher .= '<br><a href="' . esc_url($baseurl . '/voucherpdfuploads/' . $item['voucherpdf_link'] . '-receipt.pdf') . '" title="click to show order receipt" target="_blank"><img src="' . esc_url(WPGIFT__PLUGIN_URL . '/assets/img/pdf.png') . '"></a>';
+				$receipt_url = wpgv_get_voucher_pdf_url(isset($item['voucherpdf_link']) ? $item['voucherpdf_link'] : '', '-receipt');
+				if ($receipt_url !== '') {
+					$voucher .= '<br><a href="' . esc_url($receipt_url) . '" title="click to show order receipt" target="_blank" rel="noopener noreferrer"><img src="' . esc_url(WPGIFT__PLUGIN_URL . '/assets/img/pdf.png') . '"></a>';
+				}
 			}
 			return $voucher;
 		}

@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
 Tested up to: 6.9.4
-Stable tag: 4.7.0
+Stable tag: 4.7.1
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -224,6 +224,11 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.7.1 - Released: May 27, 2026 =
+* Security: Fix a stored XSS issue in voucher admin screens by sanitizing generated PDF filenames and safely escaping voucher PDF links before rendering them in the WordPress admin.
+* Security: Harden voucher PDF path, URL, receipt, and attachment handling so untrusted `voucherpdf_link` values can no longer inject HTML attributes or unsafe filenames.
+* Improvement: Tighten validation for public voucher creation inputs related to template/style selection while preserving the existing guest checkout voucher flow.
 
 = Version 4.7.0 - Released: May 15, 2026 =
 * Security: Harden voucher, gift item, and modern gift card payment flows so public success URLs can no longer mark unpaid orders as paid without verified payment capture.

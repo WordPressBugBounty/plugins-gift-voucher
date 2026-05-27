@@ -8,8 +8,6 @@ $setting_table 	= $wpdb->prefix . 'giftvouchers_setting';
 $template_table = $wpdb->prefix . 'giftvouchers_template';
 $activity_table = $wpdb->prefix . 'giftvouchers_activity';
 
-$url_upload = wp_get_upload_dir();
-$baseurl = $url_upload['baseurl'];
 if (!current_user_can('manage_options')) {
 	wp_die('You are not allowed to be on this page.');
 }
@@ -78,7 +76,12 @@ if ($voucher_options->order_type == 'vouchers') {
 					</td>
 
 					<td>
-						<?php echo '<a href="' . esc_url($baseurl . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '.pdf') . '" title="click to show order receipt" target="_blank"><img src="' . esc_url(WPGIFT__PLUGIN_URL . '/assets/img/pdf.png') . '" width="50"></a>'; ?>
+						<?php
+						$pdf_url = wpgv_get_voucher_pdf_url($voucher_options->voucherpdf_link);
+						if ($pdf_url !== '') {
+							echo '<a href="' . esc_url($pdf_url) . '" title="click to show order receipt" target="_blank" rel="noopener noreferrer"><img src="' . esc_url(WPGIFT__PLUGIN_URL . '/assets/img/pdf.png') . '" width="50"></a>';
+						}
+						?>
 					</td>
 				</tr>
 			</tbody>

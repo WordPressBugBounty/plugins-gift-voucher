@@ -6,6 +6,13 @@ if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
 function wc_wpgv_voucher_pdf_save_func($value, $for, $from, $email, $shipping_email, $message, $code, $payment_method, $product_img, $product_id, $wvgc_order_id)
 {
+    $code = sanitize_text_field((string) $code);
+    if ($code === '' || wpgv_couponcode_exists($code)) {
+        $code = wpgv_generate_unique_couponcode();
+        if (is_wp_error($code)) {
+            wp_die(esc_html($code->get_error_message()));
+        }
+    }
 
     $buyingfor = "someone_else";
     $expiry = "";
@@ -45,8 +52,8 @@ function wc_wpgv_voucher_pdf_save_func($value, $for, $from, $email, $shipping_em
     $upload = wp_upload_dir();
     $upload_dir = $upload['basedir'];
     $curr_time = time();
-    $upload_dir = $upload_dir . '/voucherpdfuploads/' . $curr_time . $code . '.pdf';
-    $upload_url = $curr_time . $code;
+    $upload_url = wpgv_sanitize_voucher_pdf_basename($curr_time . $code);
+    $upload_dir = $upload_dir . '/voucherpdfuploads/' . $upload_url . '.pdf';
 
     $formtype = 'wpgv_voucher_product';
     $preview = false;
@@ -169,7 +176,7 @@ function wc_wpgv_voucher_pdf_save_func($value, $for, $from, $email, $shipping_em
 
     $upload = wp_upload_dir();
     $upload_dir = $upload['basedir'];
-    $attachments[0] = $upload_dir . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '.pdf';
+    $attachments[0] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link);
 
     $headers = 'Content-type: text/html;charset=utf-8' . "\r\n";
     $headers .= 'From: ' . $setting_options->sender_name . ' <' . $setting_options->sender_email . '>' . "\r\n";
@@ -199,8 +206,8 @@ function wc_wpgv_voucher_pdf_save_func($value, $for, $from, $email, $shipping_em
         }
     }
 
-    $attachments[1] = $upload_dir . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '-receipt.pdf';
-    $attachments[2] = $upload_dir . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '-invoice.pdf';
+    $attachments[1] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link, '-receipt');
+    $attachments[2] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link, '-invoice');
 
     /* Buyer Mail */
     $buyersub = wpgv_mailvarstr($emailsubject, $setting_options, $voucher_options);

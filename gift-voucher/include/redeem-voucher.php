@@ -389,6 +389,7 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
 
         function wpgv_ajax_redeem()
         {
+            check_ajax_referer('wpgv_gift_voucher_session', 'nonce');
 
             $voucher_code = wc_clean($_POST['voucher_code']);
 
@@ -405,6 +406,7 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
 
         function wpgv_ajax_remove()
         {
+            check_ajax_referer('wpgv_gift_voucher_session', 'nonce');
 
             $voucher_code = wc_clean($_POST['voucher_code']);
 

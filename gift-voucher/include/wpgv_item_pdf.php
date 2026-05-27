@@ -21,7 +21,6 @@ function wpgv__doajax_item_pdf_save_func()
 	$from = isset($_POST['recipientname']) ? sanitize_text_field(base64_decode($_POST['recipientname'])) : '';
 	$value = sanitize_text_field(base64_decode($_POST['totalprice']));
 	$message = sanitize_textarea_field(base64_decode($_POST['recipientmessage']));
-	$code = sanitize_text_field($_POST['couponcode']);
 	$shipping = sanitize_text_field(base64_decode($_POST['shipping']));
 	$shipping_email = isset($_POST['shipping_email']) ? sanitize_email(base64_decode($_POST['shipping_email'])) : '';
 	$firstname = isset($_POST['firstname']) ? sanitize_text_field(base64_decode($_POST['firstname'])) : '';
@@ -36,6 +35,11 @@ function wpgv__doajax_item_pdf_save_func()
 	$voucher_table 	= $wpdb->prefix . 'giftvouchers_list';
 	$setting_table 	= $wpdb->prefix . 'giftvouchers_setting';
 	$setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
+	$code = wpgv_generate_unique_couponcode();
+	if (is_wp_error($code)) {
+		wp_send_json_error(array('message' => $code->get_error_message()));
+		wp_die();
+	}
 	$image = get_attached_file(get_post_thumbnail_id($itemid)) ? get_attached_file(get_post_thumbnail_id($itemid)) : get_option('wpgv_demoimageurl_item');
 	$voucher_bgcolor = wpgv_hex2rgb($setting_options->voucher_bgcolor);
 	$voucher_color = wpgv_hex2rgb($setting_options->voucher_color);
@@ -66,8 +70,8 @@ function wpgv__doajax_item_pdf_save_func()
 	$upload = wp_upload_dir();
 	$upload_dir = $upload['basedir'];
 	$curr_time = time();
-	$upload_dir = $upload_dir . '/voucherpdfuploads/' . $curr_time . $code . '.pdf';
-	$upload_url = $curr_time . $code;
+	$upload_url = wpgv_sanitize_voucher_pdf_basename($curr_time . $code);
+	$upload_dir = $upload_dir . '/voucherpdfuploads/' . $upload_url . '.pdf';
 
 	$formtype = 'item';
 	$preview = false;

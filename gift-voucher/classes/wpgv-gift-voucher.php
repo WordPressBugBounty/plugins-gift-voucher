@@ -228,6 +228,10 @@ if (! class_exists('WPGV_Gift_Voucher')) :
                 return __('Card Number cannot be empty.', 'gift-voucher');
             }
 
+            if (wpgv_couponcode_exists($couponcode)) {
+                return __('Card Number already exists.', 'gift-voucher');
+            }
+
             $result = $wpdb->insert($wpdb->prefix . 'giftvouchers_list', array('couponcode' => $couponcode), array('%s'));
 
             if ($result !== false) {
@@ -242,23 +246,17 @@ if (! class_exists('WPGV_Gift_Voucher')) :
 
         public static function create_card($note = '')
         {
-            // Failsafe. If we haven't generated a number after this many tries, throw an error.
-            $attempts = 0;
-            $max_attempts = 100;
+            $couponcode = wpgv_generate_unique_couponcode(100);
+            if (is_wp_error($couponcode)) {
+                wp_die(esc_html($couponcode->get_error_message()));
+            }
 
-            // Get a random Card Number and insert it. If the insertion fails, it is already in use.
-            do {
-                $attempts++;
-
-                $couponcode = self::random_card_number();
-                $gift_card = WPGV_Gift_Voucher::add_card($couponcode, $note);
-            } while (!($gift_card instanceof self) && $attempts < $max_attempts);
+            $gift_card = WPGV_Gift_Voucher::add_card($couponcode, $note);
 
             if ($gift_card instanceof self) {
                 return $gift_card;
             } else {
-                // translators: %1$d: number of attempts, %2$s: gift card number
-                wp_die(sprintf(esc_html__('Failed to generate a unique random card number after %1$d attempts. %2$s', 'gift-voucher'), intval($attempts), esc_html($gift_card)));
+                wp_die(esc_html($gift_card));
             }
         }
 

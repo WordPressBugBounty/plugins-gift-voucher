@@ -464,7 +464,11 @@ if (!class_exists('wpgv-')) :
                 }
 
                 foreach ($numbers as $valueNumber) {
-                    $code = wp_rand(1000000000000000, 9000000000000000);
+                    $code = wpgv_generate_unique_couponcode();
+                    if (is_wp_error($code)) {
+                        wp_die(esc_html($code->get_error_message()));
+                    }
+
                     do_action('wc_wpgv_voucher_pdf_save_func', $value, $your_name, $recipient_name, $your_email, $recipient_email, $msg, $code, $payment_method, $product_img, $product_id, $wvgc_order_id);
                     wc_add_order_item_meta($order_item_id, WPGV_GIFT_VOUCHER_NUMBER_META_KEY, $code);
                 }
@@ -510,8 +514,8 @@ if (!class_exists('wpgv-')) :
                 // exit();
                 $upload = wp_upload_dir();
                 $upload_dir = $upload['basedir'];
-                $attachments[] = $upload_dir . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '.pdf';
-                $attachments_user = $upload_dir . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link  . '.pdf';
+                $attachments[] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link);
+                $attachments_user = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link);
                 $voucherpdf_link = $voucher_options->voucherpdf_link;
 
                 /* Recipient Mail */
@@ -543,8 +547,8 @@ if (!class_exists('wpgv-')) :
                     }
                 }
 
-                $attachments[] = $upload_dir . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '-receipt.pdf';
-                $attachments[] = $upload_dir . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '-invoice.pdf';
+                $attachments[] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link, '-receipt');
+                $attachments[] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link, '-invoice');
 
                 // /* Your email address (for the receipt) | Name email Order Confirmation */
                 $buyersub = wpgv_mailvarstr_multiple($emailsubject, $setting_options, $voucher_options_results, $voucherpdf_link);

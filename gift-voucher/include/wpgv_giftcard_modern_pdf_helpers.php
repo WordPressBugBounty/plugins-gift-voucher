@@ -126,10 +126,14 @@ function wpgv_generate_modern_giftcard_pdf($voucher_id, $voucher_data, $template
     }
 
     if (!empty($pdf_filename_base)) {
-        $pdf_filename_base = sanitize_file_name($pdf_filename_base);
+        $pdf_filename_base = wpgv_sanitize_voucher_pdf_basename($pdf_filename_base);
     } else {
         $curr_time = time();
-        $pdf_filename_base = $curr_time . $voucher_data->couponcode;
+        $pdf_filename_base = wpgv_sanitize_voucher_pdf_basename($curr_time . $voucher_data->couponcode);
+    }
+
+    if ($pdf_filename_base === '') {
+        $pdf_filename_base = wpgv_sanitize_voucher_pdf_basename($voucher_id . '-' . time());
     }
     $pdf_filename = $pdf_filename_base . '.pdf';
     $pdf_path = $upload_dir . $pdf_filename;

@@ -14,15 +14,14 @@ function wpgv__doajax_voucher_pdf_save_func()
 		wp_die();
 	}
 
-	$template = wp_kses_post($_POST['template']);
+	$template = isset($_POST['template']) ? absint(wp_unslash($_POST['template'])) : 0;
 	$buyingfor = sanitize_text_field($_POST['buying_for']);
 	$for = sanitize_text_field($_POST['for']);
 	$from = isset($_POST['from']) ? sanitize_text_field($_POST['from']) : '';
-	$value = sanitize_text_field($_POST['value']);
+	$raw_value = isset($_POST['value']) ? wp_unslash($_POST['value']) : '';
 
 	$message = sanitize_textarea_field($_POST['message']);
 	$expiry = sanitize_textarea_field($_POST['expiry']);
-	$code = sanitize_text_field($_POST['code']);
 	$shipping = sanitize_text_field($_POST['shipping']);
 	$shipping_email = isset($_POST['shipping_email']) ? sanitize_email($_POST['shipping_email']) : '';
 	$firstname = isset($_POST['firstname']) ? sanitize_text_field($_POST['firstname']) : '';
@@ -42,6 +41,21 @@ function wpgv__doajax_voucher_pdf_save_func()
 	$setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM $setting_table WHERE id = %d", 1));
 	$template_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM $template_table WHERE id = %d", $template));
 
+	$value = wpgv_validate_public_voucher_amount($raw_value, $setting_options);
+	if (is_wp_error($value)) {
+		wp_send_json_error(array('message' => $value->get_error_message()));
+	}
+
+	$code = wpgv_generate_unique_couponcode();
+	if (is_wp_error($code)) {
+		wp_send_json_error(array('message' => $code->get_error_message()));
+	}
+
+	$shipping_charges = wpgv_get_shipping_charge_amount($shipping, $shipping_method, $setting_options);
+	if (is_wp_error($shipping_charges)) {
+		wp_send_json_error(array('message' => $shipping_charges->get_error_message()));
+	}
+
 
 	$images = $template_options->image_style ? json_decode($template_options->image_style) : ['', '', ''];
 	$voucher_bgcolor = wpgv_hex2rgb($setting_options->voucher_bgcolor);
@@ -52,7 +66,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 	$wpgv_customer_receipt = get_option('wpgv_customer_receipt') ? get_option('wpgv_customer_receipt') : 0;
 	$wpgv_expiry_date_format = get_option('wpgv_expiry_date_format') ? get_option('wpgv_expiry_date_format') : 'd.m.Y';
 	$wpgv_enable_pdf_saving = get_option('wpgv_enable_pdf_saving') ? get_option('wpgv_enable_pdf_saving') : 0;
-	$wpgv_add_extra_charges = get_option('wpgv_add_extra_charges_voucher') ? get_option('wpgv_add_extra_charges_voucher') : 0;
+	$wpgv_add_extra_charges = wpgv_get_configured_extra_charge('wpgv_add_extra_charges_voucher');
 
 	if ($wpgv_hide_expiry == 'no') {
 		$expiry = __('No Expiry', 'gift-voucher');
@@ -63,14 +77,14 @@ function wpgv__doajax_voucher_pdf_save_func()
 	$upload = wp_upload_dir();
 	$upload_dir = $upload['basedir'];
 	$curr_time = time();
-	$upload_dir = $upload_dir . '/voucherpdfuploads/' . $curr_time . $code . '.pdf';
-	$upload_url = $curr_time . $code;
+	$upload_url = wpgv_sanitize_voucher_pdf_basename($curr_time . $code);
+	$upload_dir = $upload_dir . '/voucherpdfuploads/' . $upload_url . '.pdf';
 
 	$formtype = 'voucher';
 	$preview = false;
 
 	if ($setting_options->is_style_choose_enable) {
-		$voucher_style = sanitize_text_field($_POST['style']);
+		$voucher_style = isset($_POST['style']) ? absint(wp_unslash($_POST['style'])) : 0;
 		$image_attributes = get_attached_file($images[$voucher_style]);
 		$image = ($image_attributes) ? $image_attributes : get_option('wpgv_demoimageurl_voucher');
 		$stripeimage = (wp_get_attachment_image_src($images[$voucher_style])) ? wp_get_attachment_image_src($images[$voucher_style]) : get_option('wpgv_demoimageurl_voucher');
@@ -158,21 +172,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 	$order_key = wpgv_create_voucher_order_key($lastid);
 	WPGV_Gift_Voucher_Activity::record($lastid, 'create', '', 'Voucher ordered by ' . $for . ', Message: ' . $message);
 
-	$shipping_charges = 0;
-
-	if ($shipping != 'shipping_as_email') {
-		$preshipping_methods = explode(',', $setting_options->shipping_method);
-		foreach ($preshipping_methods as $method) {
-			$preshipping_method = explode(':', $method);
-			if (trim(stripslashes($preshipping_method[1])) == trim(stripslashes($shipping_method))) {
-				$value += trim($preshipping_method[0]);
-				$shipping_charges = trim($preshipping_method[0]);
-				break;
-			}
-		}
-	}
-
-	$value += $wpgv_add_extra_charges;
+	$total_value = $value + $shipping_charges + $wpgv_add_extra_charges;
 
 
 	//Customer Receipt
@@ -180,7 +180,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 		wpgv_generate_receipt_pdf_for_voucher($lastid);
 	}
 
-	$currency = wpgv_price_format($value);
+	$currency = wpgv_price_format($total_value);
 	update_post_meta($lastid, 'wpgv_total_payable_amount', $currency);
 
 	$success_url = get_site_url() . '/voucher-payment-successful/?voucheritem=' . $lastid . '&orderkey=' . rawurlencode($order_key);
@@ -211,7 +211,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 					"purchase_units" => [[
 						"reference_id" => $template_options->title,
 						"amount" => [
-							"value" => $value,
+							"value" => $total_value,
 							"currency_code" => $setting_options->currency_code
 						]
 					]],
@@ -254,7 +254,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 
 		$Sofortueberweisung = new Sofortueberweisung($setting_options->sofort_configure_key);
 
-		$Sofortueberweisung->setAmount($value);
+		$Sofortueberweisung->setAmount($total_value);
 		$Sofortueberweisung->setCurrencyCode($setting_options->currency_code);
 
 		$Sofortueberweisung->setReason($setting_options->reason_for_payment, $lastid);
@@ -288,7 +288,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 				"secret_key"      => $setting_options->stripe_secret_key,
 			);
 
-			$camount = ($value) * 100;
+			$camount = ($total_value) * 100;
 			$stripeemail = ($email) ? $email : $shipping_email;
 
 			\Stripe\Stripe::setApiKey($stripe['secret_key']);

@@ -98,8 +98,8 @@ function wpgv_voucher_successful_shortcode()
 
 			$upload = wp_upload_dir();
 			$upload_dir = $upload['basedir'];
-			$attachments[0] = $upload_dir . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '.pdf';
-			$attachments[1] = $upload_dir . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '-receipt.pdf';
+			$attachments[0] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link);
+			$attachments[1] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link, '-receipt');
 
 			$adminemailsubject = get_option('wpgv_adminemailsubject') ? get_option('wpgv_adminemailsubject') : 'New Voucher Order Received from {customer_name}  (Order No: {order_number})!';
 			$adminemailbody = get_option('wpgv_adminemailbody') ? get_option('wpgv_adminemailbody') : '<p>Hello, New Voucher Order received.</p><p><strong>Order Id:</strong> {order_number}</p><p><strong>Name:</strong> {customer_name}<br /><strong>Email:</strong> {customer_email}<br /><strong>Address:</strong> {customer_address}<br /><strong>Postcode:</strong> {customer_postcode}</p>';
@@ -137,7 +137,7 @@ function wpgv_voucher_successful_shortcode()
 
 			$upload = wp_upload_dir();
 			$upload_dir = $upload['basedir'];
-			$attachments[0] = $upload_dir . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '.pdf';
+			$attachments[0] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link);
 			$headers = 'Content-type: text/html;charset=utf-8' . "\r\n";
 			$headers .= 'From: ' . $setting_options->sender_name . ' <' . $setting_options->sender_email . '>' . "\r\n";
 			$headers .= 'Reply-to: ' . $setting_options->sender_name . ' <' . $setting_options->sender_email . '>' . "\r\n";
@@ -155,7 +155,7 @@ function wpgv_voucher_successful_shortcode()
 				}
 			}
 
-			$attachments[1] = $upload_dir . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '-receipt.pdf';
+			$attachments[1] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link, '-receipt');
 
 			/* Buyer Mail */
 			$buyersub = wpgv_mailvarstr($emailsubject, $setting_options, $voucher_options);
@@ -319,7 +319,7 @@ function wpgv_stripe_success_page_shortcode()
 
 				$upload = wp_upload_dir();
 				$upload_dir = $upload['basedir'];
-				$attachments[0] = $upload_dir . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '.pdf';
+				$attachments[0] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link);
 				$headers = 'Content-type: text/html;charset=utf-8' . "\r\n";
 				$headers .= 'From: ' . $setting_options->sender_name . ' <' . $setting_options->sender_email . '>' . "\r\n";
 				$headers .= 'Reply-to: ' . $setting_options->sender_name . ' <' . $setting_options->sender_email . '>' . "\r\n";
@@ -337,7 +337,7 @@ function wpgv_stripe_success_page_shortcode()
 					}
 				}
 
-				$attachments[1] = $upload_dir . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '-receipt.pdf';
+				$attachments[1] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link, '-receipt');
 
 				/* Buyer Mail */
 				$buyersub = wpgv_mailvarstr($emailsubject, $setting_options, $voucher_options);
@@ -411,9 +411,8 @@ function wpgv_check_voucher_balance_shortcode()
 	</form>
 	<?php
 	if ($voucher_code) {
-		global $wpdb;
 		$gift_voucher = new WPGV_Gift_Voucher($voucher_code);
-		if ($gift_voucher->get_id()) {
+		if ($gift_voucher->get_id() && wpgv_current_user_can_view_voucher_details($gift_voucher->get_id())) {
 	?>
 			<style type="text/css">
 				.wpgv-balance-activity-negative {
@@ -472,7 +471,7 @@ function wpgv_check_voucher_balance_shortcode()
 			</table>
 <?php
 		} else {
-			echo esc_html_e('This is a invalid voucher code.', 'gift-voucher');
+			echo esc_html__('This voucher code is invalid or you do not have permission to view it.', 'gift-voucher');
 		}
 	}
 }

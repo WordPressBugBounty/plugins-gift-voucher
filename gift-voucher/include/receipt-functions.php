@@ -22,7 +22,10 @@ function wpgv_generate_receipt_pdf_for_voucher($voucher_id)
         return false;
     }
 
-    $receiptupload_dir = wpgv_pdf_get_upload_path($voucher->voucherpdf_link . '-receipt.pdf');
+    $receiptupload_dir = wpgv_get_voucher_pdf_path($voucher->voucherpdf_link, '-receipt');
+    if ($receiptupload_dir === '') {
+        return false;
+    }
 
     $template_vars = array(
         'customer_name' => isset($voucher->from_name) ? $voucher->from_name : '',

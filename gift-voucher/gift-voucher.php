@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.7.0
+ * Version: 4.7.1
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -38,7 +38,7 @@ if (!ob_get_level()) {
   });
 }
 
-define('WPGIFT_VERSION', '4.7.0');
+define('WPGIFT_VERSION', '4.7.1');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -78,6 +78,304 @@ function wpgv_db_column_exists($table_name, $column_name)
   }
 
   return (bool) $wpdb->get_var("SHOW COLUMNS FROM `{$table_name}` LIKE '{$column_name}'");
+}
+
+function wpgv_db_has_unique_index_for_column($table_name, $column_name)
+{
+  global $wpdb;
+
+  if (!wpgv_db_table_exists($table_name)) {
+    return false;
+  }
+
+  $column_name = sanitize_key($column_name);
+  if ($column_name === '') {
+    return false;
+  }
+
+  $query = $wpdb->prepare(
+    "SHOW INDEX FROM `{$table_name}` WHERE Column_name = %s AND Non_unique = 0",
+    $column_name
+  );
+
+  return (bool) $wpdb->get_var($query);
+}
+
+function wpgv_couponcode_has_duplicates()
+{
+  global $wpdb;
+
+  $table_name = $wpdb->prefix . 'giftvouchers_list';
+  if (!wpgv_db_table_exists($table_name) || !wpgv_db_column_exists($table_name, 'couponcode')) {
+    return false;
+  }
+
+  $duplicate_code = $wpdb->get_var(
+    "SELECT couponcode
+    FROM `{$table_name}`
+    GROUP BY couponcode
+    HAVING COUNT(*) > 1
+    LIMIT 1"
+  );
+
+  return !empty($duplicate_code);
+}
+
+function wpgv_normalize_decimal_amount($raw_value)
+{
+  if (is_int($raw_value) || is_float($raw_value)) {
+    return round((float) $raw_value, 2);
+  }
+
+  $raw_value = sanitize_text_field(wp_unslash((string) $raw_value));
+  $raw_value = preg_replace('/\s+/', '', $raw_value);
+  $raw_value = preg_replace('/[^0-9,.\-]/', '', $raw_value);
+
+  if ($raw_value === '' || $raw_value === null) {
+    return null;
+  }
+
+  if (strpos($raw_value, ',') !== false && strpos($raw_value, '.') !== false) {
+    $raw_value = str_replace(',', '', $raw_value);
+  } elseif (strpos($raw_value, ',') !== false) {
+    $raw_value = str_replace(',', '.', $raw_value);
+  }
+
+  if (!is_numeric($raw_value)) {
+    return null;
+  }
+
+  return round((float) $raw_value, 2);
+}
+
+function wpgv_get_public_voucher_value_limits($setting_options)
+{
+  $min_amount = isset($setting_options->voucher_min_value) && $setting_options->voucher_min_value !== ''
+    ? max(0, (float) $setting_options->voucher_min_value)
+    : 1.0;
+  $max_amount = isset($setting_options->voucher_max_value) && $setting_options->voucher_max_value !== ''
+    ? max(0, (float) $setting_options->voucher_max_value)
+    : 10000.0;
+
+  if ($max_amount > 0 && $max_amount < $min_amount) {
+    $max_amount = $min_amount;
+  }
+
+  return array($min_amount, $max_amount);
+}
+
+function wpgv_validate_public_voucher_amount($raw_value, $setting_options)
+{
+  $amount = wpgv_normalize_decimal_amount($raw_value);
+  if ($amount === null) {
+    return new WP_Error('wpgv_invalid_amount', __('Invalid voucher amount supplied.', 'gift-voucher'));
+  }
+
+  list($min_amount, $max_amount) = wpgv_get_public_voucher_value_limits($setting_options);
+
+  if ($amount <= 0) {
+    return new WP_Error('wpgv_invalid_amount', __('Voucher amount must be greater than zero.', 'gift-voucher'));
+  }
+
+  if ($min_amount > 0 && $amount < $min_amount) {
+    return new WP_Error(
+      'wpgv_amount_too_low',
+      sprintf(
+        /* translators: %s: minimum voucher value */
+        __('Voucher amount must be at least %s.', 'gift-voucher'),
+        wpgv_price_format($min_amount)
+      )
+    );
+  }
+
+  if ($max_amount > 0 && $amount > $max_amount) {
+    return new WP_Error(
+      'wpgv_amount_too_high',
+      sprintf(
+        /* translators: %s: maximum voucher value */
+        __('Voucher amount must not exceed %s.', 'gift-voucher'),
+        wpgv_price_format($max_amount)
+      )
+    );
+  }
+
+  return $amount;
+}
+
+function wpgv_get_configured_extra_charge($option_name)
+{
+  $extra_charge = get_option($option_name);
+  $amount = wpgv_normalize_decimal_amount($extra_charge);
+
+  return ($amount === null || $amount < 0) ? 0.0 : $amount;
+}
+
+function wpgv_get_shipping_charge_amount($shipping_type, $shipping_method, $setting_options)
+{
+  $shipping_type = sanitize_text_field((string) $shipping_type);
+  $shipping_method = sanitize_text_field((string) $shipping_method);
+
+  if ($shipping_type !== 'shipping_as_post') {
+    return 0.0;
+  }
+
+  if ($shipping_method === '') {
+    return new WP_Error('wpgv_invalid_shipping_method', __('Invalid shipping method selected.', 'gift-voucher'));
+  }
+
+  $configured_methods = isset($setting_options->shipping_method) ? (string) $setting_options->shipping_method : '';
+  foreach (explode(',', $configured_methods) as $method) {
+    if ($method === '') {
+      continue;
+    }
+
+    $parts = explode(':', $method, 2);
+    $configured_amount = wpgv_normalize_decimal_amount($parts[0] ?? '');
+    $configured_label = trim(stripslashes($parts[1] ?? ''));
+
+    if ($configured_label !== '' && hash_equals($configured_label, $shipping_method)) {
+      return ($configured_amount === null || $configured_amount < 0) ? 0.0 : $configured_amount;
+    }
+  }
+
+  return new WP_Error('wpgv_invalid_shipping_method', __('Invalid shipping method selected.', 'gift-voucher'));
+}
+
+function wpgv_couponcode_exists($couponcode, $exclude_id = 0)
+{
+  global $wpdb;
+
+  $couponcode = sanitize_text_field((string) $couponcode);
+  if ($couponcode === '') {
+    return false;
+  }
+
+  $table_name = $wpdb->prefix . 'giftvouchers_list';
+  if ($exclude_id > 0) {
+    $existing_id = $wpdb->get_var(
+      $wpdb->prepare(
+        "SELECT id FROM `{$table_name}` WHERE couponcode = %s AND id != %d LIMIT 1",
+        $couponcode,
+        absint($exclude_id)
+      )
+    );
+  } else {
+    $existing_id = $wpdb->get_var(
+      $wpdb->prepare(
+        "SELECT id FROM `{$table_name}` WHERE couponcode = %s LIMIT 1",
+        $couponcode
+      )
+    );
+  }
+
+  return !empty($existing_id);
+}
+
+function wpgv_generate_unique_couponcode($max_attempts = 50)
+{
+  $max_attempts = max(1, (int) $max_attempts);
+
+  for ($attempt = 0; $attempt < $max_attempts; $attempt++) {
+    try {
+      $couponcode = (string) random_int(1000000000000000, 9999999999999999);
+    } catch (Exception $exception) {
+      return new WP_Error('wpgv_couponcode_rng_failed', __('Unable to generate a secure voucher code.', 'gift-voucher'));
+    }
+
+    if (!wpgv_couponcode_exists($couponcode)) {
+      return $couponcode;
+    }
+  }
+
+  return new WP_Error('wpgv_couponcode_generation_failed', __('Unable to generate a unique voucher code.', 'gift-voucher'));
+}
+
+function wpgv_sanitize_voucher_pdf_basename($value)
+{
+  $value = sanitize_file_name((string) $value);
+  $value = preg_replace('/[^A-Za-z0-9_-]/', '', $value);
+
+  return trim((string) $value, '._-');
+}
+
+function wpgv_get_voucher_pdf_filename($voucherpdf_link, $suffix = '')
+{
+  $voucherpdf_link = wpgv_sanitize_voucher_pdf_basename($voucherpdf_link);
+  $suffix = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $suffix);
+
+  if ($voucherpdf_link === '') {
+    return '';
+  }
+
+  return $voucherpdf_link . $suffix . '.pdf';
+}
+
+function wpgv_get_voucher_pdf_url($voucherpdf_link, $suffix = '')
+{
+  $filename = wpgv_get_voucher_pdf_filename($voucherpdf_link, $suffix);
+  if ($filename === '') {
+    return '';
+  }
+
+  $upload = wp_get_upload_dir();
+
+  return trailingslashit($upload['baseurl']) . 'voucherpdfuploads/' . rawurlencode($filename);
+}
+
+function wpgv_get_voucher_pdf_path($voucherpdf_link, $suffix = '')
+{
+  $filename = wpgv_get_voucher_pdf_filename($voucherpdf_link, $suffix);
+  if ($filename === '') {
+    return '';
+  }
+
+  return wpgv_pdf_get_upload_path($filename);
+}
+
+function wpgv_get_voucher_row_by_id($voucher_id)
+{
+  global $wpdb;
+
+  $voucher_id = absint($voucher_id);
+  if ($voucher_id <= 0) {
+    return null;
+  }
+
+  return $wpdb->get_row(
+    $wpdb->prepare(
+      "SELECT * FROM `{$wpdb->prefix}giftvouchers_list` WHERE id = %d",
+      $voucher_id
+    )
+  );
+}
+
+function wpgv_current_user_can_view_voucher_details($voucher_id)
+{
+  $voucher = wpgv_get_voucher_row_by_id($voucher_id);
+  if (!$voucher) {
+    return false;
+  }
+
+  if (current_user_can('manage_options') || current_user_can('manage_woocommerce')) {
+    return true;
+  }
+
+  if (!is_user_logged_in()) {
+    return false;
+  }
+
+  $current_user = wp_get_current_user();
+  $current_email = isset($current_user->user_email) ? strtolower(trim((string) $current_user->user_email)) : '';
+  if ($current_email === '') {
+    return false;
+  }
+
+  $owner_emails = array_filter(array(
+    strtolower(trim((string) $voucher->email)),
+    strtolower(trim((string) $voucher->shipping_email)),
+  ));
+
+  return in_array($current_email, $owner_emails, true);
 }
 
 function wpgv_is_woocommerce_enable()
@@ -177,6 +475,10 @@ add_action('admin_init', function () {
 
     if (!wpgv_db_column_exists($giftvouchers_list, 'note_order')) {
       $wpdb->query("ALTER TABLE `{$giftvouchers_list}` ADD note_order VARCHAR(255) NOT NULL");
+    }
+
+    if (!wpgv_db_has_unique_index_for_column($giftvouchers_list, 'couponcode') && !wpgv_couponcode_has_duplicates()) {
+      $wpdb->query("ALTER TABLE `{$giftvouchers_list}` ADD UNIQUE KEY `wpgv_couponcode_unique` (`couponcode`)");
     }
   }
 
@@ -293,6 +595,7 @@ function wpgv_front_enqueue()
     'preview' => __('This is Preview!', 'gift-voucher'),
     'text_value' => __('Value', 'gift-voucher'),
     'nonce'   => wp_create_nonce('wpgv_nonce_action'),
+    'gift_voucher_session_nonce' => wp_create_nonce('wpgv_gift_voucher_session'),
   );
   wp_register_style('wpgv-voucher-style',  WPGIFT__PLUGIN_URL . '/assets/css/voucher-style.css');
   wp_register_style('wpgv-item-style',  WPGIFT__PLUGIN_URL . '/assets/css/item-style.css');
@@ -432,7 +735,8 @@ function wpgv_plugin_activation()
         status varchar(10) NOT NULL DEFAULT 'unused',
         payment_status varchar(10) NOT NULL DEFAULT 'Not Pay',
         check_send_mail varchar(30) NOT NULL DEFAULT 'unsent',
-        PRIMARY KEY (id)
+        PRIMARY KEY (id),
+        UNIQUE KEY wpgv_couponcode_unique (couponcode)
       ) $charset_collate;";
 
   $giftvouchers_template_sql = "CREATE TABLE $giftvouchers_template (
@@ -818,7 +1122,7 @@ function wpgv_mailvarstr_multiple($string, $setting_options, $voucher_options_re
   }
 
   foreach ($voucher_options_results as $get_value) {
-    $get_link_pdf[] = get_home_url() . '/wp-content/uploads/voucherpdfuploads/' . (isset($get_value->voucherpdf_link) ? $get_value->voucherpdf_link : '') . '.pdf';
+    $get_link_pdf[] = wpgv_get_voucher_pdf_url(isset($get_value->voucherpdf_link) ? $get_value->voucherpdf_link : '');
     $get_order_number[] = isset($get_value->id) ? $get_value->id : '';
     $from_name = isset($get_value->from_name) ? $get_value->from_name : '';
     $to_name = isset($get_value->to_name) ? $get_value->to_name : '';
@@ -849,8 +1153,8 @@ function wpgv_mailvarstr_multiple($string, $setting_options, $voucher_options_re
     '{coupon_code}'       => isset($first->couponcode) ? $first->couponcode : '',
     '{payment_method}'    => isset($first->pay_method) ? $first->pay_method : '',
     '{payment_status}'    => isset($first->payment_status) ? $first->payment_status : '',
-    '{pdf_link}'          => get_home_url() . '/wp-content/uploads/voucherpdfuploads/' . $voucherpdf_link . '.pdf',
-    '{receipt_link}'      => get_home_url() . '/wp-content/uploads/voucherpdfuploads/' . (isset($first->voucherpdf_link) ? $first->voucherpdf_link : '') . '-receipt.pdf',
+    '{pdf_link}'          => wpgv_get_voucher_pdf_url($voucherpdf_link),
+    '{receipt_link}'      => wpgv_get_voucher_pdf_url(isset($first->voucherpdf_link) ? $first->voucherpdf_link : '', '-receipt'),
   );
   return strtr($string, $vars);
 }
@@ -867,8 +1171,6 @@ if (! function_exists('wpgv_mailvarstr_multiple_admin')) {
 }
 function wpgv_mailvarstr($string, $setting_options, $voucher_options)
 {
-  $url_upload = wp_get_upload_dir();
-  $baseurl = $url_upload['baseurl'];
   $vars = array(
     '{order_type}'        => ($voucher_options->order_type) ? $voucher_options->order_type : 'vouchers',
     '{company_name}'      => ($setting_options->company_name) ? $setting_options->company_name : '',
@@ -885,8 +1187,8 @@ function wpgv_mailvarstr($string, $setting_options, $voucher_options)
     '{coupon_code}'       => $voucher_options->couponcode,
     '{payment_method}'    => $voucher_options->pay_method,
     '{payment_status}'    => $voucher_options->payment_status,
-    '{pdf_link}'          => $baseurl . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '.pdf',
-    '{receipt_link}'      => $baseurl . '/voucherpdfuploads/' . $voucher_options->voucherpdf_link . '-receipt.pdf',
+    '{pdf_link}'          => wpgv_get_voucher_pdf_url($voucher_options->voucherpdf_link),
+    '{receipt_link}'      => wpgv_get_voucher_pdf_url($voucher_options->voucherpdf_link, '-receipt'),
   );
 
   return strtr($string, $vars);
