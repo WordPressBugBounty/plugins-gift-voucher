@@ -69,6 +69,10 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
 
         function woocommerce_after_cart_contents()
         {
+            if (!get_option('wpgv_enable_woocommerce_redeem_form', 0)) {
+                return;
+            }
+
             wp_enqueue_script('wpgv-woocommerce-script');
             wc_get_template('cart/wpgv-gift-voucher-form.php', '', '', WPGIFT__PLUGIN_DIR . '/templates/woocommerce/');
         }
@@ -80,6 +84,10 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
 
         function woocommerce_before_checkout_form()
         {
+            if (!get_option('wpgv_enable_woocommerce_redeem_form', 0)) {
+                return;
+            }
+
             wp_enqueue_script('wpgv-woocommerce-script');
             wc_get_template('checkout/wpgv-gift-voucher-form.php', '', '', WPGIFT__PLUGIN_DIR . '/templates/woocommerce/');
         }

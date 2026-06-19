@@ -3,7 +3,7 @@
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
 ?>
-<div class="woocommerce-form-coupon-toggle" style="display:none">
+<div class="woocommerce-form-coupon-toggle">
 	<?php wc_print_notice(__('Have a gift voucher?', 'gift-voucher') . ' <a href="#" id="wpgv_show-gift-card">' . __('Click here to enter your gift voucher code', 'gift-voucher') . '</a>', 'notice'); ?>
 </div>
 

@@ -15,16 +15,42 @@
 
 function redeemVoucher(voucher_id) {
 	var voucher_amount = jQuery('#voucher_amount' + voucher_id).val();
+	var config = window.WPGiftAjax || {};
+	var messages = config.messages || {};
+	var requestUrl = config.ajaxurl || window.ajaxurl;
+
+	if (!voucher_amount || isNaN(parseFloat(voucher_amount)) || parseFloat(voucher_amount) <= 0) {
+		alert(messages.invalidAmount || 'Please enter a valid voucher amount.');
+		return;
+	}
 
 	var data = {
 		'action': 'wpgv_redeem_voucher',
 		'voucher_id': voucher_id,
 		'voucher_amount': voucher_amount,
+		'nonce': config.redeemNonce || '',
 	};
 
-	jQuery.post(ajaxurl, data, function (response) {
-		alert('Got this from the server: ' + response);
-	});
+	jQuery.post(requestUrl, data)
+		.done(function (response) {
+			if (response && response.success) {
+				alert((messages.successPrefix || 'Voucher updated:') + ' ' + response.data.message);
+				window.location.reload();
+				return;
+			}
+
+			var errorMessage = response && response.data && response.data.message
+				? response.data.message
+				: (messages.requestFailed || 'Request failed. Please try again.');
+			alert(errorMessage);
+		})
+		.fail(function (xhr) {
+			var response = xhr && xhr.responseJSON ? xhr.responseJSON : null;
+			var errorMessage = response && response.data && response.data.message
+				? response.data.message
+				: (messages.requestFailed || 'Request failed. Please try again.');
+			alert(errorMessage);
+		});
 }
 
 (function () {

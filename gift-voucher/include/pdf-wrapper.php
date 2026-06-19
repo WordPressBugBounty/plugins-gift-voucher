@@ -871,6 +871,43 @@ function wpgv_cleanup_failed_voucher_order($voucher_id, $voucher_pdf_link = '')
     return true;
 }
 
+/**
+ * Cleanup stale unpaid voucher records and their files.
+ * Removes rows with payment_status = 'Not Pay' older than configured retention.
+ * Option: 'wpgv_unpaid_retention_hours' (int) - default 24 hours.
+ */
+function wpgv_cleanup_stale_unpaid_vouchers()
+{
+    global $wpdb;
+
+    $retention_hours = intval(get_option('wpgv_unpaid_retention_hours', 24));
+    if ($retention_hours <= 0) {
+        $retention_hours = 24;
+    }
+
+    $cutoff = gmdate('Y-m-d H:i:s', time() - ($retention_hours * HOUR_IN_SECONDS));
+
+    $voucher_table = $wpdb->prefix . 'giftvouchers_list';
+
+    $rows = $wpdb->get_results($wpdb->prepare("SELECT id, voucherpdf_link FROM $voucher_table WHERE payment_status = %s AND voucheradd_time < %s", 'Not Pay', $cutoff));
+    if (empty($rows)) {
+        return 0;
+    }
+
+    $deleted = 0;
+    foreach ($rows as $row) {
+        $id = intval($row->id);
+        $link = isset($row->voucherpdf_link) ? $row->voucherpdf_link : '';
+        if (wpgv_cleanup_failed_voucher_order($id, $link)) {
+            $deleted++;
+        }
+    }
+
+    return $deleted;
+}
+
+add_action('wpgv_cleanup_unpaid_cron', 'wpgv_cleanup_stale_unpaid_vouchers');
+
 function wpgv_get_standard_pdf_args_for_voucher($voucher_data, $style = null)
 {
     if (!$voucher_data || empty($voucher_data->order_type)) {

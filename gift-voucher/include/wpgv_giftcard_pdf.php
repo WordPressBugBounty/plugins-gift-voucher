@@ -21,6 +21,24 @@ function wpgv__doajax_gift_card_pdf_save_func()
 		wp_die();
 	}
 
+	// Basic transient-based rate limiting per IP to mitigate abuse
+	$ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : 'unknown';
+	$ip_key = 'wpgv_rl_' . md5($ip);
+	$limit = intval(get_option('wpgv_public_rate_limit_per_min', 10));
+	if ($limit <= 0) {
+		$limit = 10;
+	}
+	$count = get_transient($ip_key);
+	if ($count === false) {
+		set_transient($ip_key, 1, 60);
+	} else {
+		if (intval($count) >= $limit) {
+			wp_send_json_error(array('message' => 'Too many requests, please try again later.'));
+			wp_die();
+		}
+		set_transient($ip_key, intval($count) + 1, 60);
+	}
+
 	global $wpdb;
 	$voucher_table 	= $wpdb->prefix . 'giftvouchers_list';
 	$setting_options = get_data_settings_voucher();
@@ -323,7 +341,8 @@ function wpgv__doajax_gift_card_pdf_save_func()
 				"secret_key"      => $setting_options->stripe_secret_key,
 			);
 
-			$camount = ($value) * 100;
+			$camount = wpgv_get_stripe_amount_minor_units($value);
+			$stripe_order_metadata = wpgv_get_stripe_order_binding_metadata($lastid, $order_key, $value, $setting_options->currency_code);
 
 			\Stripe\Stripe::setApiKey($stripe['secret_key']);
 
@@ -346,6 +365,11 @@ function wpgv__doajax_gift_card_pdf_save_func()
 							'quantity' => 1,
 						]],
 						'mode' => 'payment',
+						'client_reference_id' => (string) $lastid,
+						'metadata' => $stripe_order_metadata,
+						'payment_intent_data' => array(
+							'metadata' => $stripe_order_metadata,
+						),
 						'success_url' => get_page_link($stripesuccesspageurl) . '/?voucheritem=' . $lastid . '&orderkey=' . rawurlencode($order_key) . '&sessionid={CHECKOUT_SESSION_ID}',
 						'cancel_url' => $cancel_url,
 					]);
@@ -364,6 +388,11 @@ function wpgv__doajax_gift_card_pdf_save_func()
 							'quantity' => 1,
 						]],
 						'mode' => 'payment',
+						'client_reference_id' => (string) $lastid,
+						'metadata' => $stripe_order_metadata,
+						'payment_intent_data' => array(
+							'metadata' => $stripe_order_metadata,
+						),
 						'success_url' => get_page_link($stripesuccesspageurl) . '/?voucheritem=' . $lastid . '&orderkey=' . rawurlencode($order_key) . '&sessionid={CHECKOUT_SESSION_ID}',
 						'cancel_url' => $cancel_url,
 					]);

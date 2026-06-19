@@ -127,7 +127,15 @@ class WPGiftVoucherAdminPages
 		wp_enqueue_style('voucher-style', WPGIFT__PLUGIN_URL . '/assets/css/admin-style.css');
 		wp_enqueue_script('konva-js', WPGIFT__PLUGIN_URL . '/assets/js/konva.min.js', array('jquery'), 'v8.0.4', true);
 		wp_enqueue_script('voucher-script', WPGIFT__PLUGIN_URL  . '/assets/js/admin-script.js', array('wp-color-picker', 'konva-js'), '1.0.0', true);
-		wp_localize_script('voucher-script', 'WPGiftAjax', array('ajaxurl' => admin_url('admin-ajax.php')));
+		wp_localize_script('voucher-script', 'WPGiftAjax', array(
+			'ajaxurl' => admin_url('admin-ajax.php'),
+			'redeemNonce' => wp_create_nonce('wpgv_redeem_voucher'),
+			'messages' => array(
+				'invalidAmount' => __('Please enter a valid voucher amount.', 'gift-voucher'),
+				'requestFailed' => __('Request failed. Please try again.', 'gift-voucher'),
+				'successPrefix' => __('Voucher updated:', 'gift-voucher'),
+			),
+		));
 	}
 
 	/**

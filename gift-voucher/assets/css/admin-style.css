@@ -140,6 +140,45 @@
     margin: 0;
 }
 
+#voucher-details .wpgv-voucher-timeline th,
+#voucher-details .wpgv-voucher-timeline td {
+    vertical-align: top;
+}
+
+#voucher-details .wpgv-voucher-timeline td {
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+#voucher-details .wpgv-voucher-timeline abbr {
+    text-decoration: none;
+}
+
+#voucher-details .wpgv-voucher-timeline td:nth-child(5) {
+    white-space: pre-wrap;
+}
+
+#voucher-details .wpgv-voucher-timeline .wpgv-timeline-event-transaction td:nth-child(3),
+#voucher-details .wpgv-voucher-timeline .wpgv-timeline-event-firsttransact td:nth-child(3),
+#voucher-details .wpgv-voucher-timeline .wpgv-timeline-event-payment td:nth-child(3) {
+    font-weight: 600;
+}
+
+#voucher-details .wpgv-voucher-timeline-note-form {
+    max-width: 720px;
+    margin-bottom: 18px;
+}
+
+#voucher-details .wpgv-voucher-timeline-note-form textarea {
+    display: block;
+    margin-bottom: 8px;
+}
+
+#voucher-details .wpgv-voucher-timeline-note-form .submit {
+    margin: 0;
+    padding: 0;
+}
+
 /*Setting Page*/
 .wpgiftv-row {
     display: flex;

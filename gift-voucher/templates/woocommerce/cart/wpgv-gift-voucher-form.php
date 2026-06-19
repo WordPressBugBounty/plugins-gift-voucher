@@ -7,7 +7,7 @@ defined('ABSPATH') or exit;
         color: red;
     }
 </style>
-<tr style="display:none">
+<tr>
     <td colspan="6" class="actions">
         <div class="coupon gift-vocuher-coupon">
             <div id="wpgv-redeem-error"></div>

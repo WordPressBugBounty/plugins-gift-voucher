@@ -2,8 +2,8 @@
 Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
-Tested up to: 6.9.4
-Stable tag: 4.7.1
+Tested up to: 7.0
+Stable tag: 4.7.2
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -224,6 +224,12 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.7.2 - Released: June 19, 2026 =
+* Security: Re-enable Stripe TLS certificate verification in the Stripe success flow (removed `\Stripe\Stripe::setVerifySslCerts(false)` in `include/voucher-shortcodes.php`).
+* Security: Add hourly cleanup for stale unpaid vouchers and transient per-IP rate-limiting on public PDF creation endpoints to remove orphaned PDFs and mitigate automated abuse (see `include/pdf-wrapper.php`, `include/wpgv_voucher_pdf.php`, `include/wpgv_item_pdf.php`, `include/wpgv_giftcard_pdf.php`).
+* Security: Harden the admin voucher redeem AJAX action with capability checks, nonce verification, amount validation, and balance limits to prevent unauthorized balance changes.
+* Fix: Replace deprecated WooCommerce coupon property access in `wpgv_handle_gift_voucher_application()` by using `get_code()` for voucher application compatibility with newer WooCommerce versions.
 
 = Version 4.7.1 - Released: May 27, 2026 =
 * Security: Fix a stored XSS issue in voucher admin screens by sanitizing generated PDF filenames and safely escaping voucher PDF links before rendering them in the WordPress admin.

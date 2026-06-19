@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.7.1
+ * Version: 4.7.2
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -38,7 +38,7 @@ if (!ob_get_level()) {
   });
 }
 
-define('WPGIFT_VERSION', '4.7.1');
+define('WPGIFT_VERSION', '4.7.2');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -146,6 +146,128 @@ function wpgv_normalize_decimal_amount($raw_value)
   }
 
   return round((float) $raw_value, 2);
+}
+
+function wpgv_get_stripe_amount_minor_units($raw_amount)
+{
+  $amount = wpgv_normalize_decimal_amount($raw_amount);
+  if ($amount === null) {
+    return null;
+  }
+
+  return (int) round($amount * 100);
+}
+
+function wpgv_get_stripe_order_binding_metadata($voucher_id, $order_key, $raw_amount, $currency_code)
+{
+  $amount_minor = wpgv_get_stripe_amount_minor_units($raw_amount);
+
+  return array(
+    'voucher_id'   => (string) absint($voucher_id),
+    'order_key'    => sanitize_text_field((string) $order_key),
+    'amount_minor' => $amount_minor === null ? '' : (string) $amount_minor,
+    'currency'     => strtoupper(sanitize_text_field((string) $currency_code)),
+  );
+}
+
+function wpgv_normalize_stripe_metadata($metadata)
+{
+  if ($metadata instanceof \Stripe\StripeObject) {
+    $metadata = $metadata->toArray();
+  } elseif (is_object($metadata)) {
+    $metadata = get_object_vars($metadata);
+  }
+
+  if (!is_array($metadata)) {
+    return array();
+  }
+
+  return array_map(
+    static function ($value) {
+      return sanitize_text_field((string) $value);
+    },
+    $metadata
+  );
+}
+
+function wpgv_stripe_metadata_matches_expected($metadata, $expected_metadata)
+{
+  $metadata = wpgv_normalize_stripe_metadata($metadata);
+
+  foreach ($expected_metadata as $key => $expected_value) {
+    $expected_value = sanitize_text_field((string) $expected_value);
+    if ($expected_value === '' || !isset($metadata[$key]) || !hash_equals($expected_value, (string) $metadata[$key])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function wpgv_is_stripe_checkout_session_bound_to_voucher($checkout_session, $expected_metadata)
+{
+  if (!is_object($checkout_session) || !method_exists($checkout_session, 'jsonSerialize')) {
+    return false;
+  }
+
+  $session_data = $checkout_session->jsonSerialize();
+  $expected_amount_minor = isset($expected_metadata['amount_minor']) ? (int) $expected_metadata['amount_minor'] : null;
+  $expected_currency = isset($expected_metadata['currency']) ? strtoupper($expected_metadata['currency']) : '';
+  $expected_voucher_id = isset($expected_metadata['voucher_id']) ? (string) $expected_metadata['voucher_id'] : '';
+
+  if (($session_data['mode'] ?? '') !== 'payment') {
+    return false;
+  }
+
+  if (($session_data['payment_status'] ?? '') !== 'paid') {
+    return false;
+  }
+
+  if (isset($session_data['status']) && $session_data['status'] !== 'complete') {
+    return false;
+  }
+
+  if (
+    isset($session_data['client_reference_id']) &&
+    $expected_voucher_id !== '' &&
+    (string) $session_data['client_reference_id'] !== $expected_voucher_id
+  ) {
+    return false;
+  }
+
+  if ($expected_amount_minor === null || !isset($session_data['amount_total']) || (int) $session_data['amount_total'] !== $expected_amount_minor) {
+    return false;
+  }
+
+  if ($expected_currency === '' || strtoupper((string) ($session_data['currency'] ?? '')) !== $expected_currency) {
+    return false;
+  }
+
+  return wpgv_stripe_metadata_matches_expected($session_data['metadata'] ?? array(), $expected_metadata);
+}
+
+function wpgv_is_stripe_payment_intent_bound_to_voucher($payment_intent, $expected_metadata)
+{
+  if (!is_object($payment_intent)) {
+    return false;
+  }
+
+  $expected_amount_minor = isset($expected_metadata['amount_minor']) ? (int) $expected_metadata['amount_minor'] : null;
+  $expected_currency = isset($expected_metadata['currency']) ? strtoupper($expected_metadata['currency']) : '';
+
+  if (($payment_intent->status ?? '') !== 'succeeded') {
+    return false;
+  }
+
+  if ($expected_amount_minor === null || !isset($payment_intent->amount) || (int) $payment_intent->amount !== $expected_amount_minor) {
+    return false;
+  }
+
+  if ($expected_currency === '' || strtoupper((string) ($payment_intent->currency ?? '')) !== $expected_currency) {
+    return false;
+  }
+
+  return wpgv_stripe_metadata_matches_expected($payment_intent->metadata ?? array(), $expected_metadata);
 }
 
 function wpgv_get_public_voucher_value_limits($setting_options)
@@ -855,6 +977,9 @@ function wpgv_plugin_activation()
   if (!wp_next_scheduled('wpgv_check_voucher_status')) {
     wp_schedule_event(time(), 'hourly', 'wpgv_check_voucher_status');
   }
+  if (!wp_next_scheduled('wpgv_cleanup_unpaid_cron')) {
+    wp_schedule_event(time(), 'hourly', 'wpgv_cleanup_unpaid_cron');
+  }
   set_transient('wpgv_activated', 1);
   require_once(WPGIFT__PLUGIN_DIR . '/classes/class-nag.php');
   WPGIFT_Nag::insert_install_date();
@@ -1002,6 +1127,7 @@ add_action('admin_notices', 'wpgv_display_install_notice');
 function wpgv_plugin_deactivation()
 {
   wp_clear_scheduled_hook('wpgv_check_voucher_status');
+  wp_clear_scheduled_hook('wpgv_cleanup_unpaid_cron');
 }
 register_deactivation_hook(__FILE__, 'wpgv_plugin_deactivation');
 
@@ -1234,15 +1360,87 @@ add_action('wp_ajax_wpgv_redeem_voucher', 'wpgv_redeem_voucher');
 function wpgv_redeem_voucher()
 {
   global $wpdb;
+
+  if (!current_user_can('manage_options')) {
+    wp_send_json_error(array('message' => __('You are not allowed to redeem vouchers.', 'gift-voucher')), 403);
+  }
+
+  check_ajax_referer('wpgv_redeem_voucher', 'nonce');
+
   $setting_table_name = $wpdb->prefix . 'giftvouchers_setting';
   $setting_options = $wpdb->get_row("SELECT * FROM $setting_table_name WHERE id = 1");
+  $voucher_id = isset($_POST['voucher_id']) ? absint(wp_unslash($_POST['voucher_id'])) : 0;
+  $raw_voucher_amount = isset($_POST['voucher_amount']) ? sanitize_text_field(wp_unslash($_POST['voucher_amount'])) : '';
+  $normalized_amount = preg_replace('/[^0-9.,]/', '', $raw_voucher_amount);
 
-  $voucher_id = sanitize_text_field(wp_unslash($_POST['voucher_id']));
-  $voucher_amount = sanitize_text_field($_POST['voucher_amount']);
-  WPGV_Gift_Voucher_Activity::record($voucher_id, 'transaction', '-' . $voucher_amount, 'Voucher amount ' . $setting_options->currency . $voucher_amount . ' used directly by administrator.');
+  if ($voucher_id <= 0) {
+    wp_send_json_error(array('message' => __('Invalid voucher ID.', 'gift-voucher')), 400);
+  }
 
-  echo 'Successful';
-  wp_die(); // this is required to terminate immediately and return a proper response
+  if ($normalized_amount === '') {
+    wp_send_json_error(array('message' => __('Voucher amount is required.', 'gift-voucher')), 400);
+  }
+
+  if (strpos($normalized_amount, ',') !== false && strpos($normalized_amount, '.') !== false) {
+    $normalized_amount = str_replace(',', '', $normalized_amount);
+  } else {
+    $normalized_amount = str_replace(',', '.', $normalized_amount);
+  }
+
+  $voucher_amount = round((float) $normalized_amount, 2);
+
+  if ($voucher_amount <= 0) {
+    wp_send_json_error(array('message' => __('Voucher amount must be greater than zero.', 'gift-voucher')), 400);
+  }
+
+  $gift_voucher = WPGV_Gift_Voucher::get_by_id($voucher_id);
+  if (!$gift_voucher || !$gift_voucher->get_id()) {
+    wp_send_json_error(array('message' => __('Gift Voucher does not exist.', 'gift-voucher')), 404);
+  }
+
+  if ($gift_voucher->get_payment_status() !== 'Paid') {
+    wp_send_json_error(array('message' => __('Only paid vouchers can be redeemed.', 'gift-voucher')), 400);
+  }
+
+  if ($gift_voucher->get_active() === 'used') {
+    wp_send_json_error(array('message' => __('This voucher is already marked as used.', 'gift-voucher')), 400);
+  }
+
+  if ($gift_voucher->has_expired()) {
+    wp_send_json_error(array('message' => __('This voucher has expired and cannot be redeemed.', 'gift-voucher')), 400);
+  }
+
+  $current_balance = (float) $gift_voucher->get_balance();
+  if ($current_balance <= 0) {
+    wp_send_json_error(array('message' => __('This voucher has no remaining balance.', 'gift-voucher')), 400);
+  }
+
+  if ($voucher_amount > $current_balance) {
+    wp_send_json_error(array('message' => sprintf(
+      /* translators: %s: current balance */
+      __('Redeem amount exceeds current balance of %s.', 'gift-voucher'),
+      wpgv_price_format($current_balance)
+    )), 400);
+  }
+
+  $result = WPGV_Gift_Voucher_Activity::record(
+    $voucher_id,
+    'transaction',
+    -$voucher_amount,
+    'Voucher amount ' . $setting_options->currency . $voucher_amount . ' used directly by administrator.'
+  );
+
+  if (!$result) {
+    wp_send_json_error(array('message' => __('Unable to record voucher redemption.', 'gift-voucher')), 500);
+  }
+
+  $updated_voucher = WPGV_Gift_Voucher::get_by_id($voucher_id);
+  $updated_balance = $updated_voucher ? (float) $updated_voucher->get_balance() : max(0, $current_balance - $voucher_amount);
+
+  wp_send_json_success(array(
+    'message' => __('Successful', 'gift-voucher'),
+    'balance' => $updated_balance,
+  ));
 }
 
 function wpgv_price_format($price)
@@ -1539,7 +1737,16 @@ add_action('admin_notices', 'wpgv_display_testmode_notice');
 // Apply gift card code if valid and update cart totals
 function wpgv_handle_gift_voucher_application($err, $err_code, $coupon)
 {
-  $gift_voucher = new WPGV_Gift_Voucher($coupon->code);
+  // WooCommerce deprecated direct property access on coupon objects.
+  $coupon_code = is_object($coupon) && method_exists($coupon, 'get_code')
+    ? $coupon->get_code()
+    : (is_object($coupon) && isset($coupon->code) ? $coupon->code : '');
+
+  if ($coupon_code === '') {
+    return $err;
+  }
+
+  $gift_voucher = new WPGV_Gift_Voucher($coupon_code);
 
   if (!$gift_voucher->get_id() || $gift_voucher->get_payment_status() !== 'Paid') {
     return $err;
@@ -1562,7 +1769,7 @@ function wpgv_handle_gift_voucher_application($err, $err_code, $coupon)
   }
 
   $session_data = (array) WC()->session->get(WPGIFT_SESSION_KEY);
-  $session_data['gift_voucher'][$coupon->code] = 0;
+  $session_data['gift_voucher'][$coupon_code] = 0;
   WC()->session->set(WPGIFT_SESSION_KEY, $session_data);
 
   wc_add_notice(__('Gift voucher applied successfully.', 'gift-voucher'), 'success');

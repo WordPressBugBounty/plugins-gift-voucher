@@ -250,6 +250,7 @@ function wpgv_stripe_success_page_shortcode()
 			return '<div class="error"><p>' . esc_html__('This URL is invalid. You can not access this page directly.', 'gift-voucher') . '</p></div>';
 		}
 		$check_send_mail = $voucher_options->check_send_mail;
+		$was_already_paid = ($voucher_options->payment_status === 'Paid');
 		if ((strtotime($voucher_options->voucheradd_time) + 3600) < strtotime(current_time('mysql'))) {
 			return '<div class="error"><p>' . esc_html__('This URL is invalid. You can not access this page directly.', 'gift-voucher') . '</p></div>';
 		}
@@ -266,40 +267,47 @@ function wpgv_stripe_success_page_shortcode()
 		);
 
 		\Stripe\Stripe::setApiKey($stripe['secret_key']);
-		\Stripe\Stripe::setVerifySslCerts(false);
 
-		$checkout_session = \Stripe\Checkout\Session::retrieve(sanitize_text_field($_GET['sessionid']));
-
-		//retrieve charge details
-		$sessionJson = $checkout_session->jsonSerialize();
-
-		\Stripe\PaymentIntent::update(
-			$sessionJson['payment_intent'],
-			['metadata' => ['order_id' => $orderid]]
-		);
+		$sessionid = sanitize_text_field(wp_unslash($_GET['sessionid']));
+		$stripe_order_metadata = wpgv_get_stripe_order_binding_metadata($orderid, $request_order_key, $voucher_options->amount, $setting_options->currency_code);
 
 		try {
+			$checkout_session = \Stripe\Checkout\Session::retrieve($sessionid);
+			$sessionJson = $checkout_session->jsonSerialize();
+
+			if (!wpgv_is_stripe_checkout_session_bound_to_voucher($checkout_session, $stripe_order_metadata)) {
+				return '<div class="error"><p>' . esc_html__('Payment session validation failed. Please contact us if you have already been charged.', 'gift-voucher') . '</p></div>';
+			}
+
+			if (empty($sessionJson['payment_intent'])) {
+				return '<div class="error"><p>' . esc_html__('Payment session validation failed. Please contact us if you have already been charged.', 'gift-voucher') . '</p></div>';
+			}
+
 			$payment_intent = \Stripe\PaymentIntent::retrieve($sessionJson['payment_intent']);
-			if ($payment_intent->status === 'succeeded') {
+			if (!wpgv_is_stripe_payment_intent_bound_to_voucher($payment_intent, $stripe_order_metadata)) {
+				return '<div class="error"><p>' . esc_html__('Payment session validation failed. Please contact us if you have already been charged.', 'gift-voucher') . '</p></div>';
+			}
 
 				//if order inserted successfully
 
 
-				$wpdb->update(
-					$voucher_table,
-					array(
-						'payment_status' 	=> 'Paid',
-						'voucheradd_time'	=> current_time('mysql')
-					),
-					array('id' => $orderid, 'pay_method' => 'Stripe'),
-					array(
-						'%s'
-					),
-					array('%d', '%s')
-				);
-				$sessionid = sanitize_text_field($_GET['sessionid']);
-				update_post_meta($orderid, 'wpgv_stripe_session_key', $sessionid, true);
-				update_post_meta($orderid, 'wpgv_stripe_mode_for_transaction', $setting_options->stripe_publishable_key, true);
+				if (!$was_already_paid) {
+					$wpdb->update(
+						$voucher_table,
+						array(
+							'payment_status' 	=> 'Paid',
+							'voucheradd_time'	=> current_time('mysql')
+						),
+						array('id' => $orderid, 'pay_method' => 'Stripe'),
+						array(
+							'%s',
+							'%s'
+						),
+						array('%d', '%s')
+					);
+				}
+				update_post_meta($orderid, 'wpgv_stripe_session_key', $sessionid);
+				update_post_meta($orderid, 'wpgv_stripe_mode_for_transaction', $setting_options->stripe_publishable_key);
 
 
 				$voucherrow = $wpdb->get_row(
@@ -308,7 +316,9 @@ function wpgv_stripe_success_page_shortcode()
 						$orderid
 					)
 				);
-				WPGV_Gift_Voucher_Activity::record($orderid, 'firsttransact', $voucherrow->amount, 'Voucher payment recieved.');
+				if (!$was_already_paid && $voucherrow) {
+					WPGV_Gift_Voucher_Activity::record($orderid, 'firsttransact', $voucherrow->amount, 'Voucher payment recieved.');
+				}
 
 				$emailsubject = get_option('wpgv_emailsubject') ? get_option('wpgv_emailsubject') : 'Order Confirmation - Your Order with {company_name} (Voucher Order No: {order_number} ) has been successfully placed!';
 				$emailbody = get_option('wpgv_emailbody') ? get_option('wpgv_emailbody') : '<p>Dear <strong>{customer_name}</strong>,</p><p>Order successfully placed.</p><p>We are pleased to confirm your order no {order_number}</p><p>Thank you for shopping with <strong>{company_name}</strong>!</p><p>You can download the voucher from {pdf_link}.</p><p>- For any clarifications please feel free to email us at {sender_email}.</p><p><strong>Warm Regards, <br /></strong> <strong>{company_name}<br />{website_url}</strong></p>';
@@ -369,9 +379,6 @@ function wpgv_stripe_success_page_shortcode()
 						$statusMsg = '<div class="success">' . sprintf(stripslashes($successpagemessage), $voucher_options->email) . '</div>';
 					}
 				}
-			} else {
-				$statusMsg = esc_html_e("Transaction has been failed", 'gift-voucher');
-			}
 		} catch (\Exception $e) {
 			$statusMsg = esc_html_e("Transaction has been failed!", 'gift-voucher');
 		}

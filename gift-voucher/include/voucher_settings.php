@@ -84,6 +84,7 @@ if (isset($_POST['submit'])) {
 	$stripe_alternative_text = isset($_POST['stripe_alternative_text']) ? sanitize_text_field(wp_unslash($_POST['stripe_alternative_text'])) : '';
 	$customer_receipt = isset($_POST['customer_receipt']) ? sanitize_text_field(wp_unslash($_POST['customer_receipt'])) : '';
 	$invoice_mail_enable = isset($_POST['invoice_mail_enable']) ? sanitize_text_field(wp_unslash($_POST['invoice_mail_enable'])) : '';
+	$wpgv_enable_woocommerce_redeem_form = isset($_POST['wpgv_enable_woocommerce_redeem_form']) ? sanitize_text_field(wp_unslash($_POST['wpgv_enable_woocommerce_redeem_form'])) : '';
 
 	$voucher_styles = array();
 	if (isset($_POST['voucher_style']) && is_array($_POST['voucher_style'])) {
@@ -171,6 +172,7 @@ if (isset($_POST['submit'])) {
 	update_option('wpgv_customer_receipt', $customer_receipt);
 	update_option('wpgv_invoice_mail_enable', $invoice_mail_enable);
 	update_option('wpgv_leftside_notice', $leftside_notice);
+	update_option('wpgv_enable_woocommerce_redeem_form', $wpgv_enable_woocommerce_redeem_form);
 
 	if (!empty($quotes_clean)) {
 		update_option('wpgv_quotes', wp_json_encode($quotes_clean));
@@ -208,6 +210,7 @@ $voucher_brcolor = get_option('wpgv_voucher_border_color') ? get_option('wpgv_vo
 $wpgv_enable_pdf_saving = get_option('wpgv_enable_pdf_saving') ? get_option('wpgv_enable_pdf_saving') : 0;
 $wpgv_customer_receipt = get_option('wpgv_customer_receipt') ? get_option('wpgv_customer_receipt') : 0;
 $wpgv_invoice_mail_enable = (get_option('wpgv_invoice_mail_enable') != '') ? get_option('wpgv_invoice_mail_enable') : 1;
+$wpgv_enable_woocommerce_redeem_form = (get_option('wpgv_enable_woocommerce_redeem_form') != '') ? get_option('wpgv_enable_woocommerce_redeem_form') : 0;
 $wpgv_leftside_notice = get_option('wpgv_leftside_notice');
 $default_leftside_notice = esc_html__('Cash payment is not possible. The terms and conditions apply.', 'gift-voucher');
 $leftside_notice = !empty($wpgv_leftside_notice) ? $wpgv_leftside_notice : $default_leftside_notice;
@@ -719,6 +722,24 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 												<?php esc_html_e('Enable', 'gift-voucher'); ?>
 											</option>
 											<option value="<?php echo esc_attr('0'); ?>" <?php selected($options->preview_button, 0); ?>>
+												<?php esc_html_e('Disable', 'gift-voucher'); ?>
+											</option>
+										</select>
+									</td>
+								</tr>
+								<tr>
+									<th scope="row">
+										<label for="wpgv_enable_woocommerce_redeem_form"><?php esc_html_e('WooCommerce Redeem Form', 'gift-voucher'); ?></label>
+										<p class="description">
+											<?php esc_html_e('Show the plugin gift voucher redeem form on cart and checkout pages.', 'gift-voucher'); ?>
+										</p>
+									</th>
+									<td>
+										<select name="wpgv_enable_woocommerce_redeem_form" class="regular-text" id="wpgv_enable_woocommerce_redeem_form">
+											<option value="<?php echo esc_attr('1'); ?>" <?php selected($wpgv_enable_woocommerce_redeem_form, 1); ?>>
+												<?php esc_html_e('Enable', 'gift-voucher'); ?>
+											</option>
+											<option value="<?php echo esc_attr('0'); ?>" <?php selected($wpgv_enable_woocommerce_redeem_form, 0); ?>>
 												<?php esc_html_e('Disable', 'gift-voucher'); ?>
 											</option>
 										</select>
