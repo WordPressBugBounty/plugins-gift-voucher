@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.7.2
+ * Version: 4.7.3
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -38,7 +38,7 @@ if (!ob_get_level()) {
   });
 }
 
-define('WPGIFT_VERSION', '4.7.2');
+define('WPGIFT_VERSION', '4.7.3');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -58,6 +58,26 @@ define('WPGV_RECIPIENT_NAME_META_KEY', 'wpgv_recipient_name');
 define('WPGV_RECIPIENT_EMAIL_META_KEY', 'wpgv_recipient_email');
 define('WPGV_YOUR_EMAIL_META_KEY', 'wpgv_your_email');
 define('WPGV_MESSAGE_META_KEY', 'wpgv_message');
+
+// Load the Cart/Checkout Blocks integration before WooCommerce initializes its
+// block registries, while keeping classic pages on the existing flow.
+function wpgv_load_blocks_integration()
+{
+  if (!wpgv_is_woocommerce_enable()) {
+    return;
+  }
+
+  require_once WPGIFT__PLUGIN_DIR . '/include/class-wpgv-blocks-integration.php';
+  if (function_exists('wpgv_register_blocks_integration')) {
+    wpgv_register_blocks_integration();
+  }
+}
+
+if (did_action('woocommerce_blocks_loaded')) {
+  wpgv_load_blocks_integration();
+} else {
+  add_action('woocommerce_blocks_loaded', 'wpgv_load_blocks_integration', 10);
+}
 
 if (!class_exists('WP_List_Table')) {
   require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
@@ -93,12 +113,13 @@ function wpgv_db_has_unique_index_for_column($table_name, $column_name)
     return false;
   }
 
-  $query = $wpdb->prepare(
-    "SHOW INDEX FROM `{$table_name}` WHERE Column_name = %s AND Non_unique = 0",
-    $column_name
+  return (bool) $wpdb->get_var(
+    $wpdb->prepare(
+      "SHOW INDEX FROM `{$table_name}` WHERE Column_name = %s AND Non_unique = %d",
+      $column_name,
+      0
+    )
   );
-
-  return (bool) $wpdb->get_var($query);
 }
 
 function wpgv_couponcode_has_duplicates()
@@ -521,6 +542,26 @@ function wpgv_is_woocommerce_enable()
   return !empty($options->is_woocommerce_enable);
 }
 
+/**
+ * True only when the plugin voucher form is enabled within active WooCommerce integration.
+ *
+ * @return bool
+ */
+function wpgv_is_woocommerce_redeem_form_enabled()
+{
+  return wpgv_is_woocommerce_enable() && (bool) get_option('wpgv_enable_woocommerce_redeem_form', 0);
+}
+
+/**
+ * True when plugin vouchers may be entered through WooCommerce's native coupon UI.
+ *
+ * @return bool
+ */
+function wpgv_is_native_coupon_voucher_redemption_enabled()
+{
+  return wpgv_is_woocommerce_enable() && !wpgv_is_woocommerce_redeem_form_enabled();
+}
+
 // Load translations and plugin files on init to avoid early translation notice (WP 6.7+)
 add_action('init', function() {
   load_plugin_textdomain('gift-voucher', false, dirname(plugin_basename(__FILE__)) . '/languages');
@@ -898,7 +939,14 @@ function wpgv_plugin_activation()
   $paypal_email = get_option('admin_email');
   $template_lanscape = 'template-voucher-lanscape-4.png, template-voucher-lanscape-8.png, template-voucher-lanscape-10.png';
   $template_portail = 'template-voucher-portail-1.png, template-voucher-portail-2.png, template-voucher-portail-6.png';
-  if (!$wpdb->get_var("SELECT * FROM $giftvouchers_setting WHERE id = 1")) {
+  if (
+    !$wpdb->get_var(
+      $wpdb->prepare(
+        "SELECT id FROM `{$giftvouchers_setting}` WHERE id = %d",
+        1
+      )
+    )
+  ) {
     $wpdb->insert(
       $giftvouchers_setting,
       array(
@@ -947,7 +995,12 @@ function wpgv_plugin_activation()
       array('%s', '%d')
     );
   }
-  $data_setting = $wpdb->get_row("SELECT * FROM $giftvouchers_setting WHERE id = 1");
+  $data_setting = $wpdb->get_row(
+    $wpdb->prepare(
+      "SELECT * FROM `{$giftvouchers_setting}` WHERE id = %d",
+      1
+    )
+  );
   if (empty($data_setting->landscape_mode_templates) || empty($data_setting->portrait_mode_templates)) {
     // Use update() function from $wpdb
     $wpdb->update(
@@ -1027,35 +1080,40 @@ function wpgv_upgrade_completed($upgrader_object, $options)
             return false;
           }
 
-          return (bool) $wpdb->get_row("SHOW COLUMNS FROM `$table` LIKE '$column'");
+          return (bool) $wpdb->get_row(
+            $wpdb->prepare(
+              "SHOW COLUMNS FROM `{$table}` LIKE %s",
+              $column
+            )
+          );
         };
 
-        $add_column_if_not_exists = function ($table, $column, $sql) use ($column_exists, $wpdb) {
+        $add_column_if_not_exists = function ($table, $column, $definition) use ($column_exists, $wpdb) {
           if (!$column_exists($table, $column)) {
-            $wpdb->query($sql);
+            $wpdb->query("ALTER TABLE `{$table}` ADD `{$column}` {$definition}");
           }
         };
 
-        $modify_column_if_exists = function ($table, $column, $sql) use ($column_exists, $wpdb) {
+        $modify_column_if_exists = function ($table, $column, $definition) use ($column_exists, $wpdb) {
           if ($column_exists($table, $column)) {
-            $wpdb->query($sql);
+            $wpdb->query("ALTER TABLE `{$table}` MODIFY COLUMN `{$column}` {$definition}");
           }
         };
 
-        $add_column_if_not_exists($giftvouchers_template, 'image_style', "ALTER TABLE $giftvouchers_template ADD image_style varchar(100) DEFAULT NULL");
-        $add_column_if_not_exists($giftvouchers_setting, 'is_woocommerce_enable', "ALTER TABLE $giftvouchers_setting ADD is_woocommerce_enable int(1) DEFAULT 0");
-        $add_column_if_not_exists($giftvouchers_setting, 'post_shipping', "ALTER TABLE $giftvouchers_setting ADD post_shipping int(1) DEFAULT 0");
-        $add_column_if_not_exists($giftvouchers_setting, 'preview_button', "ALTER TABLE $giftvouchers_setting ADD preview_button int(1) DEFAULT 1");
-        $add_column_if_not_exists($giftvouchers_setting, 'pdf_footer_url', "ALTER TABLE $giftvouchers_setting ADD pdf_footer_url varchar(255) DEFAULT NULL");
-        $add_column_if_not_exists($giftvouchers_setting, 'pdf_footer_email', "ALTER TABLE $giftvouchers_setting ADD pdf_footer_email varchar(255) DEFAULT NULL");
-        $add_column_if_not_exists($giftvouchers_setting, 'is_style_choose_enable', "ALTER TABLE $giftvouchers_setting ADD is_style_choose_enable int(1) DEFAULT 0");
-        $add_column_if_not_exists($giftvouchers_setting, 'voucher_style', "ALTER TABLE $giftvouchers_setting ADD voucher_style varchar(100) DEFAULT NULL");
-        $add_column_if_not_exists($giftvouchers_setting, 'currency', "ALTER TABLE $giftvouchers_setting ADD currency varchar(10) DEFAULT NULL");
-        $add_column_if_not_exists($giftvouchers_setting, 'currency_code', "ALTER TABLE $giftvouchers_setting ADD currency_code varchar(10) DEFAULT NULL");
-        $add_column_if_not_exists($giftvouchers_list, 'check_send_mail', "ALTER TABLE $giftvouchers_list ADD check_send_mail varchar(30) NOT NULL DEFAULT 'unsent'");
+        $add_column_if_not_exists($giftvouchers_template, 'image_style', "varchar(100) DEFAULT NULL");
+        $add_column_if_not_exists($giftvouchers_setting, 'is_woocommerce_enable', "int(1) DEFAULT 0");
+        $add_column_if_not_exists($giftvouchers_setting, 'post_shipping', "int(1) DEFAULT 0");
+        $add_column_if_not_exists($giftvouchers_setting, 'preview_button', "int(1) DEFAULT 1");
+        $add_column_if_not_exists($giftvouchers_setting, 'pdf_footer_url', "varchar(255) DEFAULT NULL");
+        $add_column_if_not_exists($giftvouchers_setting, 'pdf_footer_email', "varchar(255) DEFAULT NULL");
+        $add_column_if_not_exists($giftvouchers_setting, 'is_style_choose_enable', "int(1) DEFAULT 0");
+        $add_column_if_not_exists($giftvouchers_setting, 'voucher_style', "varchar(100) DEFAULT NULL");
+        $add_column_if_not_exists($giftvouchers_setting, 'currency', "varchar(10) DEFAULT NULL");
+        $add_column_if_not_exists($giftvouchers_setting, 'currency_code', "varchar(10) DEFAULT NULL");
+        $add_column_if_not_exists($giftvouchers_list, 'check_send_mail', "varchar(30) NOT NULL DEFAULT 'unsent'");
 
-        $modify_column_if_exists($giftvouchers_setting, 'stripe_publishable_key', "ALTER TABLE $giftvouchers_setting MODIFY COLUMN stripe_publishable_key varchar(255) DEFAULT NULL;");
-        $modify_column_if_exists($giftvouchers_setting, 'stripe_secret_key', "ALTER TABLE $giftvouchers_setting MODIFY COLUMN stripe_secret_key varchar(255) DEFAULT NULL;");
+        $modify_column_if_exists($giftvouchers_setting, 'stripe_publishable_key', "varchar(255) DEFAULT NULL");
+        $modify_column_if_exists($giftvouchers_setting, 'stripe_secret_key', "varchar(255) DEFAULT NULL");
 
         if ($table_exists($giftvouchers_list) && $table_exists($giftvouchers_activity)) {
           $orders = $wpdb->get_results("SELECT id,from_name,amount FROM $giftvouchers_list WHERE id NOT IN (SELECT voucher_id FROM $giftvouchers_activity) AND `status` = 'unused' AND `payment_status` = 'Paid'");
@@ -1737,6 +1795,12 @@ add_action('admin_notices', 'wpgv_display_testmode_notice');
 // Apply gift card code if valid and update cart totals
 function wpgv_handle_gift_voucher_application($err, $err_code, $coupon)
 {
+  // Native Coupon code / Add coupons redemption is available only when the
+  // plugin redemption form is disabled and WooCommerce integration is enabled.
+  if (!wpgv_is_native_coupon_voucher_redemption_enabled()) {
+    return $err;
+  }
+
   // WooCommerce deprecated direct property access on coupon objects.
   $coupon_code = is_object($coupon) && method_exists($coupon, 'get_code')
     ? $coupon->get_code()
@@ -1755,13 +1819,13 @@ function wpgv_handle_gift_voucher_application($err, $err_code, $coupon)
   $balance = $gift_voucher->get_balance();
 
   if (empty($balance) || $balance <= 0) {
-    wc_add_notice(__('This gift voucher has a zero balance.', 'gift-voucher'), 'error');
-    return;
+    $message = esc_html__('This gift voucher has a zero balance.', 'gift-voucher');
+    return $message;
   }
 
   if ($gift_voucher->has_expired()) {
-    wc_add_notice(__('Your voucher has expired.', 'gift-voucher'), 'error');
-    return;
+    $message = esc_html__('Your voucher has expired.', 'gift-voucher');
+    return $message;
   }
 
   if (!WC()->session->has_session()) {
@@ -1772,12 +1836,16 @@ function wpgv_handle_gift_voucher_application($err, $err_code, $coupon)
   $session_data['gift_voucher'][$coupon_code] = 0;
   WC()->session->set(WPGIFT_SESSION_KEY, $session_data);
 
-  wc_add_notice(__('Gift voucher applied successfully.', 'gift-voucher'), 'success');
+  wc_add_notice(esc_html__('Gift voucher applied successfully.', 'gift-voucher'), 'success');
 
   WC()->cart->calculate_totals();
 
   if (is_checkout() && !is_admin()) {
     wc_enqueue_js("jQuery('body').trigger('update_checkout');");
   }
+
+  // Suppress WooCommerce's "invalid coupon" message because this code was
+  // accepted as a plugin voucher and stored in the voucher session instead.
+  return '';
 }
-add_action('woocommerce_coupon_error', 'wpgv_handle_gift_voucher_application', 10, 3);
+add_filter('woocommerce_coupon_error', 'wpgv_handle_gift_voucher_application', 10, 3);

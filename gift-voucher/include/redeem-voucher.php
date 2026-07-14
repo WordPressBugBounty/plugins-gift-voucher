@@ -6,6 +6,7 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
 
     final class WPGV_Redeem_Voucher
     {
+        private $store_api_registered = false;
 
         function __construct()
         {
@@ -30,6 +31,9 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
                 add_filter('woocommerce_order_status_refunded', array($this, 'woocommerce_order_status_refunded'), 10, 2);
                 add_filter('woocommerce_get_order_item_totals', array($this, 'woocommerce_get_order_item_totals'), 10, 3);
                 add_action('woocommerce_checkout_create_order', array($this, 'woocommerce_checkout_create_order'), 10, 2);
+                add_action('woocommerce_store_api_checkout_order_created', array($this, 'woocommerce_store_api_checkout_order_created'), 10, 1);
+                add_action('woocommerce_store_api_checkout_update_order_meta', array($this, 'woocommerce_store_api_checkout_update_order_meta'), 10, 1);
+                add_action('woocommerce_checkout_validate_order_before_payment', array($this, 'woocommerce_store_api_validate_order_before_payment'), 10, 2);
                 add_filter('woocommerce_paypal_args', array($this, 'woocommerce_paypal_args'), 10, 2);
                 add_filter('woocommerce_payment_complete_order_status', array($this, 'filter_woocommerce_payment_complete_order_status_gift_voucher'), 10, 3);
 
@@ -41,7 +45,154 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
 
                 add_action('wp_ajax_nopriv_wpgv-gift-voucher-remove', array($this, 'wpgv_ajax_remove'));
                 add_action('wp_ajax_wpgv-gift-voucher-remove', array($this, 'wpgv_ajax_remove'));
+
+                // This class is loaded from woocommerce_init, which may run after
+                // WooCommerce has already fired woocommerce_blocks_loaded.
+                if (did_action('woocommerce_blocks_loaded')) {
+                    $this->register_store_api_integration();
+                } else {
+                    add_action('woocommerce_blocks_loaded', array($this, 'register_store_api_integration'), 10);
+                }
             }
+        }
+
+        /**
+         * Register the Store API callback and Cart extension data.
+         *
+         * Older WooCommerce versions keep the classic AJAX flow because the
+         * Store API helpers are not available there.
+         */
+        function register_store_api_integration()
+        {
+            if (!wpgv_is_woocommerce_enable() || $this->store_api_registered || !function_exists('woocommerce_store_api_register_update_callback') || !function_exists('woocommerce_store_api_register_endpoint_data')) {
+                return;
+            }
+
+            $callback_result = woocommerce_store_api_register_update_callback(array(
+                'namespace' => 'gift-voucher',
+                'callback'  => array($this, 'store_api_update_callback'),
+            ));
+
+            $data_result = woocommerce_store_api_register_endpoint_data(array(
+                'endpoint'        => 'cart',
+                'namespace'       => 'gift-voucher',
+                'schema_callback' => array($this, 'store_api_cart_schema'),
+                'data_callback'   => array($this, 'store_api_cart_data'),
+                'schema_type'     => ARRAY_A,
+            ));
+
+            if (!is_wp_error($callback_result) && !is_wp_error($data_result)) {
+                $this->store_api_registered = true;
+            }
+        }
+
+        /**
+         * Apply or remove a voucher through /wc/store/v1/cart/extensions.
+         *
+         * @param mixed $data Store API extension payload.
+         * @return void
+         * @throws WC_REST_Exception For malformed or ineligible requests.
+         */
+        function store_api_update_callback($data)
+        {
+            if (!wpgv_is_woocommerce_enable()) {
+                $this->throw_store_api_error();
+            }
+
+            if (!is_array($data) || array_diff(array_keys($data), array('action', 'code'))) {
+                $this->throw_store_api_error();
+            }
+
+            $action = isset($data['action']) && is_string($data['action']) ? sanitize_key($data['action']) : '';
+            $code = isset($data['code']) && is_string($data['code']) ? wc_clean(wp_unslash($data['code'])) : '';
+            $code = is_string($code) ? trim($code) : '';
+
+            if (!in_array($action, array('apply', 'remove'), true) || $code === '' || strlen($code) > 100) {
+                $this->throw_store_api_error();
+            }
+
+            if ($action === 'apply' && !wpgv_is_woocommerce_redeem_form_enabled()) {
+                $this->throw_store_api_error();
+            }
+
+            if ($action === 'apply') {
+                // Reuse the legacy server-side validation and session writer.
+                // Its detailed result is deliberately replaced with a generic
+                // Store API error so arbitrary codes cannot be enumerated.
+                if ($this->add_gift_voucher_to_session($code) !== true) {
+                    $this->throw_store_api_error();
+                }
+                return;
+            }
+
+            $this->remove_gift_voucher_from_session($code);
+        }
+
+        /**
+         * Cart extension schema exposed to the Blocks client.
+         *
+         * @return array
+         */
+        function store_api_cart_schema()
+        {
+            return array(
+                'applied_vouchers' => array(
+                    'description' => esc_html__('Applied voucher codes and server-calculated amounts.', 'gift-voucher'),
+                    'type'        => 'array',
+                    'readonly'    => true,
+                    'items'       => array(
+                        'type'       => 'object',
+                        'properties' => array(
+                            'code' => array(
+                                'description' => esc_html__('Applied voucher code.', 'gift-voucher'),
+                                'type'        => 'string',
+                                'readonly'    => true,
+                            ),
+                            'amount' => array(
+                                'description' => esc_html__('Amount applied to the current cart.', 'gift-voucher'),
+                                'type'        => 'string',
+                                'readonly'    => true,
+                            ),
+                        ),
+                    ),
+                ),
+            );
+        }
+
+        /**
+         * Return only the voucher fields needed by the Blocks UI.
+         *
+         * @return array
+         */
+        function store_api_cart_data()
+        {
+            $applied_vouchers = array();
+            $session_data = WC()->session ? (array) WC()->session->get(WPGIFT_SESSION_KEY) : array();
+            $vouchers = isset($session_data['gift_voucher']) && is_array($session_data['gift_voucher']) ? $session_data['gift_voucher'] : array();
+
+            foreach ($vouchers as $code => $amount) {
+                $applied_vouchers[] = array(
+                    'code'   => (string) $code,
+                    'amount' => wc_format_decimal($amount, wc_get_price_decimals()),
+                );
+            }
+
+            return array('applied_vouchers' => $applied_vouchers);
+        }
+
+        /**
+         * Throw one safe error for all Store API voucher failures.
+         *
+         * @return void
+         * @throws WC_REST_Exception
+         */
+        private function throw_store_api_error()
+        {
+            throw new WC_REST_Exception(
+                'wpgv_voucher_update_failed',
+                esc_html__('Unable to update this voucher.', 'gift-voucher'),
+                400
+            );
         }
 
         function woocommerce_init()
@@ -57,19 +208,21 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
 
         function woocommerce_account_menu_items($items)
         {
-            $items['check-voucher-balance'] = __('Check Voucher Balance', 'gift-voucher');
+            $items['check-voucher-balance'] = esc_html__('Check Voucher Balance', 'gift-voucher');
             return $items;
         }
 
         function check_voucher_balance_endpoint()
         {
-            echo '<h3>' . esc_html_e('Check Voucher Balance', 'gift-voucher') . '</h3>';
-            echo do_shortcode(' [wpgv-check-voucher-balance] ');
+            echo '<h3>';
+            esc_html_e('Check Voucher Balance', 'gift-voucher');
+            echo '</h3>';
+            echo wp_kses_post(do_shortcode(' [wpgv-check-voucher-balance] '));
         }
 
         function woocommerce_after_cart_contents()
         {
-            if (!get_option('wpgv_enable_woocommerce_redeem_form', 0)) {
+            if (!wpgv_is_woocommerce_redeem_form_enabled()) {
                 return;
             }
 
@@ -79,12 +232,15 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
 
         function woocommerce_cart_totals_before_order_total()
         {
+            // The applied-voucher row is also needed when the customer entered
+            // a voucher through WooCommerce's native Coupon code field.
+            wp_enqueue_script('wpgv-woocommerce-script');
             wc_get_template('cart/wpgv-gift-vouchers.php', '', '', WPGIFT__PLUGIN_DIR . '/templates/woocommerce/');
         }
 
         function woocommerce_before_checkout_form()
         {
-            if (!get_option('wpgv_enable_woocommerce_redeem_form', 0)) {
+            if (!wpgv_is_woocommerce_redeem_form_enabled()) {
                 return;
             }
 
@@ -94,6 +250,9 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
 
         function woocommerce_review_order_before_order_total()
         {
+            // Keep the remove action available for vouchers entered through the
+            // native Coupon code field when the plugin form is hidden.
+            wp_enqueue_script('wpgv-woocommerce-script');
             wc_get_template('checkout/wpgv-gift-vouchers.php', '', '', WPGIFT__PLUGIN_DIR . '/templates/woocommerce/');
         }
 
@@ -110,45 +269,82 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
                 return;
             }
 
-            if (property_exists($cart, 'wpgv_calculated_total')) {
-                $cart->total = $cart->wpgv_calculated_total;
-                return;
-            }
+            $calculation = $this->calculate_gift_voucher_amounts(
+                $cart->total,
+                $session_data['gift_voucher']
+            );
 
-            // This is where we could optionally exclude Gift Cards, Shipping amounts, etc.
-            $eligible_amount = $cart->total;
+            // The cart total has already included WooCommerce's item, coupon, tax,
+            // shipping, and fee calculations at this hook. Preserve that behavior
+            // while always calculating from the freshly reset total. Do not cache a
+            // reduced total on the cart object: Store API and classic requests can
+            // recalculate the same cart more than once.
+            $cart->total = max(0, $cart->total - $calculation['total']);
+            $session_data['gift_voucher'] = $calculation['amounts'];
 
-            // Sum all the gift card amounts (with a sanity check for good measure).
+            WC()->session->set(WPGIFT_SESSION_KEY, $session_data);
+        }
+
+        /**
+         * Calculate the applicable amount for each voucher in application order.
+         *
+         * The amount in the session is output from this method, never an input to
+         * the calculation. Voucher balance, payment state, and expiry are checked
+         * again here on every cart recalculation.
+         *
+         * @param float $eligible_amount The current WooCommerce cart total.
+         * @param array $applied_vouchers Voucher codes keyed by their session amount.
+         * @return array{amounts: array, total: float}
+         */
+        function calculate_gift_voucher_amounts($eligible_amount, $applied_vouchers)
+        {
+            $eligible_amount = max(0, (float) $eligible_amount);
+            $applied_amounts = array();
             $gift_voucher_total = 0;
-            foreach ($session_data['gift_voucher'] as $card_number => $amount) {
-                $wpgv_gift_voucher = new WPGV_Gift_Voucher($card_number);
-                if ($wpgv_gift_voucher->get_id()) {
+            $price_decimals = function_exists('wc_get_price_decimals') ? wc_get_price_decimals() : 2;
 
-                    $amount = 0;
-                    if (!$wpgv_gift_voucher->has_expired()) {
-                        $gift_voucher_balance = $wpgv_gift_voucher->get_balance();
-                        if ($gift_voucher_balance < ($eligible_amount - $gift_voucher_total)) {
-                            $amount = $gift_voucher_balance;
-                        } else {
-                            $amount = ($eligible_amount - $gift_voucher_total);
-                        }
+            foreach ((array) $applied_vouchers as $card_number => $unused_amount) {
+                $amount = 0;
+                $gift_voucher = new WPGV_Gift_Voucher($card_number);
+
+                if ($gift_voucher->get_id() && !$gift_voucher->has_expired()) {
+                    $remaining_amount = max(0, $eligible_amount - $gift_voucher_total);
+                    $balance = max(0, (float) $gift_voucher->get_balance());
+                    // A zero-balance voucher must not remain applied after a
+                    // recalculation. A positive-balance voucher may remain in
+                    // the list with amount zero when an earlier voucher covers
+                    // the rest of the cart, so it can still be removed.
+                    if ($balance > 0) {
+                        $amount = min($balance, $remaining_amount);
+                    } else {
+                        continue;
                     }
-
-                    $session_data['gift_voucher'][$card_number] = $amount;
-                    $gift_voucher_total += $amount;
                 }
+
+                $amount = round($amount, $price_decimals);
+                $applied_amounts[$card_number] = $amount;
+                $gift_voucher_total = round($gift_voucher_total + $amount, $price_decimals);
 
                 if ($gift_voucher_total >= $eligible_amount) {
                     break;
                 }
             }
 
-            // Make sure we don't set the cart to a negative amount.
-            $new_cart_total = ($cart->total - $gift_voucher_total);
-            $cart->total = max(0, $new_cart_total);
-            $cart->wpgv_calculated_total = $cart->total;
+            // Keep any codes after a fully covering voucher visible with a zero
+            // amount so removal/order serialization remains deterministic.
+            foreach ((array) $applied_vouchers as $card_number => $unused_amount) {
+                if (!array_key_exists($card_number, $applied_amounts)) {
+                    $gift_voucher = new WPGV_Gift_Voucher($card_number);
+                    if ($gift_voucher->get_id() && !$gift_voucher->has_expired() && (float) $gift_voucher->get_balance() > 0) {
+                        $applied_amounts[$card_number] = 0;
+                    }
+                }
+            }
 
-            WC()->session->set(WPGIFT_SESSION_KEY, $session_data);
+            return array(
+                'amounts' => $applied_amounts,
+                'total'   => $gift_voucher_total,
+            );
         }
         // checking status order payment  stripe
         function filter_woocommerce_payment_complete_order_status_gift_voucher($status, $order_id, $instance)
@@ -332,8 +528,9 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
                     // Determine the label based on the count
                     $label = _n('Gift Voucher:', 'Gift Vouchers:', $gift_voucher_count, 'gift-voucher');
 
-                    // Append the total codes after determining the correct label
-                    $label .= '<br>' . $total_codes;
+                    // Order totals labels are escaped by WooCommerce templates;
+                    // keep the voucher codes as plain text instead of injecting HTML.
+                    $label .= ' ' . $total_codes;
 
                     $gift_voucher_row = array(
                         'label'  => $label,
@@ -356,14 +553,89 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
 
         function woocommerce_checkout_create_order($order, $data)
         {
+            $this->add_gift_voucher_items_to_order($order);
+        }
+
+        /**
+         * Add voucher items to orders created by the Cart/Checkout Blocks Store API.
+         * The Store API does not run woocommerce_checkout_create_order.
+         */
+        function woocommerce_store_api_checkout_order_created($order)
+        {
+            $this->add_gift_voucher_items_to_order($order);
+        }
+
+        /**
+         * Synchronize the Store API order total after its billing data is updated.
+         * Voucher amounts are stored as custom order items, while the cart total is
+         * the server-calculated source of truth for the final payable amount.
+         */
+        function woocommerce_store_api_checkout_update_order_meta($order)
+        {
+            if (!$order instanceof WC_Order) {
+                return;
+            }
+
+            $this->add_gift_voucher_items_to_order($order);
+
+            if (WC()->cart) {
+                $cart_total = (float) WC()->cart->get_total('edit');
+                $order->set_total(max(0, wc_format_decimal($cart_total)));
+            }
+        }
+
+        /**
+         * Final Store API guard before a payment gateway is called.
+         * Never allow a Blocks order to charge the pre-voucher amount when the
+         * session still contains an applied voucher.
+         */
+        function woocommerce_store_api_validate_order_before_payment($order, $validation_errors)
+        {
+            if (!$order instanceof WC_Order || 'store-api' !== $order->get_created_via()) {
+                return;
+            }
+
+            $this->add_gift_voucher_items_to_order($order);
+
+            if (WC()->cart) {
+                $cart_total = (float) WC()->cart->get_total('edit');
+                $order->set_total(max(0, wc_format_decimal($cart_total)));
+                $order->save();
+            }
+
+            $session_data = (array) WC()->session->get(WPGIFT_SESSION_KEY);
+            $session_vouchers = isset($session_data['gift_voucher']) && is_array($session_data['gift_voucher'])
+                ? $session_data['gift_voucher']
+                : array();
+            $order_voucher_items = $order->get_items('wpgv_gift_voucher');
+
+            if ($session_vouchers && count($order_voucher_items) < count($session_vouchers)) {
+                $validation_errors->add(
+                    'wpgv_voucher_order_sync_failed',
+                    esc_html__('Unable to synchronize the voucher with this order. Please refresh the checkout and try again.', 'gift-voucher')
+                );
+            }
+        }
+
+        function add_gift_voucher_items_to_order($order)
+        {
+            if (!$order instanceof WC_Order || !WC()->session) {
+                return;
+            }
+
             $session_data = (array) WC()->session->get(WPGIFT_SESSION_KEY);
             if (!isset($session_data['gift_voucher'])) {
                 return;
             }
 
+            $existing_codes = array();
+            foreach ($order->get_items('wpgv_gift_voucher') as $existing_item) {
+                $existing_codes[(string) $existing_item->get_card_number()] = true;
+            }
+
             foreach ($session_data['gift_voucher'] as $card_number => $amount) {
                 $gift_voucher = new WPGV_Gift_Voucher($card_number);
-                if ($gift_voucher->get_id()) {
+                if ($gift_voucher->get_id() && !isset($existing_codes[(string) $card_number])) {
 
                     $item = new WC_Order_Item_WPGV_Gift_Voucher();
 
@@ -373,6 +645,7 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
                     ));
 
                     $order->add_item($item);
+                    $existing_codes[(string) $card_number] = true;
                 }
             }
         }
@@ -385,7 +658,7 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
                 // Instead, we'll remove shipping_1 and then add a new item for Shipping.
                 unset($args['shipping_1']);
                 // translators: %s: shipping method
-                $args['item_name_1'] = sprintf(__('Shipping via %s', 'gift-voucher'), $order->get_shipping_method());
+                $args['item_name_1'] = sprintf(esc_html__('Shipping via %s', 'gift-voucher'), $order->get_shipping_method());
 
                 $args['quantity_1'] = 1;
                 $args['amount_1'] = $order->get_total();
@@ -397,6 +670,10 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
 
         function wpgv_ajax_redeem()
         {
+            if (!wpgv_is_woocommerce_redeem_form_enabled()) {
+                wp_send_json_error(array('message' => esc_html__('Voucher redemption is currently unavailable.', 'gift-voucher')), 403);
+            }
+
             check_ajax_referer('wpgv_gift_voucher_session', 'nonce');
 
             $voucher_code = wc_clean($_POST['voucher_code']);
@@ -404,7 +681,7 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
             $result = $this->add_gift_voucher_to_session($voucher_code);
 
             if ($result === true) {
-                wc_add_notice(__('Gift card applied.', 'gift-voucher'));
+                wc_add_notice(esc_html__('Gift card applied.', 'gift-voucher'));
 
                 wp_send_json_success();
             } else {
@@ -414,13 +691,17 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
 
         function wpgv_ajax_remove()
         {
+            if (!wpgv_is_woocommerce_enable()) {
+                wp_send_json_error(array('message' => esc_html__('Voucher redemption is currently unavailable.', 'gift-voucher')), 403);
+            }
+
             check_ajax_referer('wpgv_gift_voucher_session', 'nonce');
 
             $voucher_code = wc_clean($_POST['voucher_code']);
 
             $this->remove_gift_voucher_from_session($voucher_code);
 
-            wc_add_notice(__('Gift card removed.', 'gift-voucher'));
+            wc_add_notice(esc_html__('Gift card removed.', 'gift-voucher'));
 
             wp_send_json_success();
         }
@@ -431,7 +712,7 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
             $gift_voucher = new WPGV_Gift_Voucher($voucher_code);
             if ($gift_voucher->get_id() && ($gift_voucher->get_payment_status() == 'Paid')) {
                 $balance = $gift_voucher->get_balance();
-                if (!empty($balance)) {
+                if ((float) $balance > 0) {
                     if (!$gift_voucher->has_expired()) {
                         $session_data = (array) WC()->session->get(WPGIFT_SESSION_KEY);
 
@@ -447,10 +728,10 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
                         WC()->session->set(WPGIFT_SESSION_KEY, $session_data);
                         return true;
                     } else {
-                        $error_message = __('Your voucher has expired.', 'gift-voucher');
+                        $error_message = esc_html__('Your voucher has expired.', 'gift-voucher');
                     }
                 } else {
-                    $error_message = __('This gift voucher has a zero balance.', 'gift-voucher');
+                    $error_message = esc_html__('This gift voucher has a zero balance.', 'gift-voucher');
                 }
             } else {
                 $error_message = $gift_voucher->get_error_message();

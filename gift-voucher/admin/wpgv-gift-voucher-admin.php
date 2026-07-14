@@ -20,8 +20,6 @@ if (! class_exists('wpgv_gift_voucher_admin')) :
 
         function process_wpgv_product_meta_data($post_id)
         {
-            global $wpgv_gift_voucher;
-
             if (!isset($_POST['_wpgv_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_wpgv_nonce'])), 'wpgv_save_product_meta')) {
                 wp_die(esc_html__('Invalid request.', 'gift-voucher'));
             }
@@ -30,21 +28,12 @@ if (! class_exists('wpgv_gift_voucher_admin')) :
                 wp_die(esc_html__('You do not have permission to edit this product.', 'gift-voucher'));
             }
 
-            $product = new wpgv_wc_product_gift_voucher($post_id);
-            $new_amount = isset($_POST['wpgv_price']) ? sanitize_text_field(wp_unslash($_POST['wpgv_price'])) : '';
-
-            if (!empty($new_amount)) {
-                if (!is_numeric($new_amount)) {
-                    wp_die(esc_html__('Invalid amount format.', 'gift-voucher'));
-                }
-
-                $result = $product->add_amount($new_amount);
-                if (!is_numeric($result)) {
-                    wp_die(esc_html($result));
-                }
-            }
-
-            $product->save();
+            // Denominations are created by the dedicated AJAX Add action below.
+            // Do not process wpgv_price here: it is still part of the product form
+            // and would be submitted again when the administrator clicks Update.
+            // That caused an existing denomination to be added a second time.
+            // WooCommerce has already saved the product before this type-specific hook.
+            // The companion sync callback keeps the denomination attributes current.
         }
 
 

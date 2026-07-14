@@ -731,7 +731,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 									<th scope="row">
 										<label for="wpgv_enable_woocommerce_redeem_form"><?php esc_html_e('WooCommerce Redeem Form', 'gift-voucher'); ?></label>
 										<p class="description">
-											<?php esc_html_e('Show the plugin gift voucher redeem form on cart and checkout pages.', 'gift-voucher'); ?>
+											<?php esc_html_e('When WooCommerce is enabled, show the plugin voucher form on Cart and Checkout. When disabled, customers can redeem vouchers through WooCommerce Coupon code or Add coupons instead.', 'gift-voucher'); ?>
 										</p>
 									</th>
 									<td>

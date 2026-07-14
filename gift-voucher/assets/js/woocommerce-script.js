@@ -45,7 +45,7 @@ function wpgv_checkout_redeem_gift_voucher(redeemButton) {
             // We could hook into the cart's ajax calls, but for now we'll just reload.
             window.location = window.location.pathname;
         } else {
-            errorContainer.html(result.data.message);
+            errorContainer.text(result.data.message);
             redeemButton.attr('value', redeemButton.attr('data-apply-text')).prop('disabled', false);
             cardNumber.focus();
         }

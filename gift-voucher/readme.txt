@@ -2,8 +2,8 @@
 Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
-Tested up to: 7.0
-Stable tag: 4.7.2
+Tested up to: 7.0.1
+Stable tag: 4.7.3
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -92,16 +92,16 @@ This plugin provides two types of voucher booking forms. They are,
 * Admin can also enable the postal delivery options for its customers.
 * Customers can view a list of their gift cards used so far, the order in which they have been used and the available credit left.
 
-= <a href="https://www.wp-giftcard.com/">PREMIUM FEATURES of Gift cards Plugin</a> =
-* Customize the template vouchers.
-* Printable barcode feature on vouchers.
-* Additional charges feature on each voucher order.
-* Custom value redemption feature from the backend.
-* Check the voucher balance page on the backend.
-* Stripe with SCA-ready & Ideal Payment Option, PayPal (Express checkout), MultiSafepay and Sofort Payment Gateway Integration and  Bank Transfer.
-* Generate Invoice for each voucher order.
-* 1-year support with updates included (Get 35% off on renewal license)
-* 100% Satisfaction Guarantee (14 days refund if found unsatisfactory)
+= <a href="https://wp-giftcard.com/">PREMIUM FEATURES of Gift cards Plugin</a> =
+* Design and customize modern gift card templates with your own backgrounds, logo, text, colors, and layout.
+* Let customers choose a gift card template, preview it before payment, and schedule delivery to the recipient.
+* Sell gift vouchers through WooCommerce, including gift voucher products, product-page gift options, Cart and Checkout Blocks, and voucher redemption at checkout.
+* Offer secure partial voucher redemption from the frontend, voucher balance history, and balance resync tools for administrators.
+* Accept payments with Stripe (redirect, modal, or embedded checkout), PayPal, Klarna, Mollie, MultiSafepay, Sofort, bank transfer, and invoice payment.
+* Generate voucher, receipt, and invoice PDFs; regenerate PDFs from the admin area when needed.
+* Add barcodes, surcharges, custom voucher values, incremental voucher codes, and detailed order management with import and export.
+* Use Polylang-compatible settings, checkout text, emails, and PDF/invoice output for multilingual stores.
+* Includes 1 year of updates and support, and a 30-day money-back guarantee.
 
 = Premium Live Demos =
 
@@ -115,15 +115,13 @@ Copy this shortcode and paste it where you want the gift voucher form to appear;
 
 – **[Gift Items/Packages Demo](https://www.wp-giftcard.com/gift-items/)**
 
-- **Old version 3.x.x and lower versions please use shortcode:**
-    Copy this shortcode and paste it where you want the gift item/package form appears; `[wpgv_giftitems]`
-    Copy this shortcode and paste it where you want to display single gift item/package; `[wpgv_giftitems item_id=1]`
-    Copy this shortcode and paste it where you want to display Category wise gift item/packages; `[wpgv_giftitems item_cat_id=1]`
+- **Fixed-value gift items/packages:**
+    Copy `[wpgv_giftitems]` to display all gift items/packages.
+    Use `[wpgv_giftitems item_id=1]` to display one gift item/package.
+    Use `[wpgv_giftitems item_cat_id=1]` to display gift items/packages from one category.
 
-- **New version 4.0.0 for new style, please use shortcode:**
-    Copy this shortcode and paste it where you want the gift item/package form appears; `[wpgv_giftcard]`
-    Copy this shortcode and paste it where you want to display single gift item/package; `[wpgv_giftcard item_id=1]`
-    Copy this shortcode and paste it where you want to display Category wise gift item/packages; `[wpgv_giftcard item_cat_id=1]`
+- **Modern gift card templates:**
+    Copy `[wpgv_giftcard]` to display the modern gift card template picker and purchase form.
 
 
 By accessing our testing platform, you will be able to discover all plugin features and test them as per your preference in front-end mode.
@@ -224,6 +222,12 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.7.3 - Released: July 14, 2026 =
+* Fix: Prevent existing Gift Voucher denominations from being added again when updating a WooCommerce product; clear the amount field after successful AJAX addition and show inline admin errors.
+* Feature: Add WooCommerce Cart and Checkout Blocks voucher redemption with server-side Store API apply/remove handling.
+* Feature: Add voucher redemption placement below the native Add coupons section in Cart and Checkout Blocks.
+* Improvement: Add accessible status/error messaging and responsive styling for the Blocks voucher redemption form.
 
 = Version 4.7.2 - Released: June 19, 2026 =
 * Security: Re-enable Stripe TLS certificate verification in the Stripe success flow (removed `\Stripe\Stripe::setVerifySslCerts(false)` in `include/voucher-shortcodes.php`).

@@ -5,6 +5,34 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  * Helper functions for PDF generation moved out of wpgv_giftcard_pdf.php
  */
 
+function wpgv_get_modern_pdf_upload_dir() {
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    WP_Filesystem();
+
+    global $wp_filesystem;
+
+    if (!$wp_filesystem) {
+        return false;
+    }
+
+    $upload = wp_upload_dir();
+    $upload_dir = trailingslashit($upload['basedir']) . 'voucherpdfuploads/';
+
+    if (!$wp_filesystem->exists($upload_dir)) {
+        $mkdir_result = $wp_filesystem->mkdir($upload_dir, 0755);
+        error_log('WPGV PDF: Created directory: ' . $upload_dir . ' - Result: ' . ($mkdir_result ? 'SUCCESS' : 'FAILED'));
+    } else {
+        error_log('WPGV PDF: Directory already exists: ' . $upload_dir);
+    }
+
+    if (!$wp_filesystem->is_writable($upload_dir)) {
+        error_log('WPGV PDF ERROR: Directory is not writable: ' . $upload_dir);
+        return false;
+    }
+
+    return $upload_dir;
+}
+
 function wpgv_get_modern_pdf_orientation($template_id)
 {
     $template_style = get_post_meta($template_id, 'wpgv_customize_template_template-style', true);
@@ -108,22 +136,12 @@ function wpgv_generate_modern_giftcard_pdf($voucher_id, $voucher_data, $template
     global $wpdb;
     $voucher_table = $wpdb->prefix . 'giftvouchers_list';
 
-    $upload = wp_upload_dir();
-    $upload_dir = $upload['basedir'] . '/voucherpdfuploads/';
-
-    error_log('WPGV PDF: Upload directory: ' . $upload_dir);
-
-    if (!file_exists($upload_dir)) {
-        $mkdir_result = mkdir($upload_dir, 0755, true);
-        error_log('WPGV PDF: Created directory: ' . $upload_dir . ' - Result: ' . ($mkdir_result ? 'SUCCESS' : 'FAILED'));
-    } else {
-        error_log('WPGV PDF: Directory already exists: ' . $upload_dir);
-    }
-
-    if (!is_writable($upload_dir)) {
-        error_log('WPGV PDF ERROR: Directory is not writable: ' . $upload_dir);
+    $upload_dir = wpgv_get_modern_pdf_upload_dir();
+    if ($upload_dir === false) {
         return false;
     }
+
+    error_log('WPGV PDF: Upload directory: ' . $upload_dir);
 
     if (!empty($pdf_filename_base)) {
         $pdf_filename_base = wpgv_sanitize_voucher_pdf_basename($pdf_filename_base);
@@ -229,11 +247,10 @@ if (! function_exists('wpgv_get_template_image_path')) {
 
         error_log('WPGV PDF: Select status: ' . $select_status_template . ', Template style: ' . $selected_voucher_template);
 
-        $upload = wp_upload_dir();
-        $upload_dir = $upload['basedir'] . '/voucherpdfuploads/';
-
-        if (!file_exists($upload_dir)) {
-            mkdir($upload_dir, 0755, true);
+        $upload_dir = wpgv_get_modern_pdf_upload_dir();
+        if ($upload_dir === false) {
+            error_log('WPGV PDF ERROR: Could not initialize upload directory');
+            return false;
         }
 
         if ($select_status_template == 'custom') {

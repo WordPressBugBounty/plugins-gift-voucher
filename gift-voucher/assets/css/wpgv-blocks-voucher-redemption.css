@@ -1,0 +1,80 @@
+.wpgv-blocks-voucher {
+    margin: 1rem 0;
+    padding: 1rem;
+    border-radius: 4px;
+}
+.wp-block-woocommerce-checkout .wpgv-blocks-voucher{
+    padding:16px !important;
+}
+.wpgv-blocks-voucher__title {
+    margin: 0 0 .75rem;
+    font-size: 1rem;
+}
+
+.wpgv-blocks-voucher__form label {
+    display: block;
+    margin-bottom: .35rem;
+    font-weight: 600;
+}
+
+.wpgv-blocks-voucher__controls {
+    display: flex;
+    gap: .5rem;
+    align-items: stretch;
+}
+
+.wpgv-blocks-voucher__input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.wpgv-blocks-voucher__error {
+    color: #b32d2e;
+}
+
+.wpgv-blocks-voucher__status {
+    color: #50575e;
+}
+
+.wpgv-blocks-voucher__list {
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.wpgv-blocks-voucher__item {
+    display: flex;
+    gap: .75rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: .5rem 0;
+    border-top: 1px solid #eee;
+}
+
+.wpgv-blocks-voucher__code {
+    overflow-wrap: anywhere;
+}
+
+.wpgv-blocks-voucher__amount {
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+.wpgv-blocks-voucher__remove {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+@media (max-width: 480px) {
+    .wpgv-blocks-voucher__controls,
+    .wpgv-blocks-voucher__item {
+        flex-wrap: wrap;
+    }
+
+    .wpgv-blocks-voucher__apply {
+        width: 100%;
+    }
+}

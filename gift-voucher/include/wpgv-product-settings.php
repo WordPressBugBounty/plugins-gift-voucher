@@ -103,6 +103,8 @@ if ($options->is_woocommerce_enable) {
                     'description'       => sprintf(__('The available denominations that can be purchased. For example: %1$s25.00, %1$s50.00, %1$s100.00', 'gift-voucher'), get_woocommerce_currency_symbol()),
                 ));
 
+                echo '<div id="wpgv-price-notice" class="notice inline" style="display:none; margin:0 0 10px 0;"><p></p></div>';
+
                 /*$post_prices = get_post_meta($post_id,'_product_attributes',true);
                 $x = unserialize($post_prices);
                 echo '<div class="container" style="justify-content: center;display: flex;">';
@@ -194,12 +196,16 @@ if ($options->is_woocommerce_enable) {
 
                     // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
                     $.post(ajaxurl, data, function(response) {
-                        if (response.data.succsess == 1) {
+                        if (response.success && response.data.succsess == 1) {
                             $('#wpgv_variation_price_main').html(response.data.variations_html);
+                            $('#wpgv_price').val('');
+                            $('#wpgv-price-notice').removeClass('notice-error').addClass('notice-success').find('p').text('<?php echo esc_js(__('Voucher amount added.', 'gift-voucher')); ?>').end().show();
                         } else {
-                            // console.log(response);
+                            $('#wpgv-price-notice').removeClass('notice-success').addClass('notice-error').find('p').text(response.data && response.data.message ? response.data.message : '<?php echo esc_js(__('Could not add voucher amount.', 'gift-voucher')); ?>').end().show();
                         }
-                    }, 'json');
+                    }, 'json').fail(function() {
+                        $('#wpgv-price-notice').removeClass('notice-success').addClass('notice-error').find('p').text('<?php echo esc_js(__('Could not add voucher amount.', 'gift-voucher')); ?>').end().show();
+                    });
                 });
 
                 // ajax delete price varation

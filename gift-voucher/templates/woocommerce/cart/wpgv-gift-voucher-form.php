@@ -5,6 +5,7 @@ defined('ABSPATH') or exit;
 <style>
     #wpgv-redeem-error {
         color: red;
+        text-align: left;
     }
 </style>
 <tr>

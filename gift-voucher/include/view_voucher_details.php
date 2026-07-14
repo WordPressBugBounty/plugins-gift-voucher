@@ -58,6 +58,7 @@ if (!function_exists('wpgv_get_voucher_timeline_events')) {
 			'label'     => wpgv_get_voucher_timeline_action_label('create'),
 			'amount'    => $voucher->amount,
 			'actor'     => $voucher->from_name,
+			// translators: %s is the voucher order type.
 			'note'      => sprintf(__('Order type: %s', 'gift-voucher'), $voucher->order_type),
 			'source'    => 'voucher',
 			'sequence'  => 10,
@@ -65,6 +66,7 @@ if (!function_exists('wpgv_get_voucher_timeline_events')) {
 
 		if (!empty($voucher->payment_status)) {
 			$payment_note = trim(sprintf(
+				// translators: 1: payment method, 2: payment status.
 				__('Payment method: %1$s. Status: %2$s.', 'gift-voucher'),
 				$voucher->pay_method,
 				$voucher->payment_status
@@ -89,6 +91,7 @@ if (!function_exists('wpgv_get_voucher_timeline_events')) {
 				'label'     => wpgv_get_voucher_timeline_action_label('email'),
 				'amount'    => null,
 				'actor'     => '',
+				// translators: %s is the email delivery state.
 				'note'      => sprintf(__('Email delivery is %s.', 'gift-voucher'), $voucher->check_send_mail),
 				'source'    => 'voucher',
 				'sequence'  => 30,
@@ -102,6 +105,7 @@ if (!function_exists('wpgv_get_voucher_timeline_events')) {
 				'label'     => wpgv_get_voucher_timeline_action_label('status'),
 				'amount'    => null,
 				'actor'     => '',
+				// translators: %s is the current voucher status.
 				'note'      => sprintf(__('Current voucher status: %s.', 'gift-voucher'), $voucher->status),
 				'source'    => 'voucher',
 				'sequence'  => 40,
@@ -124,6 +128,7 @@ if (!function_exists('wpgv_get_voucher_timeline_events')) {
 			} elseif (!empty($row->user_login)) {
 				$actor = $row->user_login;
 			} elseif (!empty($row->user_id)) {
+				// translators: %d is the WordPress user ID.
 				$actor = sprintf(__('User #%d', 'gift-voucher'), absint($row->user_id));
 			}
 
