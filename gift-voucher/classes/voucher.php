@@ -753,6 +753,14 @@ if (!class_exists('WPGV_Voucher_List')) :
 			$action = $this->current_action();
 
 			if (in_array($action, ['bulk-used', 'bulk-paid', 'bulk-delete'], true)) {
+
+				// WP_List_Table renders this nonce in display_tablenav(), but it is
+				// never verified by the parent class. Without this check the bulk
+				// actions are reachable over GET and a logged-in administrator can
+				// be tricked into deleting vouchers or marking unpaid orders as
+				// 'Paid', which credits a spendable balance.
+				check_admin_referer('bulk-' . $this->_args['plural']);
+
 				if (!empty($_REQUEST['voucher_code']) && is_array($_REQUEST['voucher_code'])) {
 					$voucher_codes = array_map('absint', wp_unslash($_REQUEST['voucher_code']));
 					foreach ($voucher_codes as $voucher_code) {

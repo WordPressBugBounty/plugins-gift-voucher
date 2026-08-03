@@ -74,6 +74,12 @@ function wpgv__doajax_voucher_pdf_save_func()
 		wp_send_json_error(array('message' => $shipping_charges->get_error_message()));
 	}
 
+	// Reject gateways the shop owner has disabled before anything is persisted.
+	$paymentmethod = wpgv_validate_public_payment_method($paymentmethod, $setting_options);
+	if (is_wp_error($paymentmethod)) {
+		wp_send_json_error(array('message' => $paymentmethod->get_error_message()));
+	}
+
 
 	$images = $template_options->image_style ? json_decode($template_options->image_style) : ['', '', ''];
 	$voucher_bgcolor = wpgv_hex2rgb($setting_options->voucher_bgcolor);

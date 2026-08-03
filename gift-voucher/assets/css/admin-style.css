@@ -440,3 +440,29 @@
     margin-bottom: 10px;
     width: 100%;
 }
+
+.wpgv-secret-input-wrap {
+	position: relative;
+	display: inline-block;
+	max-width: 100%;
+}
+
+.wpgv-secret-input-wrap input {
+	padding-right: 38px;
+}
+
+.wpgv-secret-toggle {
+	position: absolute;
+	right: 8px;
+	top: 50%;
+	transform: translateY(-50%);
+	padding: 0;
+	min-height: 24px;
+	line-height: 1;
+	color: #50575e;
+}
+
+.wpgv-secret-toggle:hover,
+.wpgv-secret-toggle:focus {
+	color: #135e96;
+}

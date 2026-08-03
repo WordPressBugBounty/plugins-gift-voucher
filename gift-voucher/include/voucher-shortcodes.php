@@ -269,13 +269,29 @@ function wpgv_stripe_success_page_shortcode()
 		\Stripe\Stripe::setApiKey($stripe['secret_key']);
 
 		$sessionid = sanitize_text_field(wp_unslash($_GET['sessionid']));
-		$stripe_order_metadata = wpgv_get_stripe_order_binding_metadata($orderid, $request_order_key, $voucher_options->amount, $setting_options->currency_code);
-
 		try {
 			$checkout_session = \Stripe\Checkout\Session::retrieve($sessionid);
 			$sessionJson = $checkout_session->jsonSerialize();
+			$session_metadata = wpgv_normalize_stripe_metadata($sessionJson['metadata'] ?? array());
+			$has_binding_metadata = false;
+			foreach (array('voucher_id', 'order_key', 'amount_minor', 'currency') as $metadata_key) {
+				if (array_key_exists($metadata_key, $session_metadata)) {
+					$has_binding_metadata = true;
+					break;
+				}
+			}
+			$stripe_order_metadata = array(
+				'voucher_id'   => (string) $orderid,
+				'order_key'    => $request_order_key,
+				'amount_minor' => sanitize_text_field($session_metadata['amount_minor'] ?? ''),
+				'currency'     => strtoupper(sanitize_text_field($session_metadata['currency'] ?? '')),
+			);
 
-			if (!wpgv_is_stripe_checkout_session_bound_to_voucher($checkout_session, $stripe_order_metadata)) {
+			$legacy_amount_minor = wpgv_get_stripe_amount_minor_units($voucher_options->amount);
+			$legacy_currency = strtoupper((string) $setting_options->currency_code);
+			if ($has_binding_metadata && !wpgv_is_stripe_checkout_session_bound_to_voucher($checkout_session, $stripe_order_metadata)) {
+				return '<div class="error"><p>' . esc_html__('Payment session validation failed. Please contact us if you have already been charged.', 'gift-voucher') . '</p></div>';
+			} elseif (!$has_binding_metadata && ($legacy_amount_minor === null || !wpgv_is_legacy_stripe_checkout_session_bound_to_voucher($checkout_session, $legacy_amount_minor, $legacy_currency))) {
 				return '<div class="error"><p>' . esc_html__('Payment session validation failed. Please contact us if you have already been charged.', 'gift-voucher') . '</p></div>';
 			}
 
@@ -284,9 +300,18 @@ function wpgv_stripe_success_page_shortcode()
 			}
 
 			$payment_intent = \Stripe\PaymentIntent::retrieve($sessionJson['payment_intent']);
-			if (!wpgv_is_stripe_payment_intent_bound_to_voucher($payment_intent, $stripe_order_metadata)) {
+			if ($has_binding_metadata && !wpgv_is_stripe_payment_intent_bound_to_voucher($payment_intent, $stripe_order_metadata)) {
+				return '<div class="error"><p>' . esc_html__('Payment session validation failed. Please contact us if you have already been charged.', 'gift-voucher') . '</p></div>';
+			} elseif (!$has_binding_metadata && !wpgv_is_legacy_stripe_payment_intent_bound_to_voucher($payment_intent, $legacy_amount_minor, $legacy_currency)) {
 				return '<div class="error"><p>' . esc_html__('Payment session validation failed. Please contact us if you have already been charged.', 'gift-voucher') . '</p></div>';
 			}
+
+			$fulfillment = wpgv_fulfill_verified_stripe_voucher($checkout_session, $payment_intent, 'success-page-' . $sessionid, $has_binding_metadata ? 0 : $orderid, $legacy_currency);
+			if (is_wp_error($fulfillment)) {
+				return '<div class="error"><p>' . esc_html__('Payment verification failed. Please contact us if you have already been charged.', 'gift-voucher') . '</p></div>';
+			}
+			$successpagemessage = get_option('wpgv_successpagemessage') ? get_option('wpgv_successpagemessage') : 'We have got your order! <br>E-Mail Sent Successfully to %s';
+			return '<div class="success">' . sprintf(stripslashes($successpagemessage), $voucher_options->email) . '</div>';
 
 				//if order inserted successfully
 

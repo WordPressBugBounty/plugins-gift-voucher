@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.7.3
+ * Version: 4.7.4
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,23 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-// Start an early output buffer to capture any accidental output from included
-// libraries (fonts, third-party files with closing PHP tags, etc.). We will
-// discard this buffer on 'init' and start a fresh one to avoid leaking any
-// characters during plugin activation.
-if (!ob_get_level()) {
-  ob_start();
-  add_action('init', function () {
-    // Discard any output generated during plugin file inclusion
-    while (ob_get_level()) {
-      @ob_end_clean();
-    }
-    // Start a fresh buffer for normal runtime output handling
-    ob_start();
-  });
-}
-
-define('WPGIFT_VERSION', '4.7.3');
+define('WPGIFT_VERSION', '4.7.4');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -51,6 +35,7 @@ define('WPGV_PRODUCT_TYPE_NAME', 'Gift Voucher');
 define('WPGV_DENOMINATION_ATTRIBUTE_SLUG', 'gift-voucher-amount');
 define('WPGV_MAX_MESSAGE_CHARACTERS', 500);
 define('WPGV_RECIPIENT_LIMIT', 999);
+define('WPGV_STRIPE_WEBHOOK_SECRET_SYNC_VERSION', 1);
 define('WPGV_GIFT_VOUCHER_NUMBER_META_KEY', 'wpgv_gift_voucher_number');
 define('WPGV_AMOUNT_META_KEY', 'wpgv_gift_voucher_amount');
 define('WPGV_YOUR_NAME_META_KEY', 'wpgv_your_name');
@@ -291,6 +276,39 @@ function wpgv_is_stripe_payment_intent_bound_to_voucher($payment_intent, $expect
   return wpgv_stripe_metadata_matches_expected($payment_intent->metadata ?? array(), $expected_metadata);
 }
 
+/**
+ * Validate a legacy Stripe Checkout Session which predates binding metadata.
+ * This is used only by the customer success-page fallback, never by webhooks.
+ */
+function wpgv_is_legacy_stripe_checkout_session_bound_to_voucher($checkout_session, $amount_minor, $currency)
+{
+  if (!is_object($checkout_session) || !method_exists($checkout_session, 'jsonSerialize')) {
+    return false;
+  }
+
+  $session_data = $checkout_session->jsonSerialize();
+  return ($session_data['mode'] ?? '') === 'payment'
+    && ($session_data['payment_status'] ?? '') === 'paid'
+    && (!isset($session_data['status']) || $session_data['status'] === 'complete')
+    && isset($session_data['amount_total'])
+    && (int) $session_data['amount_total'] === (int) $amount_minor
+    && strtoupper((string) ($session_data['currency'] ?? '')) === strtoupper((string) $currency);
+}
+
+function wpgv_is_legacy_stripe_payment_intent_bound_to_voucher($payment_intent, $amount_minor, $currency)
+{
+  return is_object($payment_intent)
+    && ($payment_intent->status ?? '') === 'succeeded'
+    && isset($payment_intent->amount)
+    && (int) $payment_intent->amount === (int) $amount_minor
+    && strtoupper((string) ($payment_intent->currency ?? '')) === strtoupper((string) $currency);
+}
+
+function wpgv_is_stripe_webhook_fulfillment_enabled()
+{
+  return (bool) get_option('wpgv_stripe_webhook_fulfillment_enabled', 1);
+}
+
 function wpgv_get_public_voucher_value_limits($setting_options)
 {
   $min_amount = isset($setting_options->voucher_min_value) && $setting_options->voucher_min_value !== ''
@@ -382,6 +400,46 @@ function wpgv_get_shipping_charge_amount($shipping_type, $shipping_method, $sett
   }
 
   return new WP_Error('wpgv_invalid_shipping_method', __('Invalid shipping method selected.', 'gift-voucher'));
+}
+
+/**
+ * Validate a payment method posted by an unauthenticated buyer.
+ *
+ * The public order handlers write the posted value straight into
+ * `giftvouchers_list.pay_method`, and that column decides how the success page
+ * verifies the order. 'Per Invoice' in particular skips payment verification by
+ * design, so an unvalidated value lets a buyer select a gateway the shop owner
+ * has switched off and receive the voucher PDF without paying.
+ *
+ * @param string $payment_method Raw payment method from the request.
+ * @param object $setting_options Row from the giftvouchers_setting table.
+ * @return string|WP_Error The accepted payment method, or WP_Error when disabled.
+ */
+function wpgv_validate_public_payment_method($payment_method, $setting_options)
+{
+  $payment_method = trim(sanitize_text_field((string) $payment_method));
+
+  $gateway_settings = array(
+    'Paypal'      => 'paypal',
+    'Sofort'      => 'sofort',
+    'Stripe'      => 'stripe',
+    'Per Invoice' => 'per_invoice',
+  );
+
+  if (!isset($gateway_settings[$payment_method])) {
+    return new WP_Error('wpgv_invalid_payment_method', __('Invalid payment method selected.', 'gift-voucher'));
+  }
+
+  // The rest of the plugin reads these columns as truthy flags, so keep the
+  // same semantics here instead of requiring an exact integer 1.
+  $setting_key = $gateway_settings[$payment_method];
+  $is_enabled = is_object($setting_options) && !empty($setting_options->$setting_key);
+
+  if (!$is_enabled) {
+    return new WP_Error('wpgv_payment_method_disabled', __('The selected payment method is not available.', 'gift-voucher'));
+  }
+
+  return $payment_method;
 }
 
 function wpgv_couponcode_exists($couponcode, $exclude_id = 0)
@@ -562,6 +620,31 @@ function wpgv_is_native_coupon_voucher_redemption_enabled()
   return wpgv_is_woocommerce_enable() && !wpgv_is_woocommerce_redeem_form_enabled();
 }
 
+/**
+ * Ensure the Stripe webhook signing secret has a canonical option.
+ *
+ * This is intentionally a one-time admin migration. The secret cannot be
+ * fetched from Stripe automatically; an administrator must enter it in the
+ * Payment settings page. Existing non-empty values are never overwritten.
+ */
+function wpgv_sync_stripe_webhook_secret_option()
+{
+  $sync_version = (int) get_option('wpgv_stripe_webhook_secret_sync_version', 0);
+  if ($sync_version >= WPGV_STRIPE_WEBHOOK_SECRET_SYNC_VERSION) {
+    return;
+  }
+
+  if (get_option('wpgv_stripe_webhook_key', null) === null) {
+    add_option('wpgv_stripe_webhook_key', '', '', false);
+  }
+
+  update_option(
+    'wpgv_stripe_webhook_secret_sync_version',
+    WPGV_STRIPE_WEBHOOK_SECRET_SYNC_VERSION,
+    false
+  );
+}
+
 // Load translations and plugin files on init to avoid early translation notice (WP 6.7+)
 add_action('init', function() {
   load_plugin_textdomain('gift-voucher', false, dirname(plugin_basename(__FILE__)) . '/languages');
@@ -596,8 +679,10 @@ add_action('init', function() {
 
   require_once(WPGIFT__PLUGIN_DIR . '/include/voucher_metabox.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/voucher-shortcodes.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/include/stripewebhook.php');
   require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-gift-voucher.php');
   require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-gift-voucher-activity.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/include/stripe-fulfillment.php');
   require_once(WPGIFT__PLUGIN_DIR . '/giftcard.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/wpgv_giftcard_pdf.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/edit-order-voucher.php');
@@ -618,6 +703,8 @@ add_action('init', function () {
 
 
 add_action('admin_init', function () {
+
+  wpgv_sync_stripe_webhook_secret_option();
 
   global $wpdb;
   $giftvouchers_list = $wpdb->prefix . 'giftvouchers_list';

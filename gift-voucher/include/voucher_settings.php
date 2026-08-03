@@ -30,7 +30,15 @@ if (isset($_POST['submit'])) {
 	$paypal_client_id = isset($_POST['paypal_client_id']) ? sanitize_text_field(wp_unslash($_POST['paypal_client_id'])) : '';
 	$paypal_secret_key = isset($_POST['paypal_secret_key']) ? sanitize_text_field(wp_unslash($_POST['paypal_secret_key'])) : '';
 	$stripe_publishable_key = isset($_POST['stripe_publishable_key']) ? sanitize_text_field(wp_unslash($_POST['stripe_publishable_key'])) : '';
-	$stripe_webhook_key = isset($_POST['stripe_webhook_key']) ? sanitize_text_field(wp_unslash($_POST['stripe_webhook_key'])) : '';
+	$submitted_stripe_webhook_key = isset($_POST['stripe_webhook_key']) ? sanitize_text_field(wp_unslash($_POST['stripe_webhook_key'])) : '';
+	$stored_stripe_webhook_key = (string) get_option('wpgv_stripe_webhook_key', '');
+	$stored_stripe_webhook_fulfillment_enabled = (bool) get_option('wpgv_stripe_webhook_fulfillment_enabled', 1);
+	$submitted_stripe_webhook_fulfillment_enabled = isset($_POST['submit'])
+		? (isset($_POST['stripe_webhook_fulfillment_enabled']) ? 1 : 0)
+		: (int) $stored_stripe_webhook_fulfillment_enabled;
+	// An empty field means "keep the existing secret". This prevents an
+	// unrelated settings save from accidentally clearing webhook verification.
+	$stripe_webhook_key = $submitted_stripe_webhook_key !== '' ? $submitted_stripe_webhook_key : $stored_stripe_webhook_key;
 	$stripe_secret_key = isset($_POST['stripe_secret_key']) ? sanitize_text_field(wp_unslash($_POST['stripe_secret_key'])) : '';
 	$voucher_bgcolor = isset($_POST['voucher_bgcolor']) ? sanitize_text_field(wp_unslash($_POST['voucher_bgcolor'])) : '';
 	$voucher_brcolor = isset($_POST['voucher_brcolor']) ? sanitize_text_field(wp_unslash($_POST['voucher_brcolor'])) : '';
@@ -145,6 +153,7 @@ if (isset($_POST['submit'])) {
 	update_option('wpgv_paypal_client_id', $paypal_client_id);
 	update_option('wpgv_paypal_secret_key', $paypal_secret_key);
 	update_option('wpgv_stripe_webhook_key', $stripe_webhook_key);
+	update_option('wpgv_stripe_webhook_fulfillment_enabled', $submitted_stripe_webhook_fulfillment_enabled);
 	update_option('wpgv_termstext', $wpgvtermstext);
 	update_option('wpgv_buying_for', $buying_for);
 
@@ -235,6 +244,7 @@ $wpgv_stripe_alternative_text = get_option('wpgv_stripe_alternative_text') ? get
 $wpgv_paypal_client_id = get_option('wpgv_paypal_client_id') ? get_option('wpgv_paypal_client_id') : '';
 $wpgv_paypal_secret_key = get_option('wpgv_paypal_secret_key') ? get_option('wpgv_paypal_secret_key') : '';
 $wpgv_stripe_webhook_key = get_option('wpgv_stripe_webhook_key') ? get_option('wpgv_stripe_webhook_key') : '';
+$wpgv_stripe_webhook_fulfillment_enabled = (bool) get_option('wpgv_stripe_webhook_fulfillment_enabled', 1);
 $options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$setting_table_name} WHERE id = %d", 1));
 $voucher_styles = $options->voucher_style ? json_decode($options->voucher_style) : [''];
 
@@ -951,7 +961,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 										<label for="stripe_webhook_url"><?php echo esc_html_e('Stripe Webhook URL', 'gift-voucher'); ?></label>
 									</th>
 									<td>
-										<input name="stripe_webhook_url" type="text" id="stripe_webhook_url" value="<?php echo esc_url(WPGIFT__PLUGIN_URL . '/include/stripewebhook.php'); ?>" class="regular-text" readonly>
+										<input name="stripe_webhook_url" type="text" id="stripe_webhook_url" value="<?php echo esc_url(rest_url('gift-voucher/v1/stripe-webhook')); ?>" class="regular-text" readonly>
 										<p class="description"><?php esc_html_e('Copy this url and paste in Stripe Webhook Endpoint URL.', 'gift-voucher'); ?></p>
 									</td>
 								</tr>
@@ -966,12 +976,24 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 										</p>
 									</th>
 									<td>
-										<input name="stripe_webhook_key" type="text" id="stripe_webhook_key" value="<?php echo esc_html($wpgv_stripe_webhook_key); ?>" class="regular-text">
+										<div class="wpgv-secret-input-wrap">
+											<input name="stripe_webhook_key" type="password" id="stripe_webhook_key" value="<?php echo esc_attr($wpgv_stripe_webhook_key); ?>" class="regular-text" autocomplete="new-password" placeholder="<?php echo esc_attr($wpgv_stripe_webhook_key !== '' ? __('Leave blank to keep the current secret.', 'gift-voucher') : __('Enter the Stripe webhook signing secret.', 'gift-voucher')); ?>">
+											<button type="button" class="button-link wpgv-secret-toggle" aria-controls="stripe_webhook_key" aria-label="<?php echo esc_attr__('Show webhook signing secret', 'gift-voucher'); ?>" title="<?php echo esc_attr__('Show webhook signing secret', 'gift-voucher'); ?>">
+												<span class="dashicons dashicons-visibility" aria-hidden="true"></span>
+												<span class="screen-reader-text"><?php echo esc_html__('Show webhook signing secret', 'gift-voucher'); ?></span>
+											</button>
+										</div>
 									</td>
 								</tr>
-								<tr>
-									<th scope="row">
-										<label for="stripe_checkoutpage"><?php echo esc_html_e('Stripe Checkout Page', 'gift-voucher'); ?></label>
+				<tr>
+					<th scope="row">
+						<label for="stripe_webhook_fulfillment_enabled"><?php esc_html_e('Stripe Webhook Fulfillment', 'gift-voucher'); ?></label>
+					</th>
+					<td><label><input name="stripe_webhook_fulfillment_enabled" type="checkbox" id="stripe_webhook_fulfillment_enabled" value="1" <?php checked($wpgv_stripe_webhook_fulfillment_enabled, true); ?>> <?php esc_html_e('Enable webhook fulfillment (disable for rollback/shadow operation).', 'gift-voucher'); ?></label></td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="stripe_checkoutpage"><?php echo esc_html_e('Stripe Checkout Page', 'gift-voucher'); ?></label>
 									</th>
 									<td>
 										<input name="stripe_checkoutpage" type="text" id="stripe_checkoutpage" value="<?php echo esc_html($stripepageurl); ?>" class="regular-text" readonly>

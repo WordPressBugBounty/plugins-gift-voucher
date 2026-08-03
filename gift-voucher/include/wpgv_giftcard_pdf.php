@@ -86,6 +86,13 @@ function wpgv__doajax_gift_card_pdf_save_func()
 		wp_die();
 	}
 
+	// Reject gateways the shop owner has disabled before anything is persisted.
+	$paymentmethod = wpgv_validate_public_payment_method($paymentmethod, $setting_options);
+	if (is_wp_error($paymentmethod)) {
+		wp_send_json_error(array('message' => $paymentmethod->get_error_message()));
+		wp_die();
+	}
+
 	$voucher_id = $idVoucher;
 	$template_options = $idVoucher ? get_post($idVoucher) : null;
 	$template_title = $template_options && isset($template_options->post_title) ? $template_options->post_title : '';

@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
 Tested up to: 7.0.1
-Stable tag: 4.7.3
+Stable tag: 4.7.4
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -222,6 +222,11 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.7.4 - Released: August 03, 2026 =
+* Fix: Prevented output buffer cleanup from interfering with page caching plugins.
+* Security: Upgrade Dompdf from v2.0.4 to v3.1.6.
+* Security: Add safe Stripe webhook endpoint with signature verification and idempotent voucher fulfillment while preserving the existing success-page fallback.
 
 = Version 4.7.3 - Released: July 14, 2026 =
 * Fix: Prevent existing Gift Voucher denominations from being added again when updating a WooCommerce product; clear the amount field after successful AJAX addition and show inline admin errors.

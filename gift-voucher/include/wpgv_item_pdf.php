@@ -53,6 +53,14 @@ function wpgv__doajax_item_pdf_save_func()
 	$voucher_table 	= $wpdb->prefix . 'giftvouchers_list';
 	$setting_table 	= $wpdb->prefix . 'giftvouchers_setting';
 	$setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
+
+	// Reject gateways the shop owner has disabled before anything is persisted.
+	$paymentmethod = wpgv_validate_public_payment_method($paymentmethod, $setting_options);
+	if (is_wp_error($paymentmethod)) {
+		wp_send_json_error(array('message' => $paymentmethod->get_error_message()));
+		wp_die();
+	}
+
 	$code = wpgv_generate_unique_couponcode();
 	if (is_wp_error($code)) {
 		wp_send_json_error(array('message' => $code->get_error_message()));

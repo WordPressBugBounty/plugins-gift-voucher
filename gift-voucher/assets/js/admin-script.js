@@ -1,4 +1,19 @@
 (function ($) {
+	$(function () {
+		$(document).on('click', '.wpgv-secret-toggle', function () {
+			var $button = $(this);
+			var $input = $('#' + $button.attr('aria-controls'));
+			var showing = $input.attr('type') === 'text';
+			var label = showing ? 'Hide webhook signing secret' : 'Show webhook signing secret';
+
+			$input.attr('type', showing ? 'password' : 'text');
+			$button.attr('aria-label', label).attr('title', label);
+			$button.find('.dashicons')
+				.toggleClass('dashicons-visibility', showing)
+				.toggleClass('dashicons-hidden', !showing);
+			$button.find('.screen-reader-text').text(label);
+		});
+	});
 
 	$('#voucher_bgcolor, #voucher_color').wpColorPicker();
 
