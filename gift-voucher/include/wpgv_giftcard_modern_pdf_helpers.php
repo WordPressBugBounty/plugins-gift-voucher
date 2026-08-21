@@ -5,6 +5,24 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  * Helper functions for PDF generation moved out of wpgv_giftcard_pdf.php
  */
 
+if (!function_exists('wpgv_pdf_log')) {
+    /**
+     * Write a PDF diagnostic line, but only while debugging.
+     *
+     * Never pass an absolute path, a PDF filename or canvas data to this: the
+     * filename carries the coupon code, and debug.log is web-readable on some
+     * hosts. Voucher/template IDs and byte counts are fine.
+     *
+     * @param string $message
+     */
+    function wpgv_pdf_log($message)
+    {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('WPGV PDF: ' . $message); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- debug-only diagnostic.
+        }
+    }
+}
+
 function wpgv_get_modern_pdf_upload_dir() {
     require_once ABSPATH . 'wp-admin/includes/file.php';
     WP_Filesystem();
@@ -20,13 +38,11 @@ function wpgv_get_modern_pdf_upload_dir() {
 
     if (!$wp_filesystem->exists($upload_dir)) {
         $mkdir_result = $wp_filesystem->mkdir($upload_dir, 0755);
-        error_log('WPGV PDF: Created directory: ' . $upload_dir . ' - Result: ' . ($mkdir_result ? 'SUCCESS' : 'FAILED'));
-    } else {
-        error_log('WPGV PDF: Directory already exists: ' . $upload_dir);
+        wpgv_pdf_log('Created the upload directory: ' . ($mkdir_result ? 'SUCCESS' : 'FAILED'));
     }
 
     if (!$wp_filesystem->is_writable($upload_dir)) {
-        error_log('WPGV PDF ERROR: Directory is not writable: ' . $upload_dir);
+        wpgv_pdf_log('ERROR: The upload directory is not writable.');
         return false;
     }
 
@@ -126,10 +142,10 @@ function wpgv_render_modern_template_pdf_file($voucher_data, $template_id, $pdf_
  * @return string|false Path to generated PDF file or false on failure
  */
 function wpgv_generate_modern_giftcard_pdf($voucher_id, $voucher_data, $template_id, $canvas_data = null, $canvas_file_path = '', $pdf_filename_base = '') {
-    error_log('WPGV PDF: Starting PDF generation for voucher ID: ' . $voucher_id . ', Template ID: ' . $template_id . ', base file: ' . $pdf_filename_base);
+    wpgv_pdf_log('Starting PDF generation for voucher ID ' . $voucher_id . ', template ID ' . $template_id . '.');
 
     if (!$voucher_data || !$template_id) {
-        error_log('WPGV PDF ERROR: Missing voucher data or template ID');
+        wpgv_pdf_log('ERROR: Missing voucher data or template ID.');
         return false;
     }
 
@@ -140,8 +156,6 @@ function wpgv_generate_modern_giftcard_pdf($voucher_id, $voucher_data, $template
     if ($upload_dir === false) {
         return false;
     }
-
-    error_log('WPGV PDF: Upload directory: ' . $upload_dir);
 
     if (!empty($pdf_filename_base)) {
         $pdf_filename_base = wpgv_sanitize_voucher_pdf_basename($pdf_filename_base);
@@ -156,8 +170,6 @@ function wpgv_generate_modern_giftcard_pdf($voucher_id, $voucher_data, $template
     $pdf_filename = $pdf_filename_base . '.pdf';
     $pdf_path = $upload_dir . $pdf_filename;
 
-    error_log('WPGV PDF: PDF filename: ' . $pdf_filename . ', Full path: ' . $pdf_path);
-
     if ($voucher_id > 0) {
         $update_result = $wpdb->update(
             $voucher_table,
@@ -168,43 +180,36 @@ function wpgv_generate_modern_giftcard_pdf($voucher_id, $voucher_data, $template
         );
 
         if ($update_result === false) {
-            error_log('WPGV PDF ERROR: Failed to update voucherpdf_link in database. Error: ' . $wpdb->last_error);
-        } else {
-            error_log('WPGV PDF: Updated voucherpdf_link in database: ' . $pdf_filename_base);
+            wpgv_pdf_log('ERROR: Failed to update voucherpdf_link in the database. Error: ' . $wpdb->last_error);
         }
     }
 
     try {
         if (!empty($canvas_file_path) && file_exists($canvas_file_path)) {
-            error_log('WPGV PDF: Using existing canvas file path: ' . $canvas_file_path);
-
             if (wpgv_render_modern_canvas_pdf_file($template_id, $canvas_file_path, $pdf_path)) {
-                $file_size = filesize($pdf_path);
-                error_log('WPGV PDF: PDF created successfully using canvas file. File size: ' . $file_size . ' bytes');
+                wpgv_pdf_log('Created the PDF from the canvas file. Size: ' . filesize($pdf_path) . ' bytes.');
                 return $pdf_path;
             }
 
-            error_log('WPGV PDF ERROR: Dompdf canvas render failed at: ' . $pdf_path);
+            wpgv_pdf_log('ERROR: The Dompdf canvas render failed.');
         } elseif (!empty($canvas_data)) {
-            error_log('WPGV PDF: [DEBUG] Canvas data received. Length: ' . strlen($canvas_data));
-            error_log('WPGV PDF: [DEBUG] Canvas data (first 100 chars): ' . substr($canvas_data, 0, 100));
+            wpgv_pdf_log('Received canvas data. Length: ' . strlen($canvas_data) . '.');
 
             if (preg_match('/^data:image\/(png|jpeg|jpg);base64,/', $canvas_data, $type)) {
                 $canvas_data = substr($canvas_data, strpos($canvas_data, ',') + 1);
                 $canvas_data = base64_decode($canvas_data);
             } else {
-                error_log('WPGV PDF ERROR: Invalid canvas data format');
+                wpgv_pdf_log('ERROR: Invalid canvas data format.');
             }
 
             if ($canvas_data !== false && !empty($canvas_data)) {
                 $canvas_image_path = $upload_dir . 'temp_canvas_' . $voucher_id . '.png';
                 $bytes_written = file_put_contents($canvas_image_path, $canvas_data);
-                error_log('WPGV PDF: [DEBUG] file_put_contents result: ' . var_export($bytes_written, true));
+                wpgv_pdf_log('Wrote the temporary canvas image: ' . var_export($bytes_written, true) . ' bytes.');
 
                 if (file_exists($canvas_image_path)) {
                     if (wpgv_render_modern_canvas_pdf_file($template_id, $canvas_image_path, $pdf_path)) {
-                        $file_size = filesize($pdf_path);
-                        error_log('WPGV PDF: PDF created successfully using canvas. File size: ' . $file_size . ' bytes');
+                        wpgv_pdf_log('Created the PDF from canvas data. Size: ' . filesize($pdf_path) . ' bytes.');
                         @unlink($canvas_image_path);
                         return $pdf_path;
                     }
@@ -213,21 +218,19 @@ function wpgv_generate_modern_giftcard_pdf($voucher_id, $voucher_data, $template
                 }
             }
 
-            error_log('WPGV PDF ERROR: Failed to generate PDF from canvas data');
+            wpgv_pdf_log('ERROR: Failed to generate the PDF from canvas data.');
         }
 
-        error_log('WPGV PDF: Using Dompdf HTML fallback for modern template rendering');
+        wpgv_pdf_log('Using the Dompdf HTML fallback for modern template rendering.');
         if (wpgv_render_modern_template_pdf_file($voucher_data, $template_id, $pdf_path)) {
-            $file_size = filesize($pdf_path);
-            error_log('WPGV PDF: PDF created successfully using HTML fallback. File size: ' . $file_size . ' bytes');
+            wpgv_pdf_log('Created the PDF from the HTML fallback. Size: ' . filesize($pdf_path) . ' bytes.');
             return $pdf_path;
         }
 
-        error_log('WPGV PDF ERROR: HTML fallback could not create PDF at: ' . $pdf_path);
+        wpgv_pdf_log('ERROR: The HTML fallback could not create the PDF.');
         return false;
     } catch (Exception $e) {
-        error_log('WPGV PDF ERROR: Exception during PDF generation: ' . $e->getMessage());
-        error_log('WPGV PDF ERROR: Stack trace: ' . $e->getTraceAsString());
+        wpgv_pdf_log('ERROR: Exception during PDF generation: ' . $e->getMessage());
         return false;
     }
 }
@@ -240,37 +243,34 @@ if (! function_exists('wpgv_get_template_image_path')) {
      * @return string|false Path to template image or false
      */
     function wpgv_get_template_image_path($template_id) {
-        error_log('WPGV PDF: Getting template image path for template ID: ' . $template_id);
+        wpgv_pdf_log('Resolving the template image for template ID ' . $template_id . '.');
 
         $select_status_template = get_post_meta($template_id, 'wpgv_customize_template_select_template', true);
         $selected_voucher_template = get_post_meta($template_id, 'wpgv_customize_template_template-style', true);
 
-        error_log('WPGV PDF: Select status: ' . $select_status_template . ', Template style: ' . $selected_voucher_template);
+        wpgv_pdf_log('Select status: ' . $select_status_template . ', template style: ' . $selected_voucher_template . '.');
 
         $upload_dir = wpgv_get_modern_pdf_upload_dir();
         if ($upload_dir === false) {
-            error_log('WPGV PDF ERROR: Could not initialize upload directory');
+            wpgv_pdf_log('ERROR: Could not initialize the upload directory.');
             return false;
         }
 
         if ($select_status_template == 'custom') {
-            error_log('WPGV PDF: Using custom template');
             $get_bg_temp = get_post_meta($template_id, 'wpgv_customize_template_bg_result', true);
-            error_log('WPGV PDF: Custom background attachment ID: ' . $get_bg_temp);
+            wpgv_pdf_log('Using a custom template. Background attachment ID: ' . $get_bg_temp . '.');
 
             if ($get_bg_temp) {
                 if (is_numeric($get_bg_temp)) {
                     $attachment_path = get_attached_file($get_bg_temp);
-                    error_log('WPGV PDF: Attachment path: ' . $attachment_path);
                     if ($attachment_path && file_exists($attachment_path)) {
-                        error_log('WPGV PDF: Custom template image found: ' . $attachment_path);
+                        wpgv_pdf_log('Found the custom template attachment.');
                         return $attachment_path;
                     } else {
-                        error_log('WPGV PDF ERROR: Custom template attachment not found');
+                        wpgv_pdf_log('ERROR: The custom template attachment was not found.');
                     }
                 } else {
                     $custom_url = $get_bg_temp;
-                    error_log('WPGV PDF: Custom template URL: ' . $custom_url);
                     $tmp_file = $upload_dir . 'custom_template_' . md5($custom_url) . '.' . pathinfo($custom_url, PATHINFO_EXTENSION);
                     if (!file_exists($tmp_file)) {
                         $response = wp_remote_get($custom_url, array('timeout' => 30));
@@ -279,47 +279,43 @@ if (! function_exists('wpgv_get_template_image_path')) {
                         }
                     }
                     if (file_exists($tmp_file)) {
-                        error_log('WPGV PDF: Custom template URL downloaded to: ' . $tmp_file);
+                        wpgv_pdf_log('Cached the custom template from its URL.');
                         return $tmp_file;
                     }
-                    error_log('WPGV PDF ERROR: Custom template URL could not be downloaded');
+                    wpgv_pdf_log('ERROR: The custom template URL could not be downloaded.');
                 }
             }
         } else {
-            error_log('WPGV PDF: Using default template from S3');
+            wpgv_pdf_log('Using the default template from S3: ' . $selected_voucher_template . '.');
             $template_url = 'https://gift-card-pro.s3.eu-central-1.amazonaws.com/templates/png/' . $selected_voucher_template;
             $temp_file = $upload_dir . 'temp_' . basename($selected_voucher_template);
 
-            error_log('WPGV PDF: Template URL: ' . $template_url);
-            error_log('WPGV PDF: Temp file path: ' . $temp_file);
-
             if (!file_exists($temp_file)) {
-                error_log('WPGV PDF: Template not cached, downloading from S3...');
+                wpgv_pdf_log('The template is not cached, downloading it from S3.');
                 $response = wp_remote_get($template_url, array('timeout' => 30));
 
                 if (is_wp_error($response)) {
-                    error_log('WPGV PDF ERROR: Failed to download template. Error: ' . $response->get_error_message());
+                    wpgv_pdf_log('ERROR: Failed to download the template. Error: ' . $response->get_error_message());
                 } elseif (wp_remote_retrieve_response_code($response) == 200) {
                     $image_data = wp_remote_retrieve_body($response);
                     $bytes_written = file_put_contents($temp_file, $image_data);
-                    error_log('WPGV PDF: Template downloaded successfully. Bytes written: ' . $bytes_written);
+                    wpgv_pdf_log('Downloaded the template. Bytes written: ' . $bytes_written . '.');
                 } else {
                     $response_code = wp_remote_retrieve_response_code($response);
-                    error_log('WPGV PDF ERROR: Failed to download template. HTTP code: ' . $response_code);
+                    wpgv_pdf_log('ERROR: Failed to download the template. HTTP code: ' . $response_code);
                 }
             } else {
-                error_log('WPGV PDF: Using cached template: ' . $temp_file);
+                wpgv_pdf_log('Using the cached template.');
             }
 
             if (file_exists($temp_file)) {
-                error_log('WPGV PDF: Template image ready: ' . $temp_file);
                 return $temp_file;
             } else {
-                error_log('WPGV PDF ERROR: Template file does not exist after download attempt');
+                wpgv_pdf_log('ERROR: The template file does not exist after the download attempt.');
             }
         }
 
-        error_log('WPGV PDF ERROR: Could not get template image path');
+        wpgv_pdf_log('ERROR: Could not resolve the template image path.');
         return false;
     }
 }

@@ -8,6 +8,10 @@ $setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
 $items = isset($_GET['items']) ? sanitize_textarea_field($_GET['items']) : '';
 $woocommerce = isset($_GET['woocommerce']) ? sanitize_textarea_field($_GET['woocommerce']) : '';
 $voucher_code = isset($_GET['voucher_code']) ? sanitize_textarea_field($_GET['voucher_code']) : '';
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab switch; the import form itself is nonce protected.
+$wpgv_tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
+$wpgv_is_import_tab = ('import-db' === $wpgv_tab);
+$wpgv_import_result = $wpgv_is_import_tab ? wpgv_handle_giftcard_db_import() : null;
 ?>
 <div class="wrap voucher-page">
 	<h1><?php echo esc_html_e('Voucher Orders', 'gift-voucher') ?></h1><br>
@@ -53,19 +57,25 @@ $voucher_code = isset($_GET['voucher_code']) ? sanitize_textarea_field($_GET['vo
 		<?php } ?>
 		<!-- <a href="<?php echo esc_url(admin_url('edit.php')); ?>?post_type=wpgv_voucher_product&page=import-orders" class="button button-primary" style="display: inline-block;padding: 0 10px;float:right;"><?php echo esc_html_e('Import Vouchers', 'gift-voucher') ?></a> -->
 		<h2 class="nav-tab-wrapper">
-			<a class="nav-tab <?php if (!$items && !$woocommerce): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists"><?php echo esc_html_e('Purchased Voucher Codes', 'gift-voucher') ?></a>
-			<a class="nav-tab <?php if ($items): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists&items=1"><?php echo esc_html_e('Purchased Items', 'gift-voucher') ?></a>
-			<a class="nav-tab <?php if ($woocommerce): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists&woocommerce=1"><?php echo esc_html_e('WooCommerce Orders', 'gift-voucher') ?></a>
+			<a class="nav-tab <?php if (!$items && !$woocommerce && !$wpgv_is_import_tab): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists"><?php echo esc_html_e('Purchased Voucher Codes', 'gift-voucher') ?></a>
+			<a class="nav-tab <?php if ($items && !$wpgv_is_import_tab): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists&items=1"><?php echo esc_html_e('Purchased Items', 'gift-voucher') ?></a>
+			<a class="nav-tab <?php if ($woocommerce && !$wpgv_is_import_tab): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists&woocommerce=1"><?php echo esc_html_e('WooCommerce Orders', 'gift-voucher') ?></a>
+			<a class="nav-tab" href="<?php echo esc_url(wpgv_db_transfer_export_url()); ?>"><?php echo esc_html_e('Export Database', 'gift-voucher') ?></a>
+			<a class="nav-tab <?php if ($wpgv_is_import_tab): ?>nav-tab-active<?php endif; ?>" href="<?php echo esc_url(wpgv_db_transfer_import_url()); ?>"><?php echo esc_html_e('Import Database', 'gift-voucher') ?></a>
 		</h2>
 		<div id="post-body" class="metabox-holder">
 			<div id="post-body-content">
-				<div class="meta-box-sortables ui-sortable">
-					<form method="post">
-						<?php
-						$this->vouchers_obj->prepare_items();
-						$this->vouchers_obj->display(); ?>
-					</form>
-				</div>
+				<?php if ($wpgv_is_import_tab) : ?>
+					<?php wpgv_render_giftcard_db_import_panel($wpgv_import_result); ?>
+				<?php else : ?>
+					<div class="meta-box-sortables ui-sortable">
+						<form method="post">
+							<?php
+							$this->vouchers_obj->prepare_items();
+							$this->vouchers_obj->display(); ?>
+						</form>
+					</div>
+				<?php endif; ?>
 			</div>
 		</div>
 	</div>

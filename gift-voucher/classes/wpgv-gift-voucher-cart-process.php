@@ -541,7 +541,9 @@ if (!class_exists('wpgv-')) :
                             wp_schedule_single_event($send_gift_voucher_email_event_date_time, 'send_gift_voucher_email_event', $send_gift_voucher_email_event_args);
                         } catch (Exception $e) {
                             // On error, send immediately and log the issue for debugging.
-                            error_log('WPGV: Failed to schedule voucher email: ' . $e->getMessage());
+                            if (defined('WP_DEBUG') && WP_DEBUG) {
+                                error_log('WPGV: Failed to schedule voucher email: ' . $e->getMessage()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- debug-only diagnostic.
+                            }
                             $checkmail1 = wp_mail($recipientto, $recipientsub, $recipientmsg, $headers, $attachments_user);
                         }
                     }

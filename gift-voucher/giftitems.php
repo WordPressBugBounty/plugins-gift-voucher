@@ -664,8 +664,15 @@ function wpgv_giftitems_shortcode($atts = '')
 
 function wpgv__doajax_get_itemcat_image()
 {
-    $catid = sanitize_text_field($_REQUEST['catid']);
-    $image_id = get_term_meta($catid, 'wpgv-voucher-category-image-id', true);
+    $catid = isset($_REQUEST['catid']) ? absint(wp_unslash($_REQUEST['catid'])) : 0;
+    $term = $catid ? get_term($catid, 'wpgv_voucher_category') : null;
+
+    // Chỉ phục vụ term thuộc taxonomy của plugin, không đọc meta của term bất kỳ.
+    if (!$term || is_wp_error($term)) {
+        wp_send_json_error(array('message' => __('Invalid category.', 'gift-voucher')), 400);
+    }
+
+    $image_id = get_term_meta($term->term_id, 'wpgv-voucher-category-image-id', true);
     $image_attributes = wp_get_attachment_image_src($image_id, 'full');
     $itemimage = ($image_attributes) ? esc_url($image_attributes[0]) : esc_url(get_option('wpgv_demoimageurl'));
 
@@ -681,7 +688,17 @@ function wpgv__doajax_get_itemcat_image()
 
 function wpgv__doajax_get_item_data()
 {
-    $item_id = sanitize_text_field($_REQUEST['itemid']);
+    $item_id = isset($_REQUEST['itemid']) ? absint(wp_unslash($_REQUEST['itemid'])) : 0;
+
+    // Chỉ phục vụ gift item đã publish. Không để lộ tiêu đề/meta của post nháp,
+    // riêng tư hay của post type khác qua endpoint nopriv này.
+    if (!$item_id
+        || get_post_type($item_id) !== 'wpgv_voucher_product'
+        || get_post_status($item_id) !== 'publish'
+    ) {
+        wp_send_json_error(array('message' => __('Invalid item.', 'gift-voucher')), 400);
+    }
+
     $image_styles = array();
 
     for ($i = 0; $i < 3; $i++) {

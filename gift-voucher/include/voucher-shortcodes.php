@@ -111,8 +111,11 @@ function wpgv_voucher_successful_shortcode()
 			$headersadmin .= 'From: ' . $setting_options->sender_name . ' <' . $setting_options->sender_email . '>' . "\r\n";
 			$headersadmin .= 'Reply-to: ' . $voucher_options->from_name . ' <' . $voucher_options->email . '>' . "\r\n";
 
-			if ($check_send_mail === 'unsent') {
+			// Claim before sending, then close the claim, so a page reload can
+			// not queue another copy of this email.
+			if ($check_send_mail === 'unsent' && wpgv_claim_voucher_mail_send($voucheritem)) {
 				wp_mail($toadmin, $subadmin, $bodyadmin, $headersadmin, $attachments);
+				update_check_send_mail($voucheritem, 'sent');
 			}
 
 			$successpagemessage = get_option('wpgv_successpagemessage') ? get_option('wpgv_successpagemessage') : 'We have got your order! <br>Please complete payment process and contact us for further details';
@@ -142,53 +145,56 @@ function wpgv_voucher_successful_shortcode()
 			$headers .= 'From: ' . $setting_options->sender_name . ' <' . $setting_options->sender_email . '>' . "\r\n";
 			$headers .= 'Reply-to: ' . $setting_options->sender_name . ' <' . $setting_options->sender_email . '>' . "\r\n";
 
+			// One atomic claim covers all three emails below. Without it every
+			// reload of this URL sends another set, each with the PDFs attached.
+			$can_send = ($check_send_mail === 'unsent') && wpgv_claim_voucher_mail_send($voucheritem);
+
 			/* Recipient Mail */
-			if ($voucher_options->shipping_type != 'shipping_as_post') {
+			if ($can_send && $voucher_options->shipping_type != 'shipping_as_post') {
 				$recipientsub = wpgv_mailvarstr($recipientemailsubject, $setting_options, $voucher_options);
 				$recipientmsg = wpgv_mailvarstr($recipientemailbody, $setting_options, $voucher_options);
 				$recipientto = $voucher_options->to_name . '<' . $voucher_options->shipping_email . '>';
 				if ($voucher_options->buying_for == 'yourself') {
 					$recipientto = $voucher_options->from_name . '<' . $voucher_options->email . '>';
 				}
-				if ($check_send_mail === 'unsent') {
-					wp_mail($recipientto, $recipientsub, $recipientmsg, $headers, $attachments);
-				}
+				wp_mail($recipientto, $recipientsub, $recipientmsg, $headers, $attachments);
 			}
 
 			$attachments[1] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link, '-receipt');
 
-			/* Buyer Mail */
-			$buyersub = wpgv_mailvarstr($emailsubject, $setting_options, $voucher_options);
-			$buyermsg = wpgv_mailvarstr($emailbody, $setting_options, $voucher_options);
-			$buyerto = $voucher_options->from_name . '<' . $voucher_options->email . '>';
-			$mail_sent = false;
-			if ($check_send_mail === 'unsent') {
-				$mail_sent = wp_mail($buyerto, $buyersub, $buyermsg, $headers, $attachments);
-			}
 			$successpagemessage = get_option('wpgv_successpagemessage') ? get_option('wpgv_successpagemessage') : 'We have got your order! <br>E-Mail Sent Successfully to %s';
 
+			$mail_sent = false;
+			if ($can_send) {
+				/* Buyer Mail */
+				$buyersub = wpgv_mailvarstr($emailsubject, $setting_options, $voucher_options);
+				$buyermsg = wpgv_mailvarstr($emailbody, $setting_options, $voucher_options);
+				$buyerto = $voucher_options->from_name . '<' . $voucher_options->email . '>';
+				$mail_sent = wp_mail($buyerto, $buyersub, $buyermsg, $headers, $attachments);
 
-			if ($is_per_invoice_request) {
-				$return .= $setting_options->bank_info;
-			}
-			if ($mail_sent == 1) {
-				$return .= '<div class="success">' . sprintf(stripslashes($successpagemessage), $voucher_options->email) . '</div>';
+				/* Admin Mail — sent once regardless of the buyer result, so the
+				   shop still gets its copy when the buyer address bounces. */
 				$toadmin = $setting_options->sender_name . ' <' . $setting_options->sender_email . '>';
 				$subadmin = wpgv_mailvarstr($adminemailsubject, $setting_options, $voucher_options);
 				$bodyadmin = wpgv_mailvarstr($adminemailbody, $setting_options, $voucher_options);
 				$headersadmin = 'Content-type: text/html;charset=utf-8' . "\r\n";
 				$headersadmin .= 'From: ' . $setting_options->sender_name . ' <' . $setting_options->sender_email . '>' . "\r\n";
 				$headersadmin .= 'Reply-to: ' . $voucher_options->from_name . ' <' . $voucher_options->email . '>' . "\r\n";
-				if ($check_send_mail === 'unsent') {
-					wp_mail($toadmin, $subadmin, $bodyadmin, $headersadmin, $attachments);
-					update_check_send_mail($voucheritem, 'sent');
-				}
+				wp_mail($toadmin, $subadmin, $bodyadmin, $headersadmin, $attachments);
+
+				// Close the claim even when wp_mail() failed: reloading must not
+				// retry. The admin resends from the voucher list instead.
+				update_check_send_mail($voucheritem, 'sent');
+			}
+
+			if ($is_per_invoice_request) {
+				$return .= $setting_options->bank_info;
+			}
+
+			if ($can_send && !$mail_sent) {
+				$return .= '<div class="error"><p>' . esc_html__('Your order has been recorded, but we could not send the confirmation email. Please contact us and we will resend it.', 'gift-voucher') . '</p></div>';
 			} else {
-				if ($check_send_mail === 'unsent') {
-					$return .= '<div class="error"><p>' . __('Some Error Occurred From Sending this Email! <br>(Reload and Retry Again!) or Contact Us', 'gift-voucher') . '</p></div>';
-				} elseif ($check_send_mail === 'sent') {
-					$return .= '<div class="success">' . sprintf(stripslashes($successpagemessage), $voucher_options->email) . '</div>';
-				}
+				$return .= '<div class="success">' . sprintf(stripslashes($successpagemessage), $voucher_options->email) . '</div>';
 			}
 		}
 	} else {
@@ -428,6 +434,41 @@ function update_check_send_mail($voucher_id, $new_status)
 		array('%s'),
 		array('%d')
 	);
+}
+
+/**
+ * Claim the right to send the confirmation emails for one voucher.
+ *
+ * The success page is a plain GET URL, so a buyer can reload it as often as
+ * they like inside the one hour freshness window. Reading `check_send_mail`
+ * is not enough on its own: unless the row is also updated, every reload
+ * sends another copy of the emails, each carrying the voucher PDFs.
+ *
+ * The conditional UPDATE is the atomic gate — only the first request flips
+ * `unsent` to `sending` and gets a true back. This mirrors
+ * wpgv_send_stripe_voucher_emails_once() in /include/stripe-fulfillment.php.
+ *
+ * @param int $voucher_id giftvouchers_list.id
+ * @return bool True when this request may send, false when someone else owns it.
+ */
+function wpgv_claim_voucher_mail_send($voucher_id)
+{
+	global $wpdb;
+
+	$voucher_id = absint($voucher_id);
+	if ($voucher_id <= 0) {
+		return false;
+	}
+
+	$voucher_table = $wpdb->prefix . 'giftvouchers_list';
+	$claimed = $wpdb->query($wpdb->prepare(
+		"UPDATE `{$voucher_table}` SET `check_send_mail` = %s WHERE `id` = %d AND `check_send_mail` = %s",
+		'sending',
+		$voucher_id,
+		'unsent'
+	));
+
+	return (int) $claimed === 1;
 }
 
 

@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.7.4
+ * Version: 4.7.5
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.7.4');
+define('WPGIFT_VERSION', '4.7.5');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -689,6 +689,9 @@ add_action('init', function() {
   require_once(WPGIFT__PLUGIN_DIR . '/include/receipt-functions.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/admin_regenerate_modern_pdf.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/admin_regenerate_standard_pdf.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/include/db-transfer-common.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/include/export_giftcard_db.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/include/import_giftcard_db.php');
 
   if (wpgv_is_woocommerce_enable()) {
     require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-voucher-product-list.php');

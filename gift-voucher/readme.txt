@@ -2,8 +2,8 @@
 Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
-Tested up to: 7.0.1
-Stable tag: 4.7.4
+Tested up to: 7.1
+Stable tag: 4.7.5
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -86,6 +86,7 @@ This plugin provides two types of voucher booking forms. They are,
 * Create unlimited gift categories.
 * Generate Gift Vouchers from admin.
 * Export all orders from order page.
+* Export the whole gift card database (gift cards + activity history) to a JSON file, and import it back on another site.
 * Admin can set options like sender name, email, company name along with company details on templates from plugin settings.
 * Manage and customize inspirational quotes collection for customer use in personal messages.
 * Admin can customize email templates both for itself and its customers.
@@ -222,6 +223,20 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.7.5 - Released: August 21, 2026 =
+* Feature: Export the whole gift card database (gift cards + activity history) to a JSON file from Gift Voucher Orders &rarr; Export Database.
+* Feature: Import a JSON export back into any site from Gift Voucher Orders &rarr; Import Database, with a Merge or Add-only mode.
+* Security: The gift voucher success page now sends the order emails only once - reloading it no longer re-sends the buyer, recipient and shop emails with their PDF attachments.
+* Security: The public AJAX helpers now only return published gift items, gift voucher categories and existing templates, so titles and details of draft or private content can no longer be read by visitors.
+* Security: Editing a gift card's price, expiry date or note now requires an administrator; those actions are no longer registered for logged-out visitors and a price change can only touch the activity entry that belongs to the gift card being edited.
+* Security: Debug logging is now written only while WP_DEBUG is enabled, and it no longer records server paths or gift card PDF file names, so the log can no longer be used to look up gift card codes.
+* Fix: Editing the price of a gift card worth 1,000 or more no longer stores a truncated amount in the activity history.
+* Improvement: Import skips gift cards whose code is already used by a different gift card, so existing data is never overwritten by a code clash.
+* Improvement: Import can reconnect imported gift cards to local templates and items that carry the same name, and reports the references it could not match.
+* Improvement: Re-importing the same file is idempotent - gift cards are updated in place and activity entries are de-duplicated instead of piling up.
+* Improvement: The shop is now notified about a new order even when the buyer's confirmation email cannot be delivered, and the success page no longer asks the customer to reload the page to retry.
+* Improvement: Removed a leftover diagnostic that ran a full backtrace on every WooCommerce order status change of a Stripe order.
 
 = Version 4.7.4 - Released: August 03, 2026 =
 * Fix: Prevented output buffer cleanup from interfering with page caching plugins.

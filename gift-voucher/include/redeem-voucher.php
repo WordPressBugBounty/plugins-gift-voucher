@@ -37,9 +37,6 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
                 add_filter('woocommerce_paypal_args', array($this, 'woocommerce_paypal_args'), 10, 2);
                 add_filter('woocommerce_payment_complete_order_status', array($this, 'filter_woocommerce_payment_complete_order_status_gift_voucher'), 10, 3);
 
-                // Temporary: log status changes for Stripe orders to trace who sets order status
-                add_action('woocommerce_order_status_changed', array($this, 'wpgv_log_order_status_change'), 10, 4);
-
                 add_action('wp_ajax_nopriv_wpgv-gift-voucher-redeem', array($this, 'wpgv_ajax_redeem'));
                 add_action('wp_ajax_wpgv-gift-voucher-redeem', array($this, 'wpgv_ajax_redeem'));
 
@@ -373,7 +370,7 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
                         'quantity' => $item->get_quantity(),
                     );
                 }
-                error_log('WPGV_STATUS_DEBUG: order_id=' . $order_id . ', status_in=' . $status . ', payment_method=' . $order->get_payment_method() . ', needs_shipping=' . ( $order->needs_shipping() ? '1' : '0' ) . ', items=' . json_encode( $items ));
+                error_log('WPGV_STATUS_DEBUG: order_id=' . $order_id . ', status_in=' . $status . ', payment_method=' . $order->get_payment_method() . ', needs_shipping=' . ( $order->needs_shipping() ? '1' : '0' ) . ', items=' . json_encode( $items )); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- debug-only diagnostic.
             }
 
             // Only adjust for Stripe payments
@@ -402,27 +399,6 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
             }
 
             return $status;
-        }
-
-        // Temporary logger to capture who/what sets order status for Stripe orders
-        function wpgv_log_order_status_change($order_id, $old_status, $new_status, $order)
-        {
-            if (! $order || ! $order instanceof WC_Order) {
-                return;
-            }
-
-            $pm = $order->get_payment_method();
-            if ( strpos( $pm, 'stripe' ) === false ) {
-                return;
-            }
-
-            $bt = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
-            $callers = array();
-            foreach ( $bt as $b ) {
-                $callers[] = (isset($b['function']) ? $b['function'] : '') . (isset($b['class']) ? ' in ' . $b['class'] : '');
-            }
-
-            error_log('WPGV_STATUS_CHANGE: order=' . $order_id . ', old=' . $old_status . ', new=' . $new_status . ', pm=' . $pm . ', callers=' . json_encode($callers));
         }
 
         // Ensure we have the right total, even after recalculations and such.

@@ -466,3 +466,62 @@
 .wpgv-secret-toggle:focus {
 	color: #135e96;
 }
+
+/* Import / export gift card database */
+.wpgv-import-panel {
+	margin-top: 20px;
+	max-width: 780px;
+}
+
+.wpgv-import-card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+}
+
+.wpgv-import-card__header {
+	padding: 16px 20px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.wpgv-import-card__header h2 {
+	margin: 0 0 6px;
+	font-size: 16px;
+}
+
+.wpgv-import-card__header p {
+	margin: 0;
+	color: #50575e;
+}
+
+.wpgv-import-card__body {
+	padding: 16px 20px;
+}
+
+.wpgv-import-card__modes {
+	margin: 18px 0;
+	padding: 12px 16px;
+	border: 1px solid #dcdcde;
+	background: #f6f7f7;
+}
+
+.wpgv-import-card__modes legend {
+	padding: 0 4px;
+}
+
+.wpgv-import-card__modes label {
+	display: inline-block;
+	margin: 4px 0;
+}
+
+.wpgv-import-card__warning ul {
+	margin: 6px 0 6px 18px;
+	list-style: disc;
+}
+
+.wpgv-import-card .submit {
+	margin: 0;
+	padding: 12px 20px;
+	border-top: 1px solid #dcdcde;
+	background: #f6f7f7;
+}

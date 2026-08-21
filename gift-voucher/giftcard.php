@@ -340,7 +340,9 @@ function getSelectTemplateVoucher()
                 }
             } else {
                 // Log remote fetch errors for debugging but don't expose internal details to the client
-                error_log('wpgv: failed to fetch template json at ' . $json_url . ' - ' . $response->get_error_message());
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('wpgv: failed to fetch template json at ' . $json_url . ' - ' . $response->get_error_message()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- debug-only diagnostic.
+                }
             }
         }
     }

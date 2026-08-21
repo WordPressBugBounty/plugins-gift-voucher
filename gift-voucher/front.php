@@ -586,8 +586,15 @@ function wpgv__doajax_front_template()
     global $wpdb;
     $template_table = $wpdb->prefix . 'giftvouchers_template';
     $template_id = isset($_REQUEST['template_id']) ? (int) base64_decode(sanitize_text_field(wp_unslash($_REQUEST['template_id']))) : 0;
-    $template_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_template WHERE id = %d", $template_id));
+    $template_options = $template_id
+        ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_template WHERE id = %d", $template_id))
+        : null;
 
+    // template_id rác -> get_row() trả null. Chốt ở đây thay vì để PHP 8 cảnh báo
+    // "Attempt to read property on null" ở mỗi dòng phía dưới.
+    if (!$template_options) {
+        wp_send_json_error(array('message' => __('Invalid template.', 'gift-voucher')), 400);
+    }
 
     $images = $template_options->image_style ? json_decode($template_options->image_style) : ['', '', ''];
     $image_styles = array();
