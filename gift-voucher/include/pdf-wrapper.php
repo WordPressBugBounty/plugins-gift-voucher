@@ -966,7 +966,7 @@ function wpgv_get_standard_pdf_args_for_voucher($voucher_data, $style = null)
             $args['formtype'] = 'item';
             $args['image_path'] = $image_path ? $image_path : get_option('wpgv_demoimageurl_item');
             $args['title'] = get_the_title($item_id);
-            $args['description'] = esc_html(get_post_meta($item_id, 'description', true));
+            $args['description'] = esc_html(wpgv_item_meta($item_id, 'description'));
             $args['hide_price'] = get_option('wpgv_hide_price_item') ? get_option('wpgv_hide_price_item') : 0;
             break;
 

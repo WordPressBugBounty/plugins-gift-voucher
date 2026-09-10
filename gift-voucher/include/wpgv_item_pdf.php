@@ -61,19 +61,65 @@ function wpgv__doajax_item_pdf_save_func()
 		wp_die();
 	}
 
+	// Invariant #3 of docs-ai/README.md: everything is validated before the first
+	// write, so a rejected request leaves no order row, no coupon code and no PDF.
+	// This block used to run partly after $wpdb->insert(); see fix 12.
+
+	$itemid = (int) $itemid;
+	if (!wpgv_is_purchasable_gift_item($itemid)) {
+		wp_send_json_error(array('message' => __('Invalid gift item selected.', 'gift-voucher')), 400);
+		wp_die();
+	}
+
+	// catid is optional - the form omits it when no category filter is used - but
+	// a supplied value must be a real term of the item taxonomy.
+	$catid = (int) $catid;
+	if ($catid > 0) {
+		$term = get_term($catid, WPGV_CATEGORY_TAXONOMY);
+		if (!$term || is_wp_error($term)) {
+			wp_send_json_error(array('message' => __('Invalid gift item category.', 'gift-voucher')), 400);
+			wp_die();
+		}
+	}
+
+	// Shipping is resolved through the shared helper, which rejects a method that
+	// matches nothing in the settings. The old inline loop silently charged zero
+	// for an unknown method, so a made-up shipping_method meant free shipping.
+	$shipping_charges = wpgv_get_shipping_charge_amount($shipping, $shipping_method, $setting_options);
+	if (is_wp_error($shipping_charges)) {
+		wp_send_json_error(array('message' => $shipping_charges->get_error_message()), 400);
+		wp_die();
+	}
+
+	// $price is the FACE VALUE: it goes into giftvouchers_list.amount and becomes
+	// the recipient's balance. $value is what the BUYER PAYS. An item priced 100
+	// with a special price of 80 charges 80 and credits 100 - that gap is the
+	// promotion, confirmed by the product owner. Never collapse the two.
+	// See docs-ai/AI_DATA_FLOW.md "Face value vs promotional price".
+	$price = esc_html(wpgv_item_meta($itemid, 'price'));
+	$special_price = esc_html(wpgv_item_meta($itemid, 'special_price'));
+
+	// Guard the face value before a coupon code is minted, so a rejected request
+	// does not burn one. Deliberately NOT wpgv_validate_public_voucher_amount():
+	// that helper also enforces the voucher_min_value / voucher_max_value range,
+	// which exists for amounts a customer types into the standard form. An item
+	// price is set by the shop owner, so applying that range would reject
+	// legitimate items on any site whose minimum is above its cheapest item.
+	$normalized_price = wpgv_normalize_decimal_amount($price);
+	if ($normalized_price === null || $normalized_price <= 0) {
+		wp_send_json_error(array('message' => __('This gift item has no valid price.', 'gift-voucher')), 400);
+		wp_die();
+	}
+
 	$code = wpgv_generate_unique_couponcode();
 	if (is_wp_error($code)) {
 		wp_send_json_error(array('message' => $code->get_error_message()));
 		wp_die();
 	}
-	$image = get_attached_file(get_post_thumbnail_id($itemid)) ? get_attached_file(get_post_thumbnail_id($itemid)) : get_option('wpgv_demoimageurl_item');
 	$voucher_bgcolor = wpgv_hex2rgb($setting_options->voucher_bgcolor);
 	$voucher_color = wpgv_hex2rgb($setting_options->voucher_color);
 
-	$price = esc_html(get_post_meta($itemid, 'price', true));
-	$special_price = esc_html(get_post_meta($itemid, 'special_price', true));
 	$value = $price;
-
 	$currency = wpgv_price_format($value);
 	$value = ($special_price) ? $special_price : $price;
 
@@ -110,7 +156,7 @@ function wpgv__doajax_item_pdf_save_func()
 		$stripeimage = (wp_get_attachment_image_src($style_image)) ? wp_get_attachment_image_src($style_image) : get_option('wpgv_demoimageurl_item');
 	} else {
 		$voucher_style = 0;
-		$style_image = esc_html(get_post_meta($itemid, 'style1_image', true));
+		$style_image = esc_html(wpgv_item_meta($itemid, 'style1_image'));
 		$image_attributes = get_attached_file($style_image);
 		$image = ($image_attributes) ? $image_attributes : get_option('wpgv_demoimageurl_item');
 		$stripeimage = (wp_get_attachment_image_src($style_image)) ? wp_get_attachment_image_src($style_image) : get_option('wpgv_demoimageurl_item');
@@ -125,7 +171,7 @@ function wpgv__doajax_item_pdf_save_func()
 				'formtype' => $formtype,
 				'image_path' => $image,
 				'title' => get_the_title($itemid),
-				'description' => esc_html(get_post_meta($itemid, 'description', true)),
+				'description' => esc_html(wpgv_item_meta($itemid, 'description')),
 				'for' => $for,
 				'from' => $from,
 				'buyingfor' => $buyingfor,
@@ -194,19 +240,10 @@ function wpgv__doajax_item_pdf_save_func()
 	$order_key = wpgv_create_voucher_order_key($lastid);
 	WPGV_Gift_Voucher_Activity::record($lastid, 'create', '', 'Voucher ordered by ' . $for . ', Message: ' . $message);
 
-	$shipping_charges = 0;
-
-	if ($shipping != 'shipping_as_email') {
-		$preshipping_methods = explode(',', $setting_options->shipping_method);
-		foreach ($preshipping_methods as $method) {
-			$preshipping_method = explode(':', $method);
-			if (trim(stripslashes($preshipping_method[1])) == $shipping_method) {
-				$value += trim($preshipping_method[0]);
-				$shipping_charges = trim($preshipping_method[0]);
-				break;
-			}
-		}
-	}
+	// $shipping_charges was resolved before the insert. The loop that used to sit
+	// here indexed $preshipping_method[1] without checking it existed, and treated
+	// an unmatched method as zero cost.
+	$value += $shipping_charges;
 	$value += $wpgv_add_extra_charges;
 
 
@@ -245,7 +282,9 @@ function wpgv__doajax_item_pdf_save_func()
 				$request->body = [
 					"intent" => "CAPTURE",
 					"purchase_units" => [[
-						"reference_id" => $template_options->title,
+						// $template_options only exists in the standard voucher flow;
+						// here it was undefined, so PayPal received a null reference_id.
+						"reference_id" => get_the_title($itemid),
 						"amount" => [
 							"value" => $value,
 							"currency_code" => $setting_options->currency_code

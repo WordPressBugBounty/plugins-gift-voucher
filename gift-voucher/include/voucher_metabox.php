@@ -18,17 +18,17 @@ if (! class_exists('WPGV_Voucher_Taxonomy_Image')) {
     public function init()
     {
       // Image actions
-      add_action('wpgv_voucher_category_add_form_fields', array($this, 'add_category_image'), 10, 2);
-      add_action('created_wpgv_voucher_category', array($this, 'save_category_image'), 10, 2);
-      add_action('wpgv_voucher_category_edit_form_fields', array($this, 'update_category_image'), 10, 2);
-      add_action('edited_wpgv_voucher_category', array($this, 'updated_category_image'), 10, 2);
+      add_action(WPGV_CATEGORY_TAXONOMY . '_add_form_fields', array($this, 'add_category_image'), 10, 2);
+      add_action('created_' . WPGV_CATEGORY_TAXONOMY, array($this, 'save_category_image'), 10, 2);
+      add_action(WPGV_CATEGORY_TAXONOMY . '_edit_form_fields', array($this, 'update_category_image'), 10, 2);
+      add_action('edited_' . WPGV_CATEGORY_TAXONOMY, array($this, 'updated_category_image'), 10, 2);
       add_action('admin_enqueue_scripts', array($this, 'load_media'));
       add_action('admin_footer', array($this, 'add_script'));
     }
 
     public function load_media()
     {
-      if (! isset($_GET['taxonomy']) || $_GET['taxonomy'] != 'wpgv_voucher_category') {
+      if (! isset($_GET['taxonomy']) || $_GET['taxonomy'] != WPGV_CATEGORY_TAXONOMY) {
         return;
       }
       wp_enqueue_media();
@@ -108,7 +108,7 @@ if (! class_exists('WPGV_Voucher_Taxonomy_Image')) {
      */
     public function add_script()
     {
-      if (! isset($_GET['taxonomy']) || $_GET['taxonomy'] != 'wpgv_voucher_category') {
+      if (! isset($_GET['taxonomy']) || $_GET['taxonomy'] != WPGV_CATEGORY_TAXONOMY) {
         return;
       } ?>
       <script>
@@ -166,7 +166,15 @@ if (! class_exists('WPGV_Voucher_Taxonomy_Image')) {
 // Add the voucher Meta Boxes
 function wpgv_add_voucher_metaboxes()
 {
-  add_meta_box('wpgv_voucher_amount', 'Item Details', 'wpgv_voucher_amount', 'wpgv_voucher_product', 'normal', 'default');
+  add_meta_box('wpgv_voucher_amount', __('Item Details', 'gift-voucher'), 'wpgv_voucher_amount', 'wpgv_voucher_product', 'normal', 'default');
+
+  // Registered unconditionally on the unified type, not only when the post is
+  // already an item. Gating on wpgv_is_item() meant a brand new post - which has
+  // no kind yet - never got this box, so gift items could not be created at all.
+  // The Gift Card Data box hides it when the selected Type is not Gift Item.
+  if (wpgv_unified_cpt_enabled()) {
+    add_meta_box('wpgv_voucher_amount', __('Item Details', 'gift-voucher'), 'wpgv_voucher_amount', 'voucher_template', 'normal', 'default');
+  }
 }
 add_action('add_meta_boxes', 'wpgv_add_voucher_metaboxes');
 
@@ -194,12 +202,12 @@ function wpgv_voucher_amount()
 
   // Get the location data if its already been entered
 
-  $description = esc_html(get_post_meta($post->ID, 'description', true));
-  $price = esc_html(get_post_meta($post->ID, 'price', true));
-  $special_price = esc_html(get_post_meta($post->ID, 'special_price', true));
-  $style1_image = esc_html(get_post_meta($post->ID, 'style1_image', true));
-  $style2_image = esc_html(get_post_meta($post->ID, 'style2_image', true));
-  $style3_image = esc_html(get_post_meta($post->ID, 'style3_image', true));
+  $description = esc_html(wpgv_item_meta($post->ID, 'description'));
+  $price = esc_html(wpgv_item_meta($post->ID, 'price'));
+  $special_price = esc_html(wpgv_item_meta($post->ID, 'special_price'));
+  $style1_image = esc_html(wpgv_item_meta($post->ID, 'style1_image'));
+  $style2_image = esc_html(wpgv_item_meta($post->ID, 'style2_image'));
+  $style3_image = esc_html(wpgv_item_meta($post->ID, 'style3_image'));
   // Echo out the field
   echo '<p class="post-attributes-label-wrapper"><label class="post-attributes-label" for="description">' . esc_html__('Description', 'gift-voucher') . ': (20 Words)</label></p>';
   echo '<textarea name="description" id="description" class="widefat">' . esc_textarea($description) . '</textarea><div class="dt_hr dt_hr-bottom"></div>';
@@ -301,6 +309,17 @@ function wpt_save_voucher_meta($post_id, $post)
   if (!current_user_can('edit_post', $post->ID))
     return $post->ID;
 
+  // The Item Details box is now registered on every record of the unified type
+  // so it exists on the create screen. Only write its fields when the record is
+  // actually a gift item, otherwise saving a gift card would stamp item meta -
+  // price included - onto it.
+  if (wpgv_unified_cpt_enabled()
+    && get_post_type($post->ID) === 'voucher_template'
+    && wpgv_kind_being_saved($post->ID) !== 'item'
+  ) {
+    return $post->ID;
+  }
+
   // OK, we're authenticated: we need to find and save the data
   // We'll put it into an array to make it easier to loop though.
   $events_meta['description'] = sanitize_textarea_field($_POST['description']);
@@ -341,19 +360,17 @@ function wpt_save_voucher_meta($post_id, $post)
     }
   }
 
-  // Add values of $events_meta as custom fields
+  // Add values of $events_meta as custom fields.
+  //
+  // Written through wpgv_sync_item_meta(), which keeps the bare key and its
+  // _wpgv_ prefixed copy in step. Updating only the bare key would leave the
+  // prefixed copy stale, and reads prefer the prefixed one, so an edited price
+  // would keep displaying its old value.
   foreach ($events_meta as $key => $value) { // Cycle through the $events_meta array!
     if ($post->post_type == 'revision') return; // Don't store custom data twice
     $value = implode(',', (array)$value); // If $value is an array, make it a CSV (unlikely)
     $post_id = (int) sanitize_text_field($post->ID);
-    if (esc_html(get_post_meta($post_id, $key, FALSE))) { // If the custom field already has a value
-
-      update_post_meta($post_id, $key, $value);
-    } else { // If the custom field doesn't have a value
-
-      add_post_meta($post_id, $key, $value);
-    }
-    if (!$value) delete_post_meta($post_id, $key); // Delete if blank
+    wpgv_sync_item_meta($post_id, $key, $value); // Clears both copies when blank
   }
 
   // If any invalid images were detected, add a query arg so we can show
@@ -611,10 +628,28 @@ class Template_Voucher
             {
               if (! isset($_POST['wpgv_customize_template_nonce']))
                 return $post_id;
-              $nonce = $_POST['wpgv_customize_template_nonce'];
+              $nonce = sanitize_text_field(wp_unslash($_POST['wpgv_customize_template_nonce']));
               if (!wp_verify_nonce($nonce, 'wpgv_customize_template_data'))
                 return $post_id;
               if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE)
+                return $post_id;
+              $post_id = (int) $post_id;
+              // save_post fires for every post type; this metabox belongs to voucher_template only.
+              if (!in_array(get_post_type($post_id), $this->screens, true))
+                return $post_id;
+              // Gift items and standard templates share this post type after the
+              // merge; this box belongs to gift cards only. Reads the kind being
+              // saved, not the stored one, so it is correct on a new record too.
+              //
+              // An indeterminate kind is allowed through rather than blocked: a
+              // record with none becomes a card by default, so blocking here
+              // would drop the very fields that default implies.
+              $saving_kind = wpgv_unified_cpt_enabled() ? wpgv_kind_being_saved($post_id) : 'card';
+              if ($saving_kind !== '' && $saving_kind !== 'card')
+                return $post_id;
+              if (wp_is_post_revision($post_id))
+                return $post_id;
+              if (!current_user_can('edit_post', $post_id))
                 return $post_id;
               foreach ($this->fields as $field) {
                 if (isset($_POST[$field['id']])) {
@@ -623,15 +658,14 @@ class Template_Voucher
                       $_POST[$field['id']] = (int) sanitize_email($_POST[$field['id']]);
                       break;
                     case 'text':
-                      $_POST[$field['id']] = (int) sanitize_text_field($_POST[$field['id']]);
+                      $_POST[$field['id']] = sanitize_text_field($_POST[$field['id']]);
+                      break;
                     case 'number':
                       $_POST[$field['id']] = (int) sanitize_text_field($_POST[$field['id']]);
                       break;
                   }
-                  $post_id = (int) sanitize_text_field($post_id);
                   update_post_meta($post_id, 'wpgv_customize_template_' . sanitize_text_field($field['id']), sanitize_text_field($_POST[$field['id']]));
                 } else if ($field['type'] === 'checkbox') {
-                  $post_id = (int) sanitize_text_field($post_id);
                   update_post_meta($post_id, 'wpgv_customize_template_' . sanitize_text_field($field['id']), '0');
                 }
               }

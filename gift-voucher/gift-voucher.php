@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.7.5
+ * Version: 4.8.0
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.7.5');
+define('WPGIFT_VERSION', '4.8.0');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -43,6 +43,17 @@ define('WPGV_RECIPIENT_NAME_META_KEY', 'wpgv_recipient_name');
 define('WPGV_RECIPIENT_EMAIL_META_KEY', 'wpgv_recipient_email');
 define('WPGV_YOUR_EMAIL_META_KEY', 'wpgv_your_email');
 define('WPGV_MESSAGE_META_KEY', 'wpgv_message');
+
+// Loaded at file scope, not on init, because voucher_posttype.php registers the
+// post types on init priority 0 - earlier than the main require block below -
+// and needs wpgv_unified_cpt_enabled() at that point. The file only declares
+// constants and functions, so loading it this early is safe.
+require_once(WPGIFT__PLUGIN_DIR . '/include/unified-cpt.php');
+
+if (is_admin()) {
+  require_once(WPGIFT__PLUGIN_DIR . '/include/unified-cpt-admin.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/include/unified-cpt-metabox.php');
+}
 
 // Load the Cart/Checkout Blocks integration before WooCommerce initializes its
 // block registries, while keeping classic pages on the existing flow.
@@ -83,6 +94,94 @@ function wpgv_db_column_exists($table_name, $column_name)
   }
 
   return (bool) $wpdb->get_var("SHOW COLUMNS FROM `{$table_name}` LIKE '{$column_name}'");
+}
+
+/**
+ * Add giftvouchers_list.template_kind and settle it for existing orders.
+ *
+ * Named rather than inlined into the admin_init closure so tests can drive the
+ * upgrade directly instead of having to load an admin page first.
+ *
+ * Idempotent: the column is only added when missing, and the backfill only
+ * touches rows that are still NULL.
+ *
+ * @return int Rows backfilled in this call.
+ */
+function wpgv_upgrade_template_kind_column()
+{
+  global $wpdb;
+
+  $list = $wpdb->prefix . 'giftvouchers_list';
+
+  if (!wpgv_db_table_exists($list)) {
+    return 0;
+  }
+
+  // template_id is a polymorphic foreign key: it addresses giftvouchers_template
+  // for standard orders and a voucher_template post for modern ones, with no
+  // discriminator column. The two id spaces can collide, so resolving it by
+  // inspection can rebuild an old voucher from the wrong template. This column
+  // records the answer once. See upgrade/01-hop-nhat-item-card-template.md 2.4.
+  if (!wpgv_db_column_exists($list, 'template_kind')) {
+    $wpdb->query("ALTER TABLE `{$list}` ADD template_kind VARCHAR(20) DEFAULT NULL");
+  }
+
+  return wpgv_backfill_template_kind();
+}
+
+/**
+ * Record the resolved template kind on orders that predate the template_kind column.
+ *
+ * Prefers the wpgv_pdf_template_kind meta that newer orders already store, and
+ * falls back to the legacy guess for older ones. Rows that cannot be resolved are
+ * left NULL so the resolver keeps guessing for them - that is no worse than the
+ * behaviour before this column existed.
+ *
+ * Idempotent: only touches rows whose template_kind is still NULL, and processes
+ * a bounded batch per call so large sites do not time out on a single page load.
+ *
+ * @param int $batch Maximum rows to inspect in this call.
+ * @return int Number of rows written in this call.
+ */
+function wpgv_backfill_template_kind($batch = 500)
+{
+  global $wpdb;
+
+  $list = $wpdb->prefix . 'giftvouchers_list';
+
+  if (!wpgv_db_column_exists($list, 'template_kind')) {
+    return 0;
+  }
+
+  $rows = $wpdb->get_results($wpdb->prepare(
+    "SELECT * FROM `{$list}` WHERE template_kind IS NULL LIMIT %d",
+    max(1, (int) $batch)
+  ));
+
+  if (!$rows) {
+    return 0;
+  }
+
+  $written = 0;
+
+  foreach ($rows as $row) {
+    // Newer orders already stored the answer when their PDF was built.
+    $kind = (string) get_post_meta($row->id, 'wpgv_pdf_template_kind', true);
+
+    if ($kind === '' && function_exists('wpgv_get_voucher_template_kind_by_guess')) {
+      $resolved = wpgv_get_voucher_template_kind_by_guess($row);
+      $kind = isset($resolved['kind']) ? (string) $resolved['kind'] : '';
+    }
+
+    if ($kind === '' || $kind === 'unknown') {
+      continue;
+    }
+
+    $wpdb->update($list, array('template_kind' => $kind), array('id' => (int) $row->id));
+    $written++;
+  }
+
+  return $written;
 }
 
 function wpgv_db_has_unique_index_for_column($table_name, $column_name)
@@ -657,6 +756,7 @@ add_action('init', function() {
   require_once(WPGIFT__PLUGIN_DIR . '/include/pdf-wrapper.php');
   require_once(WPGIFT__PLUGIN_DIR . '/classes/voucher.php');
   require_once(WPGIFT__PLUGIN_DIR . '/classes/template.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/classes/wpgv-template-repository.php');
   require_once(WPGIFT__PLUGIN_DIR . '/classes/page_template.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/wpgv_voucher_pdf.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/wpgv_item_pdf.php');
@@ -733,7 +833,12 @@ add_action('admin_init', function () {
     if (!wpgv_db_has_unique_index_for_column($giftvouchers_list, 'couponcode') && !wpgv_couponcode_has_duplicates()) {
       $wpdb->query("ALTER TABLE `{$giftvouchers_list}` ADD UNIQUE KEY `wpgv_couponcode_unique` (`couponcode`)");
     }
+
   }
+
+  // One entry point instead of seven scattered calls: it gates on an
+  // administrator, takes a lock, and stops running once there is nothing left.
+  wpgv_run_pending_migrations();
 
   if (wpgv_db_table_exists($giftvouchers_setting)) {
     if (!wpgv_db_column_exists($giftvouchers_setting, 'is_order_form_enable')) {
@@ -1227,7 +1332,7 @@ function wpgv_upgrade_completed($upgrader_object, $options)
           }
         }
 
-        $items = get_posts(array('posts_per_page' => -1, 'post_type' => 'wpgv_voucher_product'));
+        $items = get_posts(wpgv_item_query_args(array('posts_per_page' => -1)));
         foreach ($items as $item) {
           update_post_meta($item->ID, 'style1_image', get_post_thumbnail_id($item->ID));
         }

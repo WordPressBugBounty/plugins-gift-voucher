@@ -59,7 +59,7 @@ if ($setting_options->is_style_choose_enable) {
 	$image = ($image_attributes) ? $image_attributes : get_option('wpgv_demoimageurl_item');
 } else {
 	$voucher_style = 0;
-	$style_image = esc_html(get_post_meta($itemid, 'style1_image', true));
+	$style_image = esc_html(wpgv_item_meta($itemid, 'style1_image'));
 	$image_attributes = get_attached_file($style_image);
 	$image = ($image_attributes) ? $image_attributes : get_option('wpgv_demoimageurl_item');
 }
@@ -73,7 +73,7 @@ switch ($voucher_style) {
 			'formtype' => $formtype,
 			'image_path' => $image,
 			'title' => get_the_title($itemid),
-			'description' => esc_html(get_post_meta($itemid, 'description', true)),
+			'description' => esc_html(wpgv_item_meta($itemid, 'description')),
 			'for' => $for,
 			'from' => $from,
 			'buyingfor' => $buyingfor,

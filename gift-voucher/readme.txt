@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
 Requires at least: 4.0
 Tested up to: 7.1
-Stable tag: 4.7.5
+Stable tag: 4.8.0
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -223,6 +223,28 @@ If you have suggestions about how to improve Gift Cards plugin, you can [write t
 12. Check Voucher Balance
 
 == Changelog ==
+
+= Version 4.8.0 - Released: September 10, 2026 =
+* Update: Gift Items, Gift Cards and Voucher Templates are now created and managed from one list under a single Gift Cards menu. Add New Gift Card opens one screen where you pick the Type, and the fields change to match. Your existing records, their categories and their settings are moved across automatically and keep working; nothing is deleted.
+* Update: The menu is down to five entries - All Gift Cards, Add New Gift Card, Categories, Orders and Settings. The separate Voucher Templates screen and the second Categories entry are gone; everything they did now happens in the unified list.
+* Update: Gift item and gift card categories are now one shared list of categories. Every category you had, and every record filed under it, is carried over unchanged, and each order form still offers only the categories that apply to it.
+* Update: A record's Type is locked once orders have been placed with it, because those orders' PDFs are rebuilt from it. To offer the same thing as a different type, create a new record and leave the original in place so your order history stays intact.
+* Breaking: Direct links to a gift card template page (addresses beginning /voucher_template/) no longer open. Those pages only ever showed the template's name and no other content, and they were appearing in your site's own search results. Gift card templates are still used exactly as before through the [wpgv_giftcard] shortcode.
+* Breaking: Editing Gift Items now needs the same permission level as editing Gift Cards. Users with an Author or Contributor role who could previously edit gift items will no longer be able to; Editors and Administrators are unaffected.
+* Breaking: Gift Items no longer use a Featured Image. The picture on a gift item's PDF has always come from its Image - Style 1, 2 and 3 settings, so no PDF changes; the unused Featured Image box has simply been removed.
+* Security: A gift item order is now fully checked before anything is saved. Ordering with an invalid item, an invalid category, or a postal shipping method that does not exist is rejected outright instead of creating an order - previously an unrecognised shipping method was charged as free postage.
+* Security: Saving the "Customize Template" box on a gift card template now requires permission to edit that template, and the box only ever writes to gift card templates - a valid form token can no longer be reused to write template settings onto an unrelated post.
+* Security: Added the standard direct-access guard to the PayPal authentication file, so it can only run inside WordPress.
+* Security: Removed an unused 1,025-line WooCommerce product page file that was never loaded and had not been reviewed against the plugin's current output escaping rules.
+* Fix: Cancelling or refunding a WooCommerce order now stops the gift vouchers it issued from being spent. The step that was meant to do this looked for the voucher numbers under the wrong name and so never found any, leaving refunded vouchers fully usable. Deleting an order to the trash is covered too.
+* Fix: Completing a WooCommerce order a second time no longer issues a second set of gift vouchers. An order that went from completed to cancelled and back, or was trashed and restored, previously handed out another full set of codes and doubled the value it had given away. Only the codes an order is still short of are issued now.
+* Fix: The two functions that take a gift voucher out of use and put it back had their effects the wrong way round, so anything asking to disable a voucher enabled it, and the reverse. They are reachable through the WooCommerce order paths above.
+* Fix: Editing a voucher template now takes effect on the order form. Changes made on the old separate screen were saved but never reached the front end, so a renamed template kept showing its previous name to customers.
+* Fix: The order confirmation sent to PayPal now carries the gift item's name; it was previously sent empty for gift item orders.
+* Fix: Rebuilding the PDF of an older order now uses the template that order was actually bought with. The template was previously worked out by inspection, which could pick the wrong one on sites where a gift card and a voucher template happened to share the same internal number.
+* Fix: Corrected a missing branch break in the template settings box that would have converted future text settings to numbers.
+* Improvement: Gift item details are now stored under plugin-specific names, so they can no longer clash with data saved by other plugins. The previous names are kept in step, so any custom code you have that reads them keeps working.
+* Improvement: The release package now excludes internal development notes and test tooling, and those folders also deny direct web access on Apache.
 
 = Version 4.7.5 - Released: August 21, 2026 =
 * Feature: Export the whole gift card database (gift cards + activity history) to a JSON file from Gift Voucher Orders &rarr; Export Database.

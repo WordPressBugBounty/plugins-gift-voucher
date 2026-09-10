@@ -91,7 +91,15 @@ class WPGiftVoucherAdminPages
 	{
 		add_filter('set-screen-option', array(__CLASS__, 'set_screen'), 10, 3);
 		add_action('admin_menu', array($this, 'plugin_menu'));
-		add_action('admin_enqueue_scripts', array($this, 'hide_voucher_details_menu'));
+		// Deliberately NOT admin_menu. Core derives a plugin page's parent by
+		// scanning $submenu, so a row removed there makes get_admin_page_parent()
+		// return an empty string, the hookname resolve to admin_page_<slug> instead
+		// of the registered gift-cards_page_<slug>, and the access check in
+		// wp-admin/includes/menu.php answer 403 for a page that still exists.
+		//
+		// admin_head runs after that check and before menu-header.php draws the
+		// menu, so the row is gone from the sidebar while the page stays reachable.
+		add_action('admin_head', array($this, 'remove_hidden_submenus'));
 		add_action('admin_enqueue_scripts', array($this, 'admin_register_assets'));
 	}
 
@@ -101,17 +109,31 @@ class WPGiftVoucherAdminPages
 	}
 
 	/**
-	 * Hide View Voucher Details from sidebar menu but keep functionality
+	 * Drop submenu rows for pages that are only meaningful when reached with a
+	 * parameter, while leaving the pages themselves registered and working.
+	 *
+	 * This replaces a CSS rule that set display:none on those rows. CSS only
+	 * hides them visually - the markup, and the working link, stayed in the page.
+	 *
+	 * - view-voucher-details needs a voucher_id; it is reached from the View
+	 *   Details row action on the Orders list (classes/voucher.php).
+	 * - new-voucher-template is the Add form of the legacy template screen and is
+	 *   reached from that screen's own button.
+	 *
+	 * Runs late so every submenu is registered before anything is removed.
 	 */
-	public function hide_voucher_details_menu()
+	public function remove_hidden_submenus()
 	{
-		echo '<style>
-			#adminmenu a[href*="page=view-voucher-details"],
-			.wp-submenu a[href*="page=view-voucher-details"],
-			.wp-submenu a[href*="page=new-voucher-template"] {
-				display: none !important;
-			}
-		</style>';
+		remove_submenu_page('wpgv-gift-cards', 'view-voucher-details');
+		remove_submenu_page('wpgv-gift-cards', 'new-voucher-template');
+
+		// Standard templates are edited in the unified list once the merge is on.
+		// The old screen wrote straight to giftvouchers_template while the front
+		// end read the mirrored post, so edits made there never took effect.
+		// The page stays registered so an existing bookmark does not 404.
+		if (wpgv_unified_cpt_enabled()) {
+			remove_submenu_page('wpgv-gift-cards', 'voucher-templates');
+		}
 	}
 
 	/**
@@ -143,17 +165,26 @@ class WPGiftVoucherAdminPages
 	 */
 	public function plugin_menu()
 	{
-		add_menu_page('Gift Vouchers', 'Gift Vouchers', 'read', 'wpgv-gift-cards', '', 'dashicons-tickets-alt', 25);
-		add_submenu_page('wpgv-gift-cards', 'Item Categories', 'Item Categories', 'edit_posts', 'edit-tags.php?taxonomy=wpgv_voucher_category&post_type=wpgv_voucher_product', '');
-		add_submenu_page('wpgv-gift-cards', 'Voucher Categories', 'Gift Cards Categories', 'edit_posts', 'edit-tags.php?taxonomy=category_voucher_template&post_type=voucher_template', '');
+		add_menu_page('Gift Cards', 'Gift Cards', 'read', 'wpgv-gift-cards', '', 'dashicons-tickets-alt', 25);
+		// Gift item categories were folded into the gift card taxonomy, so there is
+		// one Categories row rather than one per kind.
+		if (!wpgv_unified_cpt_enabled()) {
+			add_submenu_page('wpgv-gift-cards', 'Item Categories', 'Item Categories', 'edit_posts', 'edit-tags.php?taxonomy=wpgv_voucher_category&post_type=wpgv_voucher_product', '');
+		}
+		// A post type registered with show_in_menu pointing at a parent slug only
+		// gets its list row, never an Add New one, so it is added explicitly.
+		if (wpgv_unified_cpt_enabled()) {
+			add_submenu_page('wpgv-gift-cards', __('Add New Gift Card', 'gift-voucher'), __('Add New Gift Card', 'gift-voucher'), 'edit_pages', 'post-new.php?post_type=voucher_template', '');
+		}
+		add_submenu_page('wpgv-gift-cards', __('Categories', 'gift-voucher'), __('Categories', 'gift-voucher'), 'edit_posts', 'edit-tags.php?taxonomy=category_voucher_template&post_type=voucher_template', '');
 		$templatehook = add_submenu_page('wpgv-gift-cards', __('Voucher Templates', 'gift-voucher'), __('Voucher Templates', 'gift-voucher'), 'manage_options', 'voucher-templates', array($this, 'voucher_template'));
 		add_submenu_page('wpgv-gift-cards', __('Add New Template', 'gift-voucher'), __('Add New Template', 'gift-voucher'), 'manage_options', 'new-voucher-template', array($this, 'new_voucher_template'));
 
 		// Create page for viewing voucher details (will be hidden from sidebar but accessible via URL/action buttons)
 		add_submenu_page('wpgv-gift-cards', __('View Voucher Details', 'gift-voucher'), __('View Voucher Details', 'gift-voucher'), 'manage_options', 'view-voucher-details', array($this, 'view_voucher_details'));
 
+		$hook = add_submenu_page('wpgv-gift-cards', __('Orders', 'gift-voucher'), __('Orders', 'gift-voucher'), 'manage_options', 'vouchers-lists', array($this, 'voucher_list'));
 		add_submenu_page('wpgv-gift-cards', __('Settings', 'gift-voucher'), __('Settings', 'gift-voucher'), 'manage_options', 'voucher-setting', array($this, 'voucher_settings'));
-		$hook = add_submenu_page('wpgv-gift-cards', __('Gift Voucher Orders', 'gift-voucher'), __('Gift Voucher Orders', 'gift-voucher'), 'manage_options', 'vouchers-lists', array($this, 'voucher_list'));
 
 		add_action("load-$hook", array($this, 'screen_option_voucher'));
 		add_action("load-$templatehook", array($this, 'screen_option_template'));

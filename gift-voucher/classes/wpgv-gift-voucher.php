@@ -168,16 +168,27 @@ if (! class_exists('WPGV_Gift_Voucher')) :
             $this->log_activity('transaction', $amount, $note);
         }
 
+        /**
+         * Take the card out of use.
+         *
+         * The two status values mean what adjust_balance() above enforces:
+         * 'used' refuses any further movement, 'unused' allows it. These two
+         * methods had them the other way round, so deactivating a card handed
+         * it back to the shopper and reactivating one locked it.
+         */
         public function deactivate($note = '')
         {
-            if ($this->update_property('status', 'unused') === true) {
+            if ($this->update_property('status', 'used') === true) {
                 $this->log_activity('deactivate', null, $note);
             }
         }
 
+        /**
+         * Put a card back into use.
+         */
         public function reactivate($note = '')
         {
-            if ($this->update_property('status', 'used') === true) {
+            if ($this->update_property('status', 'unused') === true) {
                 $this->log_activity('reactivate', null, $note);
             }
         }

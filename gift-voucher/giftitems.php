@@ -185,7 +185,8 @@ function wpgv_giftitems_shortcode($atts = '')
         <input type="hidden" name="wpgv_website_commission_price" id="website_commission_price" data-price="' . $wpgv_add_extra_charges . '">
         ';
 
-    $wpgv_voucher_categories = get_categories('taxonomy=wpgv_voucher_category&post_type=wpgv_voucher_product&order_by=term_id&order=DESC');
+    // Only categories that hold gift items, for the same reason as above.
+    $wpgv_voucher_categories = wpgv_get_categories_for_kind('item', array('orderby' => 'term_id', 'order' => 'DESC'));
     if ($wpgv_voucher_categories) {
         $image_id = get_term_meta($wpgv_voucher_categories[0]->term_id, 'wpgv-voucher-category-image-id', true);
         $image_attributes = wp_get_attachment_image_src($image_id, 'full');
@@ -203,29 +204,28 @@ function wpgv_giftitems_shortcode($atts = '')
         foreach ($wpgv_voucher_categories as $category) {
             $html .= '<div class="wpgv-according-category" id="itemcat' . $category->term_id . '">
     <div class="wpgv-according-title" data-cat-id="' . $category->term_id . '">
-        <h2>' . $category->name . '<span>' . wp_strip_all_tags(term_description($category->term_id, 'wpgv_voucher_category')) . '</span></h2>
+        <h2>' . $category->name . '<span>' . wp_strip_all_tags(term_description($category->term_id, WPGV_CATEGORY_TAXONOMY)) . '</span></h2>
     </div>';
 
             $items = get_posts(
-                array(
+                wpgv_item_query_args(array(
                     'posts_per_page' => -1,
-                    'post_type' => 'wpgv_voucher_product',
                     'tax_query' => array(
                         array(
-                            'taxonomy' => 'wpgv_voucher_category',
+                            'taxonomy' => WPGV_CATEGORY_TAXONOMY,
                             'field' => 'term_id',
                             'terms' => $category->term_id,
                         )
                     )
-                )
+                ))
             );
             $html .= '<div class="wpgv-items">';
             foreach ($items as $item) {
 
                 $item_id = $item->ID;
-                $description = esc_html(get_post_meta($item_id, 'description', true));
-                $price = esc_html(get_post_meta($item_id, 'price', true));
-                $special_price = esc_html(get_post_meta($item_id, 'special_price', true));
+                $description = esc_html(wpgv_item_meta($item_id, 'description'));
+                $price = esc_html(wpgv_item_meta($item_id, 'price'));
+                $special_price = esc_html(wpgv_item_meta($item_id, 'special_price'));
                 $subprice = ($special_price) ? $special_price : $price;
                 $pricestring = ($special_price) ? '<del>' . wpgv_price_format($price) . '</del> <span>' . wpgv_price_format($special_price) . '</span>' : '<span>' . wpgv_price_format($price) . '</span>';
                 $html .= '<div class="wpgv-item">
@@ -239,10 +239,9 @@ function wpgv_giftitems_shortcode($atts = '')
             $html .= '</div>';
         }
     } else if ($shortcode_attr['item_id'] != 0) {
-        $single_item_args = array(
-            'post_type' => 'wpgv_voucher_product',
+        $single_item_args = wpgv_item_query_args(array(
             'post__in' => array($shortcode_attr['item_id'])
-        );
+        ));
         $items = get_posts($single_item_args);
 
         $html .= '<div class="wpgv-items">';
@@ -250,9 +249,9 @@ function wpgv_giftitems_shortcode($atts = '')
         foreach ($items as $item) {
 
             $item_id = $item->ID;
-            $description = esc_html(get_post_meta($item_id, 'description', true));
-            $price = esc_html(get_post_meta($item_id, 'price', true));
-            $special_price = esc_html(get_post_meta($item_id, 'special_price', true));
+            $description = esc_html(wpgv_item_meta($item_id, 'description'));
+            $price = esc_html(wpgv_item_meta($item_id, 'price'));
+            $special_price = esc_html(wpgv_item_meta($item_id, 'special_price'));
             $subprice = ($special_price) ? $special_price : $price;
             $pricestring = ($special_price) ? '<del>' . wpgv_price_format($price) . '</del> <span>' . wpgv_price_format($special_price) . '</span>' : '<span>' . wpgv_price_format($price) . '</span>';
 
@@ -271,30 +270,29 @@ function wpgv_giftitems_shortcode($atts = '')
 
         $html .= '<div class="wpgv-according-category" id="itemcat' . $category->term_id . '">
                     <div class="wpgv-according-title" data-cat-id="' . $category->term_id . '">
-                        <h2>' . $category->name . '<span>' . wp_strip_all_tags(term_description($category->term_id, 'wpgv_voucher_category')) . '</span></h2>
+                        <h2>' . $category->name . '<span>' . wp_strip_all_tags(term_description($category->term_id, WPGV_CATEGORY_TAXONOMY)) . '</span></h2>
                     </div>';
 
         $items = get_posts(
-            array(
+            wpgv_item_query_args(array(
                 'posts_per_page' => -1,
-                'post_type' => 'wpgv_voucher_product',
                 'tax_query' => array(
                     array(
-                        'taxonomy' => 'wpgv_voucher_category',
+                        'taxonomy' => WPGV_CATEGORY_TAXONOMY,
                         'field' => 'term_id',
                         'terms' => $category->term_id,
                     )
                 )
-            )
+            ))
         );
 
         $html .= '<div class="wpgv-items">';
 
         foreach ($items as $item) {
             $item_id = $item->ID;
-            $description = esc_html(get_post_meta($item_id, 'description', true));
-            $price = esc_html(get_post_meta($item_id, 'price', true));
-            $special_price = esc_html(get_post_meta($item_id, 'special_price', true));
+            $description = esc_html(wpgv_item_meta($item_id, 'description'));
+            $price = esc_html(wpgv_item_meta($item_id, 'price'));
+            $special_price = esc_html(wpgv_item_meta($item_id, 'special_price'));
             $subprice = ($special_price) ? $special_price : $price;
             $pricestring = ($special_price) ? '<del>' . wpgv_price_format($price) . '</del> <span>' . wpgv_price_format($special_price) . '</span>' : '<span>' . wpgv_price_format($price) . '</span>';
 
@@ -665,7 +663,7 @@ function wpgv_giftitems_shortcode($atts = '')
 function wpgv__doajax_get_itemcat_image()
 {
     $catid = isset($_REQUEST['catid']) ? absint(wp_unslash($_REQUEST['catid'])) : 0;
-    $term = $catid ? get_term($catid, 'wpgv_voucher_category') : null;
+    $term = $catid ? get_term($catid, WPGV_CATEGORY_TAXONOMY) : null;
 
     // Chỉ phục vụ term thuộc taxonomy của plugin, không đọc meta của term bất kỳ.
     if (!$term || is_wp_error($term)) {
@@ -692,10 +690,9 @@ function wpgv__doajax_get_item_data()
 
     // Chỉ phục vụ gift item đã publish. Không để lộ tiêu đề/meta của post nháp,
     // riêng tư hay của post type khác qua endpoint nopriv này.
-    if (!$item_id
-        || get_post_type($item_id) !== 'wpgv_voucher_product'
-        || get_post_status($item_id) !== 'publish'
-    ) {
+    // Same guard as the purchase handler, so the two cannot drift apart after
+    // gift items move into the shared post type.
+    if (!wpgv_is_purchasable_gift_item($item_id)) {
         wp_send_json_error(array('message' => __('Invalid item.', 'gift-voucher')), 400);
     }
 
@@ -711,9 +708,9 @@ function wpgv__doajax_get_item_data()
     $data = array(
         'title' => esc_html(wp_strip_all_tags(get_the_title($item_id))),
         'images' => array_map('esc_url', $image_styles),
-        'description' => esc_html(html_entity_decode(wp_strip_all_tags(get_post_meta($item_id, 'description', true)))),
-        'price' => esc_html(get_post_meta($item_id, 'price', true)),
-        'special_price' => esc_html(get_post_meta($item_id, 'special_price', true))
+        'description' => esc_html(html_entity_decode(wp_strip_all_tags(wpgv_item_meta($item_id, 'description')))),
+        'price' => esc_html(wpgv_item_meta($item_id, 'price')),
+        'special_price' => esc_html(wpgv_item_meta($item_id, 'special_price'))
     );
 
     // Send JSON response

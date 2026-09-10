@@ -15,6 +15,28 @@ if (!defined('ABSPATH')) exit;
  */
 function wpgv_get_voucher_template_kind($voucher_data)
 {
+    if (!$voucher_data) {
+        return array('kind' => 'unknown', 'template_id' => 0);
+    }
+
+    // The stored answer wins. template_id alone is ambiguous - it addresses two
+    // different id spaces that can collide - so guessing is a last resort now.
+    if (!empty($voucher_data->template_kind)) {
+        return array(
+            'kind'        => (string) $voucher_data->template_kind,
+            'template_id' => intval($voucher_data->template_id),
+        );
+    }
+
+    return wpgv_get_voucher_template_kind_by_guess($voucher_data);
+}
+
+/**
+ * Legacy resolution by inspection, kept as the fallback for rows the backfill
+ * could not settle. Do not call directly; go through wpgv_get_voucher_template_kind().
+ */
+function wpgv_get_voucher_template_kind_by_guess($voucher_data)
+{
     if (!$voucher_data || empty($voucher_data->order_type)) {
         return array('kind' => 'unknown', 'template_id' => 0);
     }

@@ -1,5 +1,7 @@
 <?php
 
+if (!defined('ABSPATH')) exit;  // Exit if accessed directly
+
 use PayPalCheckoutSdk\Core\PayPalHttpClient;
 use PayPalCheckoutSdk\Core\SandboxEnvironment;
 use PayPalCheckoutSdk\Core\ProductionEnvironment;

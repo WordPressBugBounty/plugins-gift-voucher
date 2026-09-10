@@ -668,10 +668,9 @@ function format_categories_function()
                     <li class="category-nav-item active">
                         <a href="#all" class="category-voucher-item" data-category-id="0">' . __('All', 'gift-voucher') . '</a>
                     </li>';
-    $category_voucher = get_terms(array(
-        'taxonomy' => 'category_voucher_template',
-        'hide_empty' => false,
-    ));
+    // Only categories that hold gift cards. The item and card taxonomies were
+    // merged, so an unfiltered term query would list gift item categories here.
+    $category_voucher = wpgv_get_categories_for_kind('card');
     if (!empty($category_voucher)) {
         foreach ($category_voucher as $key => $category) {
             // Support both WP_Term objects and term arrays

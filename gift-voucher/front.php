@@ -12,7 +12,6 @@ function wpgv_voucher_shortcode()
     $siteURL = str_replace($find, $replace, get_site_url());
     $voucher_table     = $wpdb->prefix . 'giftvouchers_list';
     $setting_table     = $wpdb->prefix . 'giftvouchers_setting';
-    $template_table = $wpdb->prefix . 'giftvouchers_template';
     wp_enqueue_style('wpgv-voucher-style');
     wp_enqueue_script('wpgv-jquery-validate');
     wp_enqueue_script('wpgv-jquery-steps');
@@ -23,7 +22,7 @@ function wpgv_voucher_shortcode()
 
     $setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1));
 
-    $template_options = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_template WHERE active = %d", 1));
+    $template_options = WPGV_Template_Repository::get_active_standard();
 
     $nonce = wp_create_nonce('voucher_form_verify');
     $wpgv_custom_css = get_option('wpgv_custom_css') ? stripslashes(trim(get_option('wpgv_custom_css'))) : '';
@@ -583,12 +582,8 @@ function wpgv_voucher_shortcode()
 
 function wpgv__doajax_front_template()
 {
-    global $wpdb;
-    $template_table = $wpdb->prefix . 'giftvouchers_template';
     $template_id = isset($_REQUEST['template_id']) ? (int) base64_decode(sanitize_text_field(wp_unslash($_REQUEST['template_id']))) : 0;
-    $template_options = $template_id
-        ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_template WHERE id = %d", $template_id))
-        : null;
+    $template_options = WPGV_Template_Repository::find_standard($template_id);
 
     // template_id rác -> get_row() trả null. Chốt ở đây thay vì để PHP 8 cảnh báo
     // "Attempt to read property on null" ở mỗi dòng phía dưới.

@@ -335,7 +335,7 @@ if ($voucher_options->order_type == 'vouchers') {
 	$image_attributes = $product_id ? wp_get_attachment_image_src(get_post_thumbnail_id($product_id), 'voucher-medium') : false;
 } else {
 	$item_id = absint($voucher_options->item_id);
-	$style_image = absint(get_post_meta($item_id, 'style1_image', true));
+	$style_image = absint(wpgv_item_meta($item_id, 'style1_image'));
 	$image_attributes = $style_image ? wp_get_attachment_image_src($style_image, 'voucher-medium') : false;
 }
 

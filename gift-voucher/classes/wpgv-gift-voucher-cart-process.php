@@ -458,8 +458,16 @@ if (!class_exists('wpgv-')) :
                 }
                 // Create any new/missing gift cards.
 
+                // Only issue what this line item is still short of. This runs
+                // on every transition into completed and again from
+                // order_restored(), and it used to mint a full set each time,
+                // so completed -> cancelled -> completed handed out a second
+                // set of codes and doubled the value the order had issued.
+                $already_issued = count($gift_card_numbers);
+                $still_to_issue = max(0, (int) $order_quantity - $already_issued);
+
                 $numbers = array();
-                for ($x = 1; $x <= $order_quantity; $x++) {
+                for ($x = 1; $x <= $still_to_issue; $x++) {
                     $numbers[] = $x;
                 }
 
@@ -616,7 +624,10 @@ if (!class_exists('wpgv-')) :
             foreach ($order->get_items('line_item') as $order_item_id => $order_item) {
                 $item_note = $note . ", order_item_id_789: $order_item_id";
 
-                $gift_card_numbers = (array) wc_get_order_item_meta($order_item_id, 'WPGV_GIFT_CARD_NUMBER_META_KEY', false);
+                // The constant, not its name in quotes. Read with the quoted
+                // string this loop always walked an empty array, so cancelling,
+                // refunding or trashing an order left its vouchers spendable.
+                $gift_card_numbers = (array) wc_get_order_item_meta($order_item_id, WPGV_GIFT_VOUCHER_NUMBER_META_KEY, false);
                 foreach ($gift_card_numbers as $gift_card_number) {
                     $gift_voucher = new WPGV_Gift_Voucher($gift_card_number);
                     $gift_voucher->deactivate($item_note);
