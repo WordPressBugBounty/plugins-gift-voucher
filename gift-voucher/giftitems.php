@@ -2,6 +2,21 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
+/**
+ * The price shown for an item in the list.
+ *
+ * An item without a price has no number to show - the customer enters the
+ * amount after pressing Buy - so it says that instead of showing an empty price.
+ */
+function wpgv_item_price_html($item_id, $price, $special_price)
+{
+    if (wpgv_item_is_open_price($item_id)) {
+        return '<span class="wpgv-open-price">' . esc_html__('Enter your amount', 'gift-voucher') . '</span>';
+    }
+
+    return ($special_price) ? '<del>' . wpgv_price_format($price) . '</del> <span>' . wpgv_price_format($special_price) . '</span>' : '<span>' . wpgv_price_format($price) . '</span>';
+}
+
 // Add Voucher Shortcode
 function wpgv_giftitems_shortcode($atts = '')
 {
@@ -227,7 +242,7 @@ function wpgv_giftitems_shortcode($atts = '')
                 $price = esc_html(wpgv_item_meta($item_id, 'price'));
                 $special_price = esc_html(wpgv_item_meta($item_id, 'special_price'));
                 $subprice = ($special_price) ? $special_price : $price;
-                $pricestring = ($special_price) ? '<del>' . wpgv_price_format($price) . '</del> <span>' . wpgv_price_format($special_price) . '</span>' : '<span>' . wpgv_price_format($price) . '</span>';
+                $pricestring = wpgv_item_price_html($item_id, $price, $special_price);
                 $html .= '<div class="wpgv-item">
                             <div class="wpgv-content"><h4>' . get_the_title($item_id) . '</h4><p>' . $description . '</p></div>
                             <div class="wpgv-price">' . $pricestring . '</div>
@@ -253,7 +268,7 @@ function wpgv_giftitems_shortcode($atts = '')
             $price = esc_html(wpgv_item_meta($item_id, 'price'));
             $special_price = esc_html(wpgv_item_meta($item_id, 'special_price'));
             $subprice = ($special_price) ? $special_price : $price;
-            $pricestring = ($special_price) ? '<del>' . wpgv_price_format($price) . '</del> <span>' . wpgv_price_format($special_price) . '</span>' : '<span>' . wpgv_price_format($price) . '</span>';
+            $pricestring = wpgv_item_price_html($item_id, $price, $special_price);
 
             $html .= '<div class="wpgv-item">
 
@@ -294,7 +309,7 @@ function wpgv_giftitems_shortcode($atts = '')
             $price = esc_html(wpgv_item_meta($item_id, 'price'));
             $special_price = esc_html(wpgv_item_meta($item_id, 'special_price'));
             $subprice = ($special_price) ? $special_price : $price;
-            $pricestring = ($special_price) ? '<del>' . wpgv_price_format($price) . '</del> <span>' . wpgv_price_format($special_price) . '</span>' : '<span>' . wpgv_price_format($price) . '</span>';
+            $pricestring = wpgv_item_price_html($item_id, $price, $special_price);
 
             $html .= '<div class="wpgv-item">
                         <div class="wpgv-content"><h4>' . get_the_title($item_id) . '</h4><p>' . $description . '</p></div>
@@ -310,6 +325,51 @@ function wpgv_giftitems_shortcode($atts = '')
     $html .= '</div></div>';
 
     // Step 2
+    //
+    // The amount field is only shown for an item without a price. Its limits
+    // mirror the server check in wpgv_resolve_item_amounts(), which is the one
+    // that counts; these just stop an obviously wrong amount before submitting.
+    list($open_min, $open_max) = wpgv_get_public_voucher_value_limits($setting_options);
+    $open_min_label = $open_min > 0 ? wpgv_price_format($open_min) : '';
+    $open_max_label = $open_max > 0 ? wpgv_price_format($open_max) : '';
+    if ($open_min_label && $open_max_label) {
+        /* translators: 1: minimum voucher value, 2: maximum voucher value */
+        $open_hint = sprintf(__('Enter any amount from %1$s to %2$s.', 'gift-voucher'), $open_min_label, $open_max_label);
+    } elseif ($open_max_label) {
+        /* translators: %s: maximum voucher value */
+        $open_hint = sprintf(__('Enter any amount up to %s.', 'gift-voucher'), $open_max_label);
+    } elseif ($open_min_label) {
+        /* translators: %s: minimum voucher value */
+        $open_hint = sprintf(__('Enter any amount from %s.', 'gift-voucher'), $open_min_label);
+    } else {
+        $open_hint = __('Enter the amount you want to give.', 'gift-voucher');
+    }
+
+    // Same wording as the Gift Voucher form and the preview beside it, so the
+    // customer sees one name for one number. The symbol sits inside the field on
+    // the side the shop's Currency Position puts it.
+    $open_currency = '<span class="wpgv-amount-currency" aria-hidden="true">' . esc_html($setting_options->currency) . '</span>';
+    $open_currency_left = ($setting_options->currency_position !== 'Right');
+    $open_amount_html = '<div class="wpgv-form-fields" id="wpgv-item_amount" style="display:none">
+                    <label for="item_amount">' . esc_html__('Voucher Value', 'gift-voucher') . ' <sup>*</sup></label>
+                    <span class="error" id="item_amount_error" role="alert"></span>
+                    <div class="wpgv-amount-input' . ($open_currency_left ? '' : ' wpgv-amount-input--right') . '">'
+                    . ($open_currency_left ? $open_currency : '')
+                    . '<input type="number" name="item_amount" id="item_amount" class="form-field" step="0.01" inputmode="decimal" placeholder="0.00"'
+                    . ' aria-describedby="item_amount_hint item_amount_error"'
+                    . ' data-min="' . esc_attr($open_min) . '" data-max="' . esc_attr($open_max) . '"'
+                    . ' data-msg-empty="' . esc_attr__('Please enter a voucher value.', 'gift-voucher') . '"'
+                    /* translators: %s: minimum voucher value */
+                    . ' data-msg-min="' . esc_attr(sprintf(__('The voucher value must be at least %s.', 'gift-voucher'), $open_min_label)) . '"'
+                    /* translators: %s: maximum voucher value */
+                    . ' data-msg-max="' . esc_attr(sprintf(__('The voucher value must not exceed %s.', 'gift-voucher'), $open_max_label)) . '"'
+                    . ($open_min > 0 ? ' min="' . esc_attr($open_min) . '"' : ' min="0.01"')
+                    . ($open_max > 0 ? ' max="' . esc_attr($open_max) . '"' : '') . '>'
+                    . ($open_currency_left ? '' : $open_currency)
+                    . '</div>
+                    <p class="wpgv-amount-hint" id="item_amount_hint">' . esc_html($open_hint) . '</p>
+                </div>';
+
     $html .= '<div id="wpgv-giftitems-step2" class="wpgv-items-wrap">
                 <div class="wpgv-gifttitle">
                     <h3></h3>
@@ -319,6 +379,7 @@ function wpgv_giftitems_shortcode($atts = '')
                     ' . $chooseStyle . '
                 </div>
                 ' . $buying_for_html . '
+                ' . $open_amount_html . '
                 <div class="wpgv-form-fields" id="wpgv-message">
                     <label for="message">' . __('Personal Message (Optional)', 'gift-voucher') . ' (' . __('Max: 250 Characters', 'gift-voucher') . ')</label>
                     <span class="error">' . __('Please enter no more than 250 characters.', 'gift-voucher') . '</span>
@@ -710,7 +771,8 @@ function wpgv__doajax_get_item_data()
         'images' => array_map('esc_url', $image_styles),
         'description' => esc_html(html_entity_decode(wp_strip_all_tags(wpgv_item_meta($item_id, 'description')))),
         'price' => esc_html(wpgv_item_meta($item_id, 'price')),
-        'special_price' => esc_html(wpgv_item_meta($item_id, 'special_price'))
+        'special_price' => esc_html(wpgv_item_meta($item_id, 'special_price')),
+        'open_price' => wpgv_item_is_open_price($item_id),
     );
 
     // Send JSON response

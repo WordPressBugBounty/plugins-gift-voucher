@@ -59,10 +59,25 @@ function wpgv__doajax_voucher_pdf_save_func()
 	$setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM $setting_table WHERE id = %d", 1));
 	$template_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM $template_table WHERE id = %d", $template));
 
-	$value = wpgv_validate_public_voucher_amount($raw_value, $setting_options);
-	if (is_wp_error($value)) {
-		wp_send_json_error(array('message' => $value->get_error_message()));
+	// A template with a price set in admin sells at that price: the value the
+	// browser sent is ignored, and Special Price, when set, is what the buyer pays.
+	// A template without a price keeps the old behaviour - the customer's value,
+	// checked against Min/Max Voucher Value. Same rules as a gift item.
+	// $value is the face value stored on the voucher; $pay_value is what is charged.
+	$template_post = wpgv_find_post_by_legacy_template_id($template);
+	if ($template_post) {
+		$amounts = wpgv_resolve_item_amounts($template_post, $raw_value, $setting_options);
+	} else {
+		$amounts = wpgv_validate_public_voucher_amount($raw_value, $setting_options);
+		if (!is_wp_error($amounts)) {
+			$amounts = array('face' => $amounts, 'pay' => $amounts);
+		}
 	}
+	if (is_wp_error($amounts)) {
+		wp_send_json_error(array('message' => $amounts->get_error_message()));
+	}
+	$value = $amounts['face'];
+	$pay_value = $amounts['pay'];
 
 	$code = wpgv_generate_unique_couponcode();
 	if (is_wp_error($code)) {
@@ -128,7 +143,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 				'formtype' => $formtype,
 				'image_path' => $image,
 				'title' => isset($template_options->title) ? $template_options->title : '',
-				'description' => '',
+				'description' => $template_post ? (string) wpgv_item_meta($template_post, 'description') : '',
 				'for' => $for,
 				'from' => $from,
 				'buyingfor' => $buyingfor,
@@ -196,7 +211,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 	$order_key = wpgv_create_voucher_order_key($lastid);
 	WPGV_Gift_Voucher_Activity::record($lastid, 'create', '', 'Voucher ordered by ' . $for . ', Message: ' . $message);
 
-	$total_value = $value + $shipping_charges + $wpgv_add_extra_charges;
+	$total_value = $pay_value + $shipping_charges + $wpgv_add_extra_charges;
 
 
 	//Customer Receipt

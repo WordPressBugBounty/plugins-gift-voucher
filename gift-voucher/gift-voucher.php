@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.8.0
+ * Version: 4.8.1
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.8.0');
+define('WPGIFT_VERSION', '4.8.1');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -777,6 +777,7 @@ add_action('init', function() {
     codemenschen_voucher_template_category();
   }
 
+  require_once(WPGIFT__PLUGIN_DIR . '/include/demo-content.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/voucher_metabox.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/voucher-shortcodes.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/stripewebhook.php');
@@ -955,8 +956,11 @@ function wpgv_front_enqueue()
     'nonce'   => wp_create_nonce('wpgv_nonce_action'),
     'gift_voucher_session_nonce' => wp_create_nonce('wpgv_gift_voucher_session'),
   );
-  wp_register_style('wpgv-voucher-style',  WPGIFT__PLUGIN_URL . '/assets/css/voucher-style.css');
-  wp_register_style('wpgv-item-style',  WPGIFT__PLUGIN_URL . '/assets/css/item-style.css');
+  wp_register_style('wpgv-voucher-style',  WPGIFT__PLUGIN_URL . '/assets/css/voucher-style.css', array(), WPGIFT_VERSION);
+  // Versioned with the plugin so an update reaches browsers and page caches -
+  // 4.8.1's open-price items and priced templates need the new scripts and
+  // styles to work at all.
+  wp_register_style('wpgv-item-style',  WPGIFT__PLUGIN_URL . '/assets/css/item-style.css', array(), WPGIFT_VERSION);
   wp_register_style('wpgv-slick-css',  WPGIFT__PLUGIN_URL . '/assets/css/slick.css');
   wp_register_style('wpgv-fontawesome-css',  WPGIFT__PLUGIN_URL . '/assets/css/font-awesome.min.css');
   wp_register_style('wpgv-voucher-template-fonts-css',  WPGIFT__PLUGIN_URL . '/assets/css/voucher-template-fonts.css');
@@ -966,8 +970,8 @@ function wpgv_front_enqueue()
   wp_register_script('wpgv-jquery-validate', WPGIFT__PLUGIN_URL . '/assets/js/jquery.validate.min.js', array('jquery'), '1.17.0', true);
   wp_register_script('wpgv-jquery-steps', WPGIFT__PLUGIN_URL . '/assets/js/jquery.steps.min.js', array('jquery'), '1.1.0', true);
   wp_register_script('wpgv-stripe-js', WPGIFT__PLUGIN_URL . '/assets/js/stripe-v3.js', array('jquery'), '3.0.0', true);
-  wp_register_script('wpgv-voucher-script', WPGIFT__PLUGIN_URL  . '/assets/js/voucher-script.js', array('jquery'), '3.3.9.1', true);
-  wp_register_script('wpgv-item-script', WPGIFT__PLUGIN_URL  . '/assets/js/item-script.js', array('jquery'), '3.3.9.1', true);
+  wp_register_script('wpgv-voucher-script', WPGIFT__PLUGIN_URL  . '/assets/js/voucher-script.js', array('jquery'), WPGIFT_VERSION, true);
+  wp_register_script('wpgv-item-script', WPGIFT__PLUGIN_URL  . '/assets/js/item-script.js', array('jquery'), WPGIFT_VERSION, true);
   wp_register_script('wpgv-woocommerce-script', WPGIFT__PLUGIN_URL  . '/assets/js/woocommerce-script.js', array('jquery'), '3.3.9.1', true);
   wp_register_script('wpgv-voucher-product', WPGIFT__PLUGIN_URL  . '/assets/js/wpgv-voucher-product.js', array('jquery'), WPGIFT_VERSION, true);
   wp_register_script('wpgv-slick-script', WPGIFT__PLUGIN_URL  . '/assets/js/slick.min.js', array('jquery'), WPGIFT_VERSION, true);
@@ -1009,6 +1013,261 @@ function wpgv_front_enqueue()
 }
 
 add_action('wp_enqueue_scripts', 'wpgv_front_enqueue');
+
+/**
+ * Settings columns a pre-4.8.1 install left holding a value it cannot use.
+ *
+ * Installs before 4.8.1 seeded these through a misaligned $format array and
+ * stored 0 in each. We deliberately do not repair them - that would be editing
+ * a customer's settings - but one of them, voucher_expiry_type, silently makes
+ * expiry dates wrong, and nobody would think to look. So the plugin says so.
+ *
+ * The test is deliberately narrow. A column counts as broken only when its
+ * value is the exact string '0', which is not a choice any of these fields
+ * offers, so a shop owner's own setting can never be mistaken for damage.
+ * shipping_method is the exception: it survived as '5', a syntactically fine
+ * number, so it is judged on shape instead - a real value always carries the
+ * "price : label" separator, including a free method like '0 : Free Shipping'.
+ *
+ * See docs-ai/fix/16-settings-seed-format-mismatch.md
+ *
+ * @param object|null $options Settings row; read from the database when null.
+ * @return array Column name => the label it carries on the Settings screen.
+ */
+function wpgv_settings_needing_repair($options = null)
+{
+  if (null === $options) {
+    $options = function_exists('get_data_settings_voucher') ? get_data_settings_voucher() : null;
+  }
+
+  if (!is_object($options)) {
+    return array();
+  }
+
+  $labels = array(
+    'currency'                 => __('Currency Symbol', 'gift-voucher'),
+    'currency_position'        => __('Currency Position', 'gift-voucher'),
+    'pdf_footer_email'         => __('Email on PDF in Footer', 'gift-voucher'),
+    'voucher_expiry_type'      => __('Voucher Expiry Type', 'gift-voucher'),
+    'portrait_mode_templates'  => __('Portrait Templates', 'gift-voucher'),
+    'landscape_mode_templates' => __('Landscape Templates', 'gift-voucher'),
+  );
+
+  $broken = array();
+
+  foreach ($labels as $column => $label) {
+    if (!property_exists($options, $column)) {
+      continue;
+    }
+    if ((string) $options->$column === '0') {
+      $broken[$column] = $label;
+    }
+  }
+
+  // shipping_method kept a number rather than becoming 0, so the '0' test does
+  // not reach it. Every usable value names a method after the price.
+  if (property_exists($options, 'shipping_method')) {
+    $shipping = (string) $options->shipping_method;
+    if ($shipping !== '' && strpos($shipping, ':') === false) {
+      $broken['shipping_method'] = __('Shipping Methods', 'gift-voucher');
+    }
+  }
+
+  return $broken;
+}
+
+/**
+ * Point the shop owner at the settings that need re-entering.
+ *
+ * Shown only on this plugin's own screens: it concerns nobody working
+ * elsewhere in wp-admin, and it disappears by itself once the values are set.
+ * It changes nothing - the whole point is that the owner decides.
+ */
+function wpgv_maybe_show_settings_repair_notice()
+{
+  if (!current_user_can('manage_options')) {
+    return;
+  }
+
+  if (function_exists('wpgv_is_plugin_admin_screen') && !wpgv_is_plugin_admin_screen()) {
+    return;
+  }
+
+  $options = function_exists('get_data_settings_voucher') ? get_data_settings_voucher() : null;
+  if (is_object($options) && isset($_GET['page']) && $_GET['page'] === 'voucher-setting') { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read only
+    $options = wpgv_settings_with_pending_save($options, $_POST); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified inside
+  }
+
+  echo wpgv_settings_repair_notice_html(wpgv_settings_needing_repair($options)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in the builder
+}
+
+/**
+ * The settings as they will be once the Settings form now being submitted is saved.
+ *
+ * admin_notices fires before the Settings page callback writes to the table, so
+ * on the page that comes back after Save the notice would still read the old
+ * row and keep complaining about a value the owner has just fixed. Overlay the
+ * submitted values - only for a genuine, nonce-verified save - before judging.
+ *
+ * @param object $options Settings row from the database.
+ * @param array  $post    Request body, normally $_POST.
+ * @return object A copy; the original row is not modified.
+ */
+function wpgv_settings_with_pending_save($options, $post)
+{
+  $options = clone $options;
+
+  if (empty($post['submit']) || empty($post['voucher_settings_verify_nonce'])
+    || !wp_verify_nonce(sanitize_text_field(wp_unslash($post['voucher_settings_verify_nonce'])), 'voucher_settings_verify')) {
+    return $options;
+  }
+
+  foreach (array('currency', 'currency_position', 'voucher_expiry_type', 'shipping_method') as $column) {
+    if (isset($post[$column])) {
+      $options->$column = sanitize_text_field(wp_unslash($post[$column]));
+    }
+  }
+  if (isset($post['pdf_footer_email'])) {
+    $options->pdf_footer_email = sanitize_email(wp_unslash($post['pdf_footer_email']));
+  }
+
+  return $options;
+}
+
+/**
+ * The notice markup for a given set of broken settings.
+ *
+ * Only the two columns whose damage is invisible get a consequence line, and
+ * only when that column is actually among the broken ones - a site with just
+ * Shipping Methods broken must not be told its expiry dates are wrong.
+ *
+ * @param array $broken Column name => label, from wpgv_settings_needing_repair().
+ * @return string Empty when nothing is broken.
+ */
+function wpgv_settings_repair_notice_html($broken)
+{
+  if (!$broken) {
+    return '';
+  }
+
+  $consequences = array(
+    'voucher_expiry_type' => __('Until Voucher Expiry Type is set, voucher expiry dates are calculated incorrectly.', 'gift-voucher'),
+    'shipping_method'     => __('Until Shipping Methods is set, customers who choose shipping see an option with no name at checkout.', 'gift-voucher'),
+  );
+
+  $html = '<div class="notice notice-warning"><p><strong>'
+    . esc_html__('Gift Cards: a few settings need to be filled in.', 'gift-voucher')
+    . '</strong></p><p>'
+    . esc_html__('These were left unusable by an installation problem fixed in version 4.8.1. Nothing has been changed for you - please set them yourself:', 'gift-voucher')
+    . '</p><p><strong>' . esc_html(implode(' - ', $broken)) . '</strong></p>';
+
+  foreach ($consequences as $column => $message) {
+    if (isset($broken[$column])) {
+      $html .= '<p>' . esc_html($message) . '</p>';
+    }
+  }
+
+  return $html . '<p><a href="' . esc_url(admin_url('admin.php?page=voucher-setting')) . '" class="button button-primary">'
+    . esc_html__('Open Gift Cards settings', 'gift-voucher')
+    . '</a></p></div>';
+}
+add_action('admin_notices', 'wpgv_maybe_show_settings_repair_notice');
+
+add_action('admin_init', 'wpgv_redirect_orders_filter');
+/**
+ * Turn the Orders screen's Filter button into a URL.
+ *
+ * The list table sits inside a POST form (its bulk actions need one), but the
+ * Type filter, paging and search all read the URL. Pressed as it was, Filter
+ * posted the choice and the list ignored it: the dropdown showed "Gift Item"
+ * over a list of every type. Redirecting to a GET URL makes the filter apply,
+ * survive a reload and be bookmarkable. Bulk actions are left alone - they only
+ * reach here without filter_action and keep posting as before.
+ */
+function wpgv_redirect_orders_filter()
+{
+  // phpcs:disable WordPress.Security.NonceVerification -- builds a URL, changes nothing
+  if (!isset($_GET['page'], $_POST['filter_action']) || $_GET['page'] !== 'vouchers-lists') {
+    return;
+  }
+  if (!current_user_can('manage_options')) {
+    return;
+  }
+
+  $type = isset($_POST['wpgv_type']) ? sanitize_text_field(wp_unslash($_POST['wpgv_type'])) : '';
+  $url = remove_query_arg(array('wpgv_type', 'items', 'paged'), admin_url('admin.php?page=vouchers-lists'));
+  foreach (array('search', 'voucher_code') as $keep) {
+    if (isset($_GET[$keep])) {
+      $url = add_query_arg($keep, rawurlencode(sanitize_text_field(wp_unslash($_GET[$keep]))), $url);
+    }
+  }
+  // phpcs:enable
+  if (in_array($type, array('vouchers', 'templates', 'items'), true)) {
+    $url = add_query_arg('wpgv_type', $type, $url);
+  }
+
+  wp_safe_redirect($url);
+  exit;
+}
+
+/**
+ * The values a brand new install starts with.
+ *
+ * Kept apart from the insert so a test can read it back, and so the thing that
+ * broke it cannot return: this used to sit inline with a hand-written $format
+ * array beside it - 33 values against 32 specifiers, misaligned - which pushed
+ * six string columns through %d and stored each as 0. On every fresh site the
+ * currency symbol, the shipping methods and the expiry unit arrived dead.
+ *
+ * The caller passes no $format at all. Everything goes as %s and MySQL casts
+ * per column, so an int column handed '1' still stores 1, and adding a column
+ * later cannot silently shift the ones after it.
+ *
+ * @return array Column name => value.
+ */
+function wpgv_default_settings_row()
+{
+  $company_name = get_bloginfo('name');
+  $paypal_email = get_option('admin_email');
+  $template_lanscape = 'template-voucher-lanscape-4.png, template-voucher-lanscape-8.png, template-voucher-lanscape-10.png';
+  $template_portail = 'template-voucher-portail-1.png, template-voucher-portail-2.png, template-voucher-portail-6.png';
+
+  return array(
+    'is_woocommerce_enable' => 0,
+    'is_style_choose_enable' => 0,
+    'is_order_form_enable' => 1,
+    'voucher_style'      => 0,
+    'company_name'       => $company_name,
+    'paypal_email'       => $paypal_email,
+    'reason_for_payment' => 'Payment for Gift Cards',
+    'sender_name'        => $company_name,
+    'sender_email'       => $paypal_email,
+    'currency_code'      => 'USD',
+    'currency'           => '$',
+    'paypal'             => 1,
+    'sofort'             => 0,
+    'stripe'             => 0,
+    'voucher_bgcolor'    => '81c6a9',
+    'voucher_color'      => '555555',
+    'template_col'       => 4,
+    'voucher_min_value'  => 0,
+    'voucher_max_value'  => 10000,
+    'voucher_expiry_type' => 'days',
+    'voucher_expiry'     => 60,
+    'voucher_terms_note' => 'Note: The voucher is valid for 60 days and can be redeemed at ' . $company_name . '. A cash payment is not possible.',
+    'custom_loader'      => WPGIFT__PLUGIN_URL . '/assets/img/loader.gif',
+    'pdf_footer_url'     => get_site_url(),
+    'pdf_footer_email'   => $paypal_email,
+    'post_shipping'      => 1,
+    'shipping_method'    => '5.99 : Express Shipping - $5.99, 3.99 : Standard Shipping - $3.99',
+    'preview_button'     => 1,
+    'currency_position'  => 'Left',
+    'test_mode'          => 0,
+    'per_invoice'        => 0,
+    'landscape_mode_templates' => $template_lanscape,
+    'portrait_mode_templates' => $template_portail,
+  );
+}
 
 function wpgv_plugin_activation()
 {
@@ -1142,45 +1401,8 @@ function wpgv_plugin_activation()
       )
     )
   ) {
-    $wpdb->insert(
-      $giftvouchers_setting,
-      array(
-        'is_woocommerce_enable' => 0,
-        'is_style_choose_enable' => 0,
-        'is_order_form_enable' => 1,
-        'voucher_style'      => 0,
-        'company_name'       => $company_name,
-        'paypal_email'       => $paypal_email,
-        'reason_for_payment' => 'Payment for Gift Cards',
-        'sender_name'        => $company_name,
-        'sender_email'       => $paypal_email,
-        'currency_code'      => 'USD',
-        'currency'           => '$',
-        'paypal'             => 1,
-        'sofort'             => 0,
-        'stripe'             => 0,
-        'voucher_bgcolor'    => '81c6a9',
-        'voucher_color'      => '555555',
-        'template_col'       => 4,
-        'voucher_min_value'  => 0,
-        'voucher_max_value'  => 10000,
-        'voucher_expiry_type' => 'days',
-        'voucher_expiry'     => 60,
-        'voucher_terms_note' => 'Note: The voucher is valid for 60 days and can be redeemed at ' . $company_name . '. A cash payment is not possible.',
-        'custom_loader'      => WPGIFT__PLUGIN_URL . '/assets/img/loader.gif',
-        'pdf_footer_url'     => get_site_url(),
-        'pdf_footer_email'   => $paypal_email,
-        'post_shipping'      => 1,
-        'shipping_method'    => '5.99 : Express Shipping - $5.99, 3.99 : Standard Shipping - $3.99',
-        'preview_button'     => 1,
-        'currency_position'  => 'Left',
-        'test_mode'          => 0,
-        'per_invoice'        => 0,
-        'landscape_mode_templates' => $template_lanscape,
-        'portrait_mode_templates' => $template_portail,
-      ),
-      array('%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%d', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s', '%d', '%d', '%s', '%s',)
-    );
+    // Khong truyen $format: xem ghi chu tren wpgv_default_settings_row().
+    $wpdb->insert($giftvouchers_setting, wpgv_default_settings_row());
     $wpdb->insert(
       $giftvouchers_template,
       array(

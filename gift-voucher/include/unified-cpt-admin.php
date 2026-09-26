@@ -20,7 +20,7 @@ function wpgv_kind_labels()
     return array(
         'item'     => __('Gift Items', 'gift-voucher'),
         'card'     => __('Gift Cards', 'gift-voucher'),
-        'template' => __('Voucher Templates', 'gift-voucher'),
+        'template' => __('Gift Vouchers', 'gift-voucher'),
     );
 }
 

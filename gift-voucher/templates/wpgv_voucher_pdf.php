@@ -62,7 +62,7 @@ switch ($voucher_style) {
 			'formtype' => $formtype,
 			'image_path' => $image,
 			'title' => isset($template_options->title) ? $template_options->title : '',
-			'description' => '',
+			'description' => ($wpgv_preview_tpl_post = wpgv_find_post_by_legacy_template_id($template)) ? (string) wpgv_item_meta($wpgv_preview_tpl_post, 'description') : '',
 			'for' => $for,
 			'from' => $from,
 			'buyingfor' => $buyingfor,

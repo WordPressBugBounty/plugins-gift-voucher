@@ -257,10 +257,15 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 	if (isset($_GET['_wpnonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'create_default_pages_action')) {
 ?>
 		<div class="wrap wpgiftv-settings">
-			<h1><?php esc_html_e('Pages Created', 'gift-voucher'); ?></h1>
+			<h1><?php esc_html_e('Pages and Sample Content Created', 'gift-voucher'); ?></h1>
 			<?php
 			$createdpages = wpgv_create_plugin_pages();
 			$page_count = is_array($createdpages[0]) ? count($createdpages[0]) : 0;
+
+			// The pages alone open to an empty form on a new site: the shortcode is
+			// there but nothing exists for it to offer. Sample records give each of
+			// the three pages something to show.
+			$demo = function_exists('wpgv_create_demo_content') ? wpgv_create_demo_content() : array();
 			?>
 			<p>
 				<?php
@@ -273,6 +278,19 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 				);
 				?>
 			</p>
+			<?php if ($demo) : ?>
+				<p>
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: %d: number of sample records created */
+							__('Added %d sample records - a gift card for each template, a gift item and a gift voucher - so those pages have something to show. Edit or delete them once you have your own.', 'gift-voucher'),
+							count($demo)
+						)
+					);
+					?>
+				</p>
+			<?php endif; ?>
 			<?php
 			foreach ($createdpages[0] as $page) {
 				$permalink = get_permalink($page);
@@ -299,7 +317,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 			<div class="wpgiftv-col75">
 				<div class="white-box">
 					<a class="button button-large button-primary alignright" href="<?php echo esc_url($url); ?>">
-						<?php echo esc_html__('Create Plugin\'s Default Pages', 'gift-voucher'); ?>
+						<?php echo esc_html__('Set Up Pages and Sample Content', 'gift-voucher'); ?>
 					</a>
 					<div class="nav-tab-wrapper">
 						<a class="nav-tab nav-tab-active" href="#general"><?php echo esc_html_e('General Settings', 'gift-voucher') ?></a>

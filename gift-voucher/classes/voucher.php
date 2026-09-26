@@ -2,6 +2,89 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
+if (!function_exists('wpgv_order_type_label')) {
+	/**
+	 * What an order's order_type is called on screen.
+	 *
+	 * The column stores the flow the order came through, not a word anyone would
+	 * recognise. 'templates' is not stored anywhere: it is the display type of a
+	 * 'vouchers' order that came through [wpgv_giftvoucher] (see
+	 * wpgv_order_display_type()).
+	 *
+	 * @param string $order_type Value of giftvouchers_list.order_type, or 'templates'.
+	 * @return string
+	 */
+	function wpgv_order_type_label($order_type)
+	{
+		switch ((string) $order_type) {
+			case 'vouchers':
+				return __('Gift Card', 'gift-voucher');
+			case 'templates':
+				return __('Gift Voucher', 'gift-voucher');
+			case 'items':
+				return __('Gift Item', 'gift-voucher');
+			case 'gift_voucher_product':
+				return __('WooCommerce', 'gift-voucher');
+		}
+
+		// An order type we do not know is still an order; name it rather than
+		// leaving the cell blank.
+		return ucwords(str_replace('_', ' ', (string) $order_type));
+	}
+}
+
+if (!function_exists('wpgv_order_display_type')) {
+	/**
+	 * Which of the admin's types an order belongs to.
+	 *
+	 * Gift Card orders ([wpgv_giftcard]) and Voucher Template orders
+	 * ([wpgv_giftvoucher]) both store order_type 'vouchers', so the column alone
+	 * labelled every template order a Gift Card. The PDF context saved with each
+	 * order tells them apart: 'modern' is a gift card, 'standard_list' a template.
+	 * An order older than that context falls back to what its template_id points
+	 * at: a gift card is a voucher_template post, a template is a legacy row.
+	 * Same rule as wpgv_order_is_template_sql(), which filters the list.
+	 *
+	 * @param array $row Order row from giftvouchers_list.
+	 * @return string 'vouchers', 'templates', 'items' or the stored order_type.
+	 */
+	function wpgv_order_display_type($row)
+	{
+		$type = isset($row['order_type']) ? (string) $row['order_type'] : '';
+		if ($type !== 'vouchers') {
+			return $type;
+		}
+
+		$kind = (string) get_post_meta((int) $row['id'], 'wpgv_pdf_template_kind', true);
+		if ($kind === 'modern') {
+			return 'vouchers';
+		}
+		if ($kind === 'standard_list' || $kind === 'standard_grid') {
+			return 'templates';
+		}
+
+		$template_id = isset($row['template_id']) ? (int) $row['template_id'] : 0;
+
+		return ($template_id > 0 && get_post_type($template_id) === 'voucher_template') ? 'vouchers' : 'templates';
+	}
+
+	/**
+	 * SQL condition true for a Voucher Template order; see wpgv_order_display_type().
+	 *
+	 * @return string Fragment to AND onto a query of giftvouchers_list.
+	 */
+	function wpgv_order_is_template_sql()
+	{
+		global $wpdb;
+		$list = "`{$wpdb->prefix}giftvouchers_list`";
+
+		return "(EXISTS (SELECT 1 FROM {$wpdb->postmeta} k WHERE k.post_id = {$list}.`id`"
+			. " AND k.meta_key = 'wpgv_pdf_template_kind' AND k.meta_value IN ('standard_list', 'standard_grid'))"
+			. " OR (NOT EXISTS (SELECT 1 FROM {$wpdb->postmeta} k WHERE k.post_id = {$list}.`id` AND k.meta_key = 'wpgv_pdf_template_kind')"
+			. " AND NOT EXISTS (SELECT 1 FROM {$wpdb->posts} p WHERE p.ID = {$list}.`template_id` AND p.post_type = 'voucher_template')))";
+	}
+}
+
 if (!class_exists('WPGV_Voucher_List')) :
 
 	/**
@@ -30,17 +113,74 @@ if (!class_exists('WPGV_Voucher_List')) :
 			return isset($_GET['woocommerce']) && sanitize_text_field(wp_unslash($_GET['woocommerce'])) === '1';
 		}
 
+		/**
+		 * The order types the current view shows.
+		 *
+		 * Gift card and gift item orders used to live behind separate tabs that
+		 * differed by nothing but this value, so finding an order meant knowing
+		 * which tab it was filed under. They share one tab now and this returns
+		 * both unless the Type dropdown narrows it.
+		 *
+		 * WooCommerce keeps its own tab: those rows carry a WooCommerce order id
+		 * and read differently.
+		 *
+		 * @return array One or more values for giftvouchers_list.order_type.
+		 */
 		protected static function get_current_order_type_filter()
 		{
-			if (self::is_items_view()) {
-				return 'items';
-			}
-
 			if (self::is_woocommerce_view()) {
-				return 'gift_voucher_product';
+				return array('gift_voucher_product');
 			}
 
-			return 'vouchers';
+			$chosen = self::get_chosen_order_type();
+
+			if ($chosen !== '') {
+				// Gift cards and templates share the stored value 'vouchers';
+				// order_type_where() splits them.
+				return array($chosen === 'templates' ? 'vouchers' : $chosen);
+			}
+
+			// ?items=1 was the old Purchased Items tab. Bookmarks and links inside
+			// the plugin still carry it, so it keeps working as a filter.
+			if (self::is_items_view()) {
+				return array('items');
+			}
+
+			return array('vouchers', 'items');
+		}
+
+		/** The Type dropdown selection, or '' when none is chosen. */
+		protected static function get_chosen_order_type()
+		{
+			if (!isset($_GET['wpgv_type'])) {
+				return '';
+			}
+
+			$value = sanitize_text_field(wp_unslash($_GET['wpgv_type']));
+
+			return in_array($value, array('vouchers', 'templates', 'items'), true) ? $value : '';
+		}
+
+		/** SQL fragment limiting a query to the current view's order types. */
+		protected static function order_type_where()
+		{
+			global $wpdb;
+
+			$types = self::get_current_order_type_filter();
+			$slots = implode(', ', array_fill(0, count($types), '%s'));
+
+			$where = $wpdb->prepare(" WHERE `order_type` IN ({$slots}) ", $types);
+
+			if (!self::is_woocommerce_view()) {
+				$chosen = self::get_chosen_order_type();
+				if ($chosen === 'vouchers') {
+					$where .= ' AND NOT ' . wpgv_order_is_template_sql() . ' ';
+				} elseif ($chosen === 'templates') {
+					$where .= ' AND ' . wpgv_order_is_template_sql() . ' ';
+				}
+			}
+
+			return $where;
 		}
 
 		protected static function get_current_view_args()
@@ -51,6 +191,14 @@ if (!class_exists('WPGV_Voucher_List')) :
 
 			if (self::is_woocommerce_view()) {
 				return array('woocommerce' => '1');
+			}
+
+			$chosen = self::get_chosen_order_type();
+
+			// Carried through paging and search links, otherwise the second page
+			// of a filtered list quietly shows everything again.
+			if ($chosen !== '') {
+				return array('wpgv_type' => $chosen);
 			}
 
 			return array();
@@ -87,7 +235,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 				$voucher_code = '1';
 			}
 
-			$where_clause = $wpdb->prepare(" WHERE `order_type` = %s ", self::get_current_order_type_filter());
+			$where_clause = self::order_type_where();
 
 			if ($page == 'vouchers-lists') {
 				if ($search && $voucher_code) {
@@ -240,8 +388,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 				}
 			}
 
-			$order_type = self::get_current_order_type_filter();
-			$where_clause = $wpdb->prepare(" WHERE `order_type` = %s ", $order_type);
+			$where_clause = self::order_type_where();
 
 			if ($page === 'vouchers-lists' && $search && $voucher_code !== '') {
 				$where_clause .= $wpdb->prepare(
@@ -318,6 +465,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 			$columns = array(
 				'cb'              => '<input type="checkbox" />',
 				'id'              => esc_html__('Order id', 'gift-voucher'),
+				'type'            => esc_html__('Type', 'gift-voucher'),
 				'couponcode'      => esc_html__('Voucher Code', 'gift-voucher'),
 				'voucher_info'    => esc_html__('Voucher Information', 'gift-voucher'),
 				'buyer_info'      => esc_html__('Buyer\'s Information', 'gift-voucher'),
@@ -327,6 +475,55 @@ if (!class_exists('WPGV_Voucher_List')) :
 			);
 
 			return $columns;
+		}
+
+
+		/**
+		 * Which flow the order came through.
+		 */
+		function column_type($item)
+		{
+			return esc_html(wpgv_order_type_label(wpgv_order_display_type($item)));
+		}
+
+		/**
+		 * The Type dropdown above the table.
+		 *
+		 * Only on the merged view. The WooCommerce tab holds one type, so a filter
+		 * there would be a control that cannot change anything.
+		 */
+		protected function extra_tablenav($which)
+		{
+			if ($which !== 'top' || self::is_woocommerce_view()) {
+				return;
+			}
+
+			$chosen = self::get_chosen_order_type();
+
+			// ?items=1 is the old tab link; show it selected rather than letting the
+			// dropdown claim nothing is filtered while the list is filtered.
+			if ($chosen === '' && self::is_items_view()) {
+				$chosen = 'items';
+			}
+
+			echo '<div class="alignleft actions">';
+			echo '<label class="screen-reader-text" for="wpgv_type">'
+				. esc_html__('Filter by type', 'gift-voucher') . '</label>';
+			echo '<select name="wpgv_type" id="wpgv_type">';
+			echo '<option value="">' . esc_html__('All types', 'gift-voucher') . '</option>';
+
+			foreach (array('vouchers', 'templates', 'items') as $type) {
+				printf(
+					'<option value="%s"%s>%s</option>',
+					esc_attr($type),
+					selected($chosen, $type, false),
+					esc_html(wpgv_order_type_label($type))
+				);
+			}
+
+			echo '</select>';
+			submit_button(__('Filter', 'gift-voucher'), '', 'filter_action', false);
+			echo '</div>';
 		}
 
 

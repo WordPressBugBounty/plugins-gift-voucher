@@ -61,7 +61,7 @@ function wpgv_register_gift_card_data_box()
 
     add_meta_box(
         'wpgv-template-details',
-        __('Template Details', 'gift-voucher'),
+        __('Gift Voucher Details', 'gift-voucher'),
         'wpgv_render_template_details_box',
         'voucher_template',
         'normal',
@@ -72,9 +72,14 @@ function wpgv_register_gift_card_data_box()
 /**
  * Render the standard template panel.
  *
- * These fields used to live on the separate Voucher Templates screen, which wrote
- * straight to giftvouchers_template while the front end read the mirrored post,
- * so an edit there never reached the buying form.
+ * Laid out field for field like the gift item's Item Details box, so the two
+ * types read the same in admin: Description, Price, Special Price and three
+ * style images with the same labels, sizes and buttons.
+ *
+ * The field names are prefixed (wpgv_template_*) because both boxes sit on the
+ * same edit screen - only shown or hidden by Type - and same-named inputs would
+ * submit twice. The values themselves go to the same meta keys as an item's, so
+ * the price rules in wpgv_resolve_item_amounts() apply to templates unchanged.
  *
  * The publish state carries the template's active flag, so there is no separate
  * Status field to disagree with it.
@@ -92,51 +97,68 @@ function wpgv_render_template_details_box($post)
         $images = array();
     }
 
-    echo '<p class="description">'
-        . esc_html__('Pick up to three background images. Use the Publish box to make this template available on the order form.', 'gift-voucher')
-        . '</p>';
+    $description = (string) wpgv_item_meta($post->ID, 'description');
+    $price = (string) wpgv_item_meta($post->ID, 'price');
+    $special_price = (string) wpgv_item_meta($post->ID, 'special_price');
 
+    echo '<p class="post-attributes-label-wrapper"><label class="post-attributes-label" for="wpgv_template_description">' . esc_html__('Description', 'gift-voucher') . ': (20 Words)</label></p>';
+    echo '<textarea name="wpgv_template_description" id="wpgv_template_description" class="widefat">' . esc_textarea($description) . '</textarea><div class="dt_hr dt_hr-bottom"></div>';
+
+    echo '<p class="post-attributes-label-wrapper"><label class="post-attributes-label" for="wpgv_template_price">' . esc_html__('Price', 'gift-voucher') . ':</label></p>';
+    echo '<input type="number" name="wpgv_template_price" id="wpgv_template_price" class="widefat" value="' . esc_attr($price) . '" step=".01" min="0">';
+    echo '<p class="description">' . esc_html__('Leave empty to let customers enter their own amount. Special Price is then ignored.', 'gift-voucher') . '</p><div class="dt_hr dt_hr-bottom"></div>';
+
+    echo '<p class="post-attributes-label-wrapper"><label class="post-attributes-label" for="wpgv_template_special_price">' . esc_html__('Special Price', 'gift-voucher') . ':</label></p>';
+    echo '<input type="number" name="wpgv_template_special_price" id="wpgv_template_special_price" class="widefat" value="' . esc_attr($special_price) . '" step=".01" min="0"><div class="dt_hr dt_hr-bottom"></div>';
+
+    $sizes = array('1000px x 760px', '1000px x 1500px', '1000px x 750px');
     for ($i = 0; $i < 3; $i++) {
         $value = isset($images[$i]) ? (string) $images[$i] : '';
-        $url   = $value ? wp_get_attachment_url((int) $value) : '';
+        $thumb = $value ? wp_get_attachment_image_src((int) $value, 'voucher-thumb') : false;
+        $url = $thumb ? $thumb[0] : '';
 
-        echo '<p><label><strong>' . sprintf(
-            /* translators: %d: image slot number */
-            esc_html__('Image — Style %d', 'gift-voucher'),
-            $i + 1
-        ) . '</strong></label><br>';
-
-        printf(
-            '<input type="hidden" class="wpgv-tpl-image-id" name="wpgv_template_image[%d]" value="%s">',
-            (int) $i,
-            esc_attr($value)
-        );
-        printf(
-            '<img class="wpgv-tpl-image-preview" src="%s" style="max-height:80px;display:%s"><br>',
-            esc_url($url),
-            $url ? 'block' : 'none'
-        );
-        echo '<button type="button" class="button wpgv-tpl-image-pick">' . esc_html__('Select image', 'gift-voucher') . '</button> ';
-        echo '<button type="button" class="button wpgv-tpl-image-clear">' . esc_html__('Remove', 'gift-voucher') . '</button>';
-        echo '</p>';
+        echo '<div class="wpgv-tpl-image">';
+        echo '<p class="post-attributes-label-wrapper"><label class="post-attributes-label">'
+            . esc_html(sprintf('Image - Style %d (Recommended: %s). ', $i + 1, $sizes[$i]))
+            . esc_html__('Supported formats: JPG, PNG only.', 'gift-voucher') . '</label></p>';
+        printf('<img class="wpgv-tpl-image-preview" src="%s" width="100" style="display:%s;">', esc_url($url), $url ? 'inline' : 'none');
+        printf('<input type="hidden" class="wpgv-tpl-image-id" name="wpgv_template_image[%d]" value="%s">', (int) $i, esc_attr($value));
+        echo '<button type="button" class="button wpgv-tpl-image-pick">' . esc_html__('Upload Image', 'gift-voucher') . '</button> ';
+        echo '<button type="button" class="button button-primary wpgv-tpl-image-clear" style="display:' . ($value ? 'inline-block' : 'none') . ';">' . esc_html__('Remove Image', 'gift-voucher') . '</button><br>';
+        echo '</div>';
     }
     ?>
     <script>
     jQuery(function ($) {
-        $('.wpgv-tpl-image-pick').on('click', function () {
-            var wrap = $(this).closest('p');
-            var frame = wp.media({ multiple: false, library: { type: 'image' } });
+        $('.wpgv-tpl-image-pick').on('click', function (e) {
+            e.preventDefault();
+            var wrap = $(this).closest('.wpgv-tpl-image');
+            var frame = wp.media({
+                title: 'Add Voucher Image',
+                button: { text: 'Upload Image' },
+                multiple: false,
+                library: { type: 'image' }
+            });
             frame.on('select', function () {
                 var a = frame.state().get('selection').first().toJSON();
+                // Same rule as the gift item images: JPG and PNG only.
+                var mime = a.mime || a.mime_type || '';
+                var ext = (a.url || '').split('.').pop().toLowerCase();
+                if (['image/jpeg', 'image/png'].indexOf(mime) === -1 && ['jpg', 'jpeg', 'png'].indexOf(ext) === -1) {
+                    alert('<?php echo esc_js(__('Only JPG and PNG images are supported for Image - Style. Please choose a JPG or PNG file.', 'gift-voucher')); ?>');
+                    return;
+                }
                 wrap.find('.wpgv-tpl-image-id').val(a.id);
                 wrap.find('.wpgv-tpl-image-preview').attr('src', a.url).show();
+                wrap.find('.wpgv-tpl-image-clear').show();
             });
             frame.open();
         });
         $('.wpgv-tpl-image-clear').on('click', function () {
-            var wrap = $(this).closest('p');
+            var wrap = $(this).closest('.wpgv-tpl-image');
             wrap.find('.wpgv-tpl-image-id').val('');
-            wrap.find('.wpgv-tpl-image-preview').hide();
+            wrap.find('.wpgv-tpl-image-preview').attr('src', '').hide();
+            $(this).hide();
         });
     });
     </script>
@@ -196,7 +218,28 @@ function wpgv_save_template_details($post_id, $post)
         return $v === '0' ? '' : $v;
     }, $images);
 
+    // JPG and PNG only, as for gift item images: the PDF renderer cannot use the rest.
+    foreach ($images as $i => $id) {
+        if ($id !== '' && !in_array(get_post_mime_type((int) $id), array('image/jpeg', 'image/png'), true)) {
+            $images[$i] = '';
+        }
+    }
+
     update_post_meta($post_id, '_wpgv_legacy_image_style', wp_json_encode($images));
+
+    // Description and prices share the gift item's meta keys, so one set of price
+    // rules (wpgv_resolve_item_amounts) serves both. Unlike the item box this keeps
+    // decimals: absint() there turns 49.90 into 49.
+    $text = function ($key) {
+        return isset($_POST[$key]) ? trim((string) wp_unslash($_POST[$key])) : '';
+    };
+    $money = function ($key) use ($text) {
+        $amount = wpgv_normalize_decimal_amount($text($key));
+        return ($amount === null || $amount <= 0) ? '' : (string) $amount;
+    };
+    wpgv_sync_item_meta($post_id, 'description', sanitize_textarea_field($text('wpgv_template_description')));
+    wpgv_sync_item_meta($post_id, 'price', $money('wpgv_template_price'));
+    wpgv_sync_item_meta($post_id, 'special_price', $money('wpgv_template_special_price'));
 
     wpgv_sync_template_to_legacy_table($post_id);
 }
@@ -250,13 +293,13 @@ function wpgv_render_gift_card_data_box($post)
     $labels = array(
         'card'     => __('Gift Card', 'gift-voucher'),
         'item'     => __('Gift Item', 'gift-voucher'),
-        'template' => __('Voucher Template', 'gift-voucher'),
+        'template' => __('Gift Voucher', 'gift-voucher'),
     );
 
     $hints = array(
         'card'     => __('Designed card, sold through [wpgv_giftcard]', 'gift-voucher'),
         'item'     => __('Fixed-price product, sold through [wpgv_giftitems]', 'gift-voucher'),
-        'template' => __('Standard template, sold through [wpgv_giftvoucher]', 'gift-voucher'),
+        'template' => __('Standard gift voucher, sold through [wpgv_giftvoucher]', 'gift-voucher'),
     );
 
     $locked = wpgv_kind_is_locked($post->ID);

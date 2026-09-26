@@ -311,6 +311,53 @@
     padding: 5px 10px;
 }
 
+/* Voucher Value for a gift item without a price: symbol inside the field. */
+.wpgv-form-fields .wpgv-amount-input {
+    position: relative;
+}
+
+.wpgv-form-fields .wpgv-amount-currency {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    color: #555;
+    pointer-events: none;
+}
+
+.wpgv-form-fields .wpgv-amount-input .form-field {
+    padding-left: 32px;
+    font-size: 1.1em;
+}
+
+.wpgv-form-fields .wpgv-amount-input--right .wpgv-amount-currency {
+    left: auto;
+    right: 12px;
+}
+
+.wpgv-form-fields .wpgv-amount-input--right .form-field {
+    padding-left: 10px;
+    padding-right: 32px;
+    text-align: right;
+}
+
+.wpgv-form-fields .wpgv-amount-hint {
+    margin: 6px 0 0;
+    font-size: 0.85em;
+    color: #666;
+}
+
+.wpgv-form-fields.has-error .form-field {
+    box-shadow: inset 0 0 0 2px #d63638;
+}
+
+.wpgv-form-fields label sup {
+    color: #d63638;
+}
+
 .wpgv-form-fields .form-field:focus {
     background: #fff;
     outline: 0;

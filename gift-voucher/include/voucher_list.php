@@ -49,6 +49,9 @@ $wpgv_import_result = $wpgv_is_import_tab ? wpgv_handle_giftcard_db_import() : n
 					<input type="hidden" name="page" value="<?php echo esc_html("vouchers-lists"); ?>">
 					<?php if ($items): ?><input type="hidden" name="items" value="<?php echo esc_html("1"); ?>"><?php endif; ?>
 					<?php if ($woocommerce): ?><input type="hidden" name="woocommerce" value="<?php echo esc_html("1"); ?>"><?php endif; ?>
+					<?php // Keep the Type filter when searching, or a search quietly lists every type again.
+					$wpgv_search_type = isset($_GET['wpgv_type']) ? sanitize_text_field(wp_unslash($_GET['wpgv_type'])) : '';
+					if (in_array($wpgv_search_type, array('vouchers', 'templates', 'items'), true)): ?><input type="hidden" name="wpgv_type" value="<?php echo esc_attr($wpgv_search_type); ?>"><?php endif; ?>
 					<input type="hidden" name="search" value="<?php echo esc_html("1"); ?>">
 					<input type="text" name="voucher_code" autocomplete="off" placeholder="<?php echo esc_attr__('Search by Gift voucher code or email', 'gift-voucher'); ?>" value="<?php echo esc_html($voucher_code); ?>" style="width: 400px;">
 					<input type="submit" class="button button-primary" value="<?php echo esc_attr__("Search", 'gift-voucher'); ?>">
@@ -57,8 +60,7 @@ $wpgv_import_result = $wpgv_is_import_tab ? wpgv_handle_giftcard_db_import() : n
 		<?php } ?>
 		<!-- <a href="<?php echo esc_url(admin_url('edit.php')); ?>?post_type=wpgv_voucher_product&page=import-orders" class="button button-primary" style="display: inline-block;padding: 0 10px;float:right;"><?php echo esc_html_e('Import Vouchers', 'gift-voucher') ?></a> -->
 		<h2 class="nav-tab-wrapper">
-			<a class="nav-tab <?php if (!$items && !$woocommerce && !$wpgv_is_import_tab): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists"><?php echo esc_html_e('Purchased Voucher Codes', 'gift-voucher') ?></a>
-			<a class="nav-tab <?php if ($items && !$wpgv_is_import_tab): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists&items=1"><?php echo esc_html_e('Purchased Items', 'gift-voucher') ?></a>
+			<a class="nav-tab <?php if (!$woocommerce && !$wpgv_is_import_tab): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists"><?php echo esc_html_e('Orders', 'gift-voucher') ?></a>
 			<a class="nav-tab <?php if ($woocommerce && !$wpgv_is_import_tab): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists&woocommerce=1"><?php echo esc_html_e('WooCommerce Orders', 'gift-voucher') ?></a>
 			<a class="nav-tab" href="<?php echo esc_url(wpgv_db_transfer_export_url()); ?>"><?php echo esc_html_e('Export Database', 'gift-voucher') ?></a>
 			<a class="nav-tab <?php if ($wpgv_is_import_tab): ?>nav-tab-active<?php endif; ?>" href="<?php echo esc_url(wpgv_db_transfer_import_url()); ?>"><?php echo esc_html_e('Import Database', 'gift-voucher') ?></a>

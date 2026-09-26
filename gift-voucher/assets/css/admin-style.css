@@ -363,25 +363,124 @@
     opacity: 1;
 }
 
-.wpgv-template-box img {
-    max-width: 225px;
-    margin: 0 5px;
-    border: 6px solid #fff;
-    transition: border-radius 0.5s linear;
+.wpgv-template-box th label {
+    font-weight: 600;
 }
 
-.wpgv-template-box input[type="radio"]:checked+img {
-    border: 6px solid red;
-    border-radius: 20px;
-    transition: border-radius 0.5s linear;
+/* Template Style chooser: grouped, even tiles, keyboard reachable. */
+.wpgv-style-picker .description {
+    margin: 0 0 12px;
 }
 
-.wpgv-template-box input[type="radio"] {
+.wpgv-style-group {
+    margin-bottom: 20px;
+}
+
+.wpgv-style-group__title {
+    margin: 0 0 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: .04em;
+    color: #50575e;
+}
+
+.wpgv-style-group__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    max-width: 960px;
+}
+
+.wpgv-style-group--portrait .wpgv-style-group__grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 200px));
+}
+
+.wpgv-style-option {
+    position: relative;
+}
+
+/* Visually hidden but still in the tab order and operable by keyboard. */
+.wpgv-style-option__radio {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+}
+
+.wpgv-style-option__card {
+    display: block;
+    position: relative;
+    padding: 8px;
+    background: #fff;
+    border: 2px solid #dcdcde;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.wpgv-style-option__card:hover {
+    border-color: #8c8f94;
+}
+
+.wpgv-style-option__thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 140px;
+    background: #f6f7f7;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.wpgv-style-group--portrait .wpgv-style-option__thumb {
+    height: 260px;
+}
+
+.wpgv-style-option__thumb img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.wpgv-style-option__check {
     display: none;
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #2271b1;
+    box-shadow: 0 0 0 2px #fff;
 }
 
-.wpgv-template-box label {
-    float: left;
+.wpgv-style-option__check::after {
+    content: "";
+    position: absolute;
+    left: 8px;
+    top: 4px;
+    width: 6px;
+    height: 11px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.wpgv-style-option__radio:checked + .wpgv-style-option__card {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+.wpgv-style-option__radio:checked + .wpgv-style-option__card .wpgv-style-option__check {
+    display: block;
+}
+
+.wpgv-style-option__radio:focus-visible + .wpgv-style-option__card {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
 }
 
 #edit-price,

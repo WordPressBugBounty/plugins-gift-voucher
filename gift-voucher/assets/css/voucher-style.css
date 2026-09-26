@@ -516,6 +516,40 @@
     padding-left: 30px
 }
 
+/* 4.8.1: a template with a price set in admin locks the Voucher Value. */
+#voucher-multistep-form .voucherform #voucherAmount.wpgv-locked {
+    background: #f3f3f3;
+    color: #333;
+    cursor: not-allowed
+}
+
+#voucher-multistep-form .voucherform .wpgv-fixed-value-note {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #555
+}
+
+/* Description and price under each template in step 1, like the gift item list. */
+#voucher-multistep-form .sin-template .wpgv-template-meta {
+    margin-top: 6px
+}
+
+#voucher-multistep-form .sin-template .wpgv-template-desc {
+    margin: 0 0 4px;
+    font-size: 13px;
+    color: #555
+}
+
+#voucher-multistep-form .sin-template .wpgv-template-price {
+    font-weight: 700
+}
+
+#voucher-multistep-form .sin-template .wpgv-template-price del {
+    font-weight: 400;
+    color: #888;
+    margin-right: 4px
+}
+
 #voucher-multistep-form .secondRightDiv.sideview {
     width: 50%;
     float: right;

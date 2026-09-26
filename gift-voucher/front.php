@@ -324,7 +324,18 @@ function wpgv_voucher_shortcode()
         $images = $options->image_style ? json_decode($options->image_style) : ['', '', ''];
         $image_attributes = wp_get_attachment_image_src($images[0], 'voucher-thumb');
         $image = ($image_attributes) ? $image_attributes[0] : get_option('wpgv_demoimageurl');
-        $html .= '<div class="vouchercol' . esc_html($setting_options->template_col) . '"><div class="sin-template"><label for="template_id' . esc_html($options->id) . '"><img src="' . esc_url($image) . '" width=""/><span>' . esc_html($options->title) . '</span></label><input type="radio" name="template_id" value="' . esc_attr($options->id) . '" id="template_id' . esc_html($options->id) . '" class="required"></div></div>';
+        // Description and price, shown like a gift item's. Kept outside the label:
+        // its <span> is the hover overlay for the title.
+        $template_meta = '';
+        $template_post = wpgv_find_post_by_legacy_template_id($options->id);
+        if ($template_post) {
+            $template_desc = (string) wpgv_item_meta($template_post, 'description');
+            $template_meta = '<div class="wpgv-template-meta">'
+                . ($template_desc !== '' ? '<p class="wpgv-template-desc">' . esc_html($template_desc) . '</p>' : '')
+                . '<div class="wpgv-template-price">' . wpgv_item_price_html($template_post, wpgv_item_meta($template_post, 'price'), wpgv_item_meta($template_post, 'special_price')) . '</div>'
+                . '</div>';
+        }
+        $html .= '<div class="vouchercol' . esc_html($setting_options->template_col) . '"><div class="sin-template"><label for="template_id' . esc_html($options->id) . '"><img src="' . esc_url($image) . '" width=""/><span>' . esc_html($options->title) . '</span></label>' . $template_meta . '<input type="radio" name="template_id" value="' . esc_attr($options->id) . '" id="template_id' . esc_html($options->id) . '" class="required"></div></div>';
     }
     $html .= '</div></fieldset>
 
@@ -337,9 +348,13 @@ function wpgv_voucher_shortcode()
             </div>
             ' . $buying_for_html . '
             <div class="form-group">
-                <label for="voucherAmount">' . __('Voucher Value', 'gift-voucher') . ' ' . esc_html($minVoucherValueMsg) . '<sup>*</sup></label>
+                <label for="voucherAmount">' . __('Voucher Value', 'gift-voucher') . ' <span class="wpgv-min-note">' . esc_html($minVoucherValueMsg) . '</span><sup>*</sup></label>
                 <span class="currencySymbol"> ' . esc_html($setting_options->currency) . ' </span>
                 <input type="number" name="voucherAmount" id="voucherAmount" class="required" min="' . esc_html($minVoucherValue) . '" max="' . esc_html($maxVoucherValue) . '">
+                <p class="wpgv-fixed-value-note" style="display:none"'
+                . ' data-fixed="' . esc_attr__('This template has a fixed value set by the shop.', 'gift-voucher') . '"'
+                /* translators: %s: special price the customer pays */
+                . ' data-special="' . esc_attr__('This template has a fixed value set by the shop. Special price: you pay %s.', 'gift-voucher') . '"></p>
             </div>
             <div class="form-group">
                 <label for="voucherMessage">' . __('Personal Message (Optional)', 'gift-voucher') . ' (' . __('Max: 250 Characters', 'gift-voucher') . ')</label>
@@ -598,10 +613,30 @@ function wpgv__doajax_front_template()
         $image_styles[] = ($image_attributes) ? esc_url($image_attributes[0]) : esc_url(get_option('wpgv_demoimageurl'));
     }
 
+    // Price data for step 2. A template with a price set in admin fills the
+    // Voucher Value and locks it; one without leaves it for the customer. The
+    // server applies the same rule again (wpgv_resolve_item_amounts), so this
+    // only shapes the form - it is not what decides the charge.
+    $template_post = wpgv_find_post_by_legacy_template_id($template_id);
+    $open_price = !$template_post || wpgv_item_is_open_price($template_post);
+    $price = 0.0;
+    $pay = 0.0;
+    if (!$open_price) {
+        $amounts = wpgv_resolve_item_amounts($template_post, '', null);
+        $price = $amounts['face'];
+        $pay = $amounts['pay'];
+    }
+
     // Prepare the data with escaping
     $data = array(
         'images' => $image_styles,
-        'title' => esc_html($template_options->title)
+        'title' => esc_html($template_options->title),
+        'description' => $template_post ? esc_html((string) wpgv_item_meta($template_post, 'description')) : '',
+        'open_price' => $open_price,
+        'price' => $price,
+        'pay' => $pay,
+        'price_label' => $open_price ? '' : wpgv_price_format($price),
+        'pay_label' => $open_price ? '' : wpgv_price_format($pay),
     );
 
     // Send JSON response

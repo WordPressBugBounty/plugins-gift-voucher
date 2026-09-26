@@ -40,6 +40,7 @@ jQuery(document).ready(function ($) {
                         });
                         $('.voucherBottomDiv h2').html(data.title);
                         $('.wpgv-itemtitle').html(data.title);
+                        wpgv_apply_template_price(data);
                     }
                 });
             }
@@ -130,6 +131,45 @@ jQuery(document).ready(function ($) {
         $(".fromNameCard").val(dInput);
         $(".voucherReceiverInfo").html(dInput);
     });
+    // A template with a price set in admin: Voucher Value is filled in and locked,
+    // and the order total uses the price the customer pays (Special Price when
+    // set). A template without one: the field is the customer's, as before. The
+    // server enforces the same rule; this only keeps the form honest about it.
+    var $voucherAmount = $('#voucherAmount'),
+        $fixedNote = $voucherAmount.closest('.form-group').find('.wpgv-fixed-value-note'),
+        $minNote = $voucherAmount.closest('.form-group').find('.wpgv-min-note'),
+        amountLimits = { min: $voucherAmount.attr('min'), max: $voucherAmount.attr('max') };
+
+    function wpgv_apply_template_price(data) {
+        var locked = $voucherAmount.prop('readonly');
+        if (data && data.open_price === false) {
+            var price = parseFloat(data.price).toFixed(2),
+                pay = parseFloat(data.pay).toFixed(2),
+                total = (parseFloat(pay) + parseFloat($website_commission_price.data('price'))).toFixed(2);
+            // A fixed price may sit outside the customer range, so drop min/max.
+            $voucherAmount.removeAttr('min').removeAttr('max').prop('readonly', true)
+                .addClass('wpgv-locked').val(price).trigger('input');
+            $voucherAmount.removeClass('error').siblings('label.error').remove();
+            $itempricespan.html(pay);
+            $wpgv_total_price.val(total);
+            $totalpricespan.html(total);
+            $voucherPaymentButtonSpan.html(total);
+            $fixedNote.text(pay !== price
+                ? String($fixedNote.data('special')).replace('%s', data.pay_label)
+                : $fixedNote.data('fixed')).show();
+            $minNote.hide();
+        } else {
+            $voucherAmount.attr('min', amountLimits.min).attr('max', amountLimits.max)
+                .prop('readonly', false).removeClass('wpgv-locked');
+            // Coming from a priced template, do not leave its price as if typed.
+            if (locked) {
+                $voucherAmount.val('').trigger('input');
+            }
+            $fixedNote.hide();
+            $minNote.show();
+        }
+    }
+
     $('#voucherAmount').on('input blur', function () {
         var dInput = this.value,
             totalprice = parseFloat(dInput) + parseFloat($website_commission_price.data('price'));

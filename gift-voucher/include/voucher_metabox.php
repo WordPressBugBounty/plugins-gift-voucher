@@ -213,7 +213,8 @@ function wpgv_voucher_amount()
   echo '<textarea name="description" id="description" class="widefat">' . esc_textarea($description) . '</textarea><div class="dt_hr dt_hr-bottom"></div>';
 
   echo '<p class="post-attributes-label-wrapper"><label class="post-attributes-label" for="price">' . esc_html__('Item Price', 'gift-voucher') . ':</label></p>';
-  echo '<input type="number" name="price" id="price" class="widefat" value="' . esc_attr($price) . '" step=".01"><div class="dt_hr dt_hr-bottom"></div>';
+  echo '<input type="number" name="price" id="price" class="widefat" value="' . esc_attr($price) . '" step=".01">';
+  echo '<p class="description">' . esc_html__('Leave empty to let customers enter their own amount. Special Price is then ignored.', 'gift-voucher') . '</p><div class="dt_hr dt_hr-bottom"></div>';
 
   echo '<p class="post-attributes-label-wrapper"><label class="post-attributes-label" for="special_price">' . esc_html__('Item Special Price', 'gift-voucher') . ':</label></p>';
   echo '<input type="number" name="special_price" id="special_price" class="widefat" value="' . esc_attr($special_price) . '" step=".01"><div class="dt_hr dt_hr-bottom"></div>';
@@ -323,7 +324,9 @@ function wpt_save_voucher_meta($post_id, $post)
   // OK, we're authenticated: we need to find and save the data
   // We'll put it into an array to make it easier to loop though.
   $events_meta['description'] = sanitize_textarea_field($_POST['description']);
-  $events_meta['price'] = absint($_POST['price']);
+  // Empty stays empty: an item without a price lets the customer choose the
+  // amount (wpgv_item_is_open_price). absint() would have stored it as 0.
+  $events_meta['price'] = (isset($_POST['price']) && trim((string) $_POST['price']) !== '') ? absint($_POST['price']) : '';
   $events_meta['special_price'] = absint($_POST['special_price']);
   $events_meta['style1_image'] = sanitize_text_field($_POST['style1_image']);
   $events_meta['style2_image'] = sanitize_text_field($_POST['style2_image']);
@@ -408,7 +411,7 @@ class Template_Voucher
   private $fields = array(
     array(
       'id' => 'template-style',
-      'label' => 'Template Style Lanscape(Right click to open the image)',
+      'label' => 'Template Style',
       'type' => 'radio',
       'options' => array(
         'template-voucher-lanscape-4.png',
@@ -521,21 +524,22 @@ class Template_Voucher
                 switch ($field['type']) {
 
                   case 'radio':
+                    if ($field['id'] === 'template-style') {
+                      $input = $this->template_style_picker($field, $db_value);
+                      break;
+                    }
                     $input = '<fieldset>';
                     $input .= '<legend class="screen-reader-text">' . esc_html($field['label']) . '</legend>';
-                    $i = 0;
                     foreach ($field['options'] as $key => $value) {
                       $field_value = !is_numeric($key) ? esc_attr($key) : esc_attr($value);
                       $input .= sprintf(
-                        '<label><input %s id="%s" name="%s" type="radio" value="%s"><img src="%s"></label>%s',
+                        '<label><input %s id="%s" name="%s" type="radio" value="%s"><img src="%s"></label>',
                         $db_value === $field_value ? 'checked' : '',
                         sanitize_text_field(esc_attr($field['id'])),
                         sanitize_text_field(esc_attr($field['id'])),
                         sanitize_text_field($field_value),
-                        sanitize_url(WPGIFT__PLUGIN_URL . '/assets/img/templates/png/' . $value),
-                        $i < count($field['options']) - 1 ? '' : ''
+                        sanitize_url(WPGIFT__PLUGIN_URL . '/assets/img/templates/png/' . $value)
                       );
-                      $i++;
                     }
                     $input .= '</fieldset>';
                     break;
@@ -571,12 +575,31 @@ class Template_Voucher
                 $output .= $this->row_format($label, $input);
               }
               $arr = array(
-                'fieldset' => array(),
+                'fieldset' => array(
+                  'class' => array(),
+                ),
                 'legend' => array(
                   'class' => array(),
                 ),
+                'div' => array(
+                  'class' => array(),
+                ),
+                'p' => array(
+                  'class' => array(),
+                ),
+                'span' => array(
+                  'class' => array(),
+                  'aria-hidden' => array(),
+                ),
+                'a' => array(
+                  'class' => array(),
+                  'href' => array(),
+                  'target' => array(),
+                  'rel' => array(),
+                ),
                 'label' => array(
                   'for' => array(),
+                  'class' => array(),
                 ),
                 'input' => array(
                   'class' => array(),
@@ -588,9 +611,11 @@ class Template_Voucher
                   'min'   => array(),
                 ),
                 'img' => array(
-                  'title' => array(),
-                  'src'   => array(),
-                  'alt'   => array(),
+                  'title'   => array(),
+                  'src'     => array(),
+                  'alt'     => array(),
+                  'class'   => array(),
+                  'loading' => array(),
                 ),
                 'select' => array(
                   'class' => array(),
@@ -609,6 +634,82 @@ class Template_Voucher
 
               );
               echo '<table class="form-table wpgv-template-box"><tbody>' . wp_kses($output, $arr) . '</tbody></table>';
+            }
+            /**
+             * The Template Style chooser: designs grouped by orientation.
+             *
+             * The old chooser floated six images of mixed height into one run, so a
+             * portrait design sat in the landscape row and left a tall gap, the label
+             * called the whole set "Lanscape", and the radios were display:none so the
+             * keyboard could not reach them. The saved value is unchanged: same name, same values.
+             *
+             * @param array  $field    Field definition from $this->fields.
+             * @param string $db_value Saved template filename.
+             * @return string
+             */
+            private function template_style_picker($field, $db_value)
+            {
+              // Not shown on screen; kept as alt text so a screen reader can tell
+              // the designs apart.
+              $names = array(
+                'template-voucher-lanscape-4.png'  => __('Elegant', 'gift-voucher'),
+                'template-voucher-lanscape-8.png'  => __('Navy and Gold', 'gift-voucher'),
+                'template-voucher-lanscape-10.png' => __("Valentine's Day", 'gift-voucher'),
+                'template-voucher-portail-1.png'   => __('A Gift For You', 'gift-voucher'),
+                'template-voucher-portail-2.png'   => __('Evergreen', 'gift-voucher'),
+                'template-voucher-portail-6.png'   => __('Red Ribbon', 'gift-voucher'),
+              );
+
+              $groups = array(
+                'landscape' => array('label' => __('Landscape', 'gift-voucher'), 'options' => array()),
+                'portrait'  => array('label' => __('Portrait', 'gift-voucher'), 'options' => array()),
+              );
+
+              foreach ($field['options'] as $file) {
+                $group = strpos($file, 'portail') !== false ? 'portrait' : 'landscape';
+                $groups[$group]['options'][] = $file;
+              }
+
+              $html = '<fieldset class="wpgv-style-picker">';
+              $html .= '<legend class="screen-reader-text">' . esc_html__('Template Style', 'gift-voucher') . '</legend>';
+              $html .= '<p class="description">' . esc_html__('Choose the design customers see for this gift card.', 'gift-voucher') . '</p>';
+
+              $n = 0;
+              foreach ($groups as $key => $group) {
+                if (!$group['options']) {
+                  continue;
+                }
+
+                $html .= '<div class="wpgv-style-group wpgv-style-group--' . esc_attr($key) . '">';
+                $html .= '<p class="wpgv-style-group__title">' . esc_html($group['label']) . '</p>';
+                $html .= '<div class="wpgv-style-group__grid">';
+
+                foreach ($group['options'] as $file) {
+                  $n++;
+                  $id   = 'wpgv-template-style-' . $n;
+                  $url  = WPGIFT__PLUGIN_URL . '/assets/img/templates/png/' . $file;
+                  /* translators: %d: position of the design in the chooser */
+                  $name = isset($names[$file]) ? $names[$file] : sprintf(__('Design %d', 'gift-voucher'), $n);
+
+                  $html .= '<div class="wpgv-style-option">';
+                  $html .= sprintf(
+                    '<input class="wpgv-style-option__radio" type="radio" id="%1$s" name="%2$s" value="%3$s" %4$s>',
+                    esc_attr($id),
+                    esc_attr($field['id']),
+                    esc_attr($file),
+                    $db_value === $file ? 'checked' : ''
+                  );
+                  $html .= '<label class="wpgv-style-option__card" for="' . esc_attr($id) . '">';
+                  $html .= '<span class="wpgv-style-option__thumb"><img src="' . esc_url($url) . '" alt="' . esc_attr($name) . '" loading="lazy"></span>';
+                  $html .= '<span class="wpgv-style-option__check" aria-hidden="true"></span>';
+                  $html .= '</label>';
+                  $html .= '</div>';
+                }
+
+                $html .= '</div></div>';
+              }
+
+              return $html . '</fieldset>';
             }
             /**
              * Generates the HTML for table rows.

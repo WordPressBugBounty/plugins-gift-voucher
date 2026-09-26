@@ -96,20 +96,19 @@ function wpgv__doajax_item_pdf_save_func()
 	// with a special price of 80 charges 80 and credits 100 - that gap is the
 	// promotion, confirmed by the product owner. Never collapse the two.
 	// See docs-ai/AI_DATA_FLOW.md "Face value vs promotional price".
-	$price = esc_html(wpgv_item_meta($itemid, 'price'));
-	$special_price = esc_html(wpgv_item_meta($itemid, 'special_price'));
-
-	// Guard the face value before a coupon code is minted, so a rejected request
-	// does not burn one. Deliberately NOT wpgv_validate_public_voucher_amount():
-	// that helper also enforces the voucher_min_value / voucher_max_value range,
-	// which exists for amounts a customer types into the standard form. An item
-	// price is set by the shop owner, so applying that range would reject
-	// legitimate items on any site whose minimum is above its cheapest item.
-	$normalized_price = wpgv_normalize_decimal_amount($price);
-	if ($normalized_price === null || $normalized_price <= 0) {
-		wp_send_json_error(array('message' => __('This gift item has no valid price.', 'gift-voucher')), 400);
+	//
+	// Resolved before a coupon code is minted, so a rejected request does not burn
+	// one. A priced item takes both numbers from the database and ignores what
+	// the browser sent. An item with no price lets the customer choose the
+	// amount, and only that amount is range-checked against Min/Max Voucher
+	// Value - a shop owner's own item price is never held to that range.
+	$customer_amount = isset($_POST['customamount']) ? sanitize_text_field(base64_decode(wp_unslash($_POST['customamount']))) : '';
+	$amounts = wpgv_resolve_item_amounts($itemid, $customer_amount, $setting_options);
+	if (is_wp_error($amounts)) {
+		wp_send_json_error(array('message' => $amounts->get_error_message()), 400);
 		wp_die();
 	}
+	$price = $amounts['face'];
 
 	$code = wpgv_generate_unique_couponcode();
 	if (is_wp_error($code)) {
@@ -119,9 +118,8 @@ function wpgv__doajax_item_pdf_save_func()
 	$voucher_bgcolor = wpgv_hex2rgb($setting_options->voucher_bgcolor);
 	$voucher_color = wpgv_hex2rgb($setting_options->voucher_color);
 
-	$value = $price;
-	$currency = wpgv_price_format($value);
-	$value = ($special_price) ? $special_price : $price;
+	$currency = wpgv_price_format($price);
+	$value = $amounts['pay'];
 
 	$wpgv_hide_expiry = get_option('wpgv_hide_expiry') ? get_option('wpgv_hide_expiry') : 'yes';
 	$wpgv_customer_receipt = get_option('wpgv_customer_receipt') ? get_option('wpgv_customer_receipt') : 0;

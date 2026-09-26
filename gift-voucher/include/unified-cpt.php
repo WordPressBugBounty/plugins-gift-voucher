@@ -773,6 +773,60 @@ function wpgv_is_purchasable_gift_item($post_id)
 }
 
 /**
+ * Whether a gift item lets the customer choose the amount.
+ *
+ * An item whose Item Price is empty or 0 is "open price". Before 4.8.1 such an
+ * item could not be bought at all - the order handler rejected it for having
+ * no valid price - so giving it this meaning changes no item that was on sale.
+ *
+ * @param int $item_id Gift item post id.
+ * @return bool
+ */
+function wpgv_item_is_open_price($item_id)
+{
+    $price = wpgv_normalize_decimal_amount(wpgv_item_meta($item_id, 'price'));
+
+    return $price === null || $price <= 0;
+}
+
+/**
+ * The face value and the amount charged for one gift item order.
+ *
+ * A priced item is judged on the database alone: whatever amount the browser
+ * sent is ignored, exactly as before. Only an open-price item reads the
+ * customer's amount, and that goes through the same range check as the Gift
+ * Voucher form (Min/Max Voucher Value) - it is the one number in this flow the
+ * customer controls, so it must never be taken on trust.
+ *
+ * Special Price only applies to a priced item: with no regular price there is
+ * nothing to discount from, so an open-price item charges what is entered.
+ *
+ * @param int    $item_id         Gift item post id.
+ * @param string $customer_amount Amount the customer entered (open price only).
+ * @param object $setting_options Settings row.
+ * @return array|WP_Error array('face' => float, 'pay' => float).
+ */
+function wpgv_resolve_item_amounts($item_id, $customer_amount, $setting_options)
+{
+    if (wpgv_item_is_open_price($item_id)) {
+        $amount = wpgv_validate_public_voucher_amount($customer_amount, $setting_options);
+        if (is_wp_error($amount)) {
+            return $amount;
+        }
+
+        return array('face' => (float) $amount, 'pay' => (float) $amount);
+    }
+
+    $price = wpgv_normalize_decimal_amount(wpgv_item_meta($item_id, 'price'));
+    $special = wpgv_normalize_decimal_amount(wpgv_item_meta($item_id, 'special_price'));
+
+    return array(
+        'face' => (float) $price,
+        'pay'  => ($special !== null && $special > 0) ? (float) $special : (float) $price,
+    );
+}
+
+/**
  * Bumped whenever a new migration step is added, so an existing site runs it.
  */
 define('WPGV_MIGRATION_VERSION', '4.8.0');

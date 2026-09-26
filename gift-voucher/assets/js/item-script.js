@@ -30,7 +30,59 @@ jQuery(document).ready(function ($) {
         $itempricespan = $("#itemprice span"),
         $shippingpricespan = $("#shippingprice span"),
         $paynowbtnspan = $("#paynowbtn span"),
-        $totalpricespan = $("#totalprice span");
+        $totalpricespan = $("#totalprice span"),
+        $item_amount = $('#item_amount'),
+        $item_amount_wrap = $('#wpgv-item_amount'),
+        openPrice = false;
+
+    // An item without a price lets the customer choose the amount. The server
+    // re-checks it; this only catches an obviously wrong value early.
+    // '' when the amount is acceptable, otherwise the message that says why not.
+    function wpgv_item_amount_error() {
+        var raw = $item_amount.val(),
+            v = parseFloat(raw),
+            min = parseFloat($item_amount.data('min')) || 0,
+            max = parseFloat($item_amount.data('max')) || 0;
+        if (raw === '' || isNaN(v) || v <= 0) return $item_amount.data('msg-empty');
+        if (min > 0 && v < min) return $item_amount.data('msg-min');
+        if (max > 0 && v > max) return $item_amount.data('msg-max');
+        return '';
+    }
+
+    function wpgv_valid_item_amount() {
+        return wpgv_item_amount_error() === '';
+    }
+
+    // force: also complain about an empty field (on Continue, not while typing).
+    function wpgv_show_item_amount_error(force) {
+        var msg = wpgv_item_amount_error(),
+            show = msg !== '' && (force || $item_amount.val() !== '');
+        $item_amount_wrap.find('.error').text(show ? msg : '').toggle(show);
+        $item_amount_wrap.toggleClass('has-error', show);
+        $item_amount.attr('aria-invalid', show ? 'true' : 'false');
+        return msg === '';
+    }
+
+    function wpgv_sync_item_amount() {
+        $('.voucherValueCard').val($item_amount.val());
+        $("#item_pdf_price").val($item_amount.val());
+    }
+
+    $item_amount.on('input', function () {
+        if (!openPrice) return;
+        wpgv_sync_item_amount();
+        // While typing, only clear an error - flagging a half-typed number is noise.
+        if (wpgv_valid_item_amount()) wpgv_show_item_amount_error(false);
+    });
+
+    $item_amount.on('blur', function () {
+        if (!openPrice) return;
+        if (wpgv_valid_item_amount()) {
+            this.value = parseFloat(this.value).toFixed(2);
+            wpgv_sync_item_amount();
+        }
+        wpgv_show_item_amount_error(false);
+    });
 
     // Ensure any lists inside the gift items UI don't show bullets or left padding
     try {
@@ -80,7 +132,17 @@ jQuery(document).ready(function ($) {
             success: function (data) {
                 $(".wpgv-gifttitle h3, .itemtitle").html(data.title);
                 $(".wpgv-gifttitle span, .itemdescription").html(data.description);
-                $('.voucherValueCard').val(data.price);
+                openPrice = !!data.open_price;
+                if (openPrice) {
+                    $item_amount.val('');
+                    wpgv_show_item_amount_error(false);
+                    $item_amount_wrap.show();
+                    $('.voucherValueCard').val('');
+                    $("#item_pdf_price").val('');
+                } else {
+                    $item_amount_wrap.hide();
+                    $('.voucherValueCard').val(data.price);
+                }
                 $.each(data.images, function (key, value) {
                     $(".wpgvstyle" + (parseInt(key) + 1) + " .cardDiv .cardImgTop img").attr('src', value);
                 });
@@ -307,6 +369,10 @@ jQuery(document).ready(function ($) {
                     $recipient_name.closest('.wpgv-form-fields').find('.error').show();
                 }
             }
+            if (openPrice && !wpgv_show_item_amount_error(true)) {
+                $status = 0;
+                $item_amount.trigger('focus');
+            }
             if ($message.val().length > 250) {
                 $status = 0;
                 $message.closest('.wpgv-form-fields').find('.error').show();
@@ -321,12 +387,12 @@ jQuery(document).ready(function ($) {
                     data: "action=wpgv_doajax_get_item_data&itemid=" + $itemid,
                     success: function (data) {
                         $(".wpgv-itemtitle").html(data.title);
-                        var $price = (data.special_price) ? data.special_price : data.price;
+                        var $price = openPrice ? parseFloat($item_amount.val()) : ((data.special_price) ? data.special_price : data.price);
                         $itempricespan.html((parseFloat($price).toFixed(2)));
                         var $totalprice = (parseFloat($price) + parseFloat($website_commission_price.data('price'))).toFixed(2);
                         $totalpricespan.html($totalprice);
                         $paynowbtnspan.html($totalprice);
-                        $wpgv_total_price.val(parseFloat(data.price).toFixed(2));
+                        $wpgv_total_price.val(parseFloat(openPrice ? $price : data.price).toFixed(2));
                     }
                 });
             }
@@ -342,9 +408,10 @@ jQuery(document).ready(function ($) {
             $buyingfor = wpgv_b64EncodeUnicode($buying_for.val()),
             $yourname = wpgv_b64EncodeUnicode($your_name.val()),
             $recipientname = wpgv_b64EncodeUnicode($recipient_name.val()),
-            $recipientmessage = wpgv_b64EncodeUnicode($message.val());
+            $recipientmessage = wpgv_b64EncodeUnicode($message.val()),
+            $customamount = wpgv_b64EncodeUnicode(openPrice ? $item_amount.val() : '');
 
-        return '&catid=' + $catid + '&itemid=' + $itemid + '&style=' + $style + '&totalprice=' + $totalprice + '&buyingfor=' + $buyingfor + '&yourname=' + $yourname + '&recipientname=' + $recipientname + '&recipientmessage=' + $recipientmessage + '&couponcode=' + Math.floor(1000000000000000 + Math.random() * 9000000000000000);
+        return '&catid=' + $catid + '&itemid=' + $itemid + '&style=' + $style + '&totalprice=' + $totalprice + '&buyingfor=' + $buyingfor + '&yourname=' + $yourname + '&recipientname=' + $recipientname + '&recipientmessage=' + $recipientmessage + '&customamount=' + $customamount + '&couponcode=' + Math.floor(1000000000000000 + Math.random() * 9000000000000000);
     }
 
     function wpgv_b64EncodeUnicode(str) {
