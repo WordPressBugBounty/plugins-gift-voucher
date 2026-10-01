@@ -220,7 +220,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 	}
 
 	$currency = wpgv_price_format($total_value);
-	update_post_meta($lastid, 'wpgv_total_payable_amount', $currency);
+	wpgv_update_voucher_meta($lastid, 'wpgv_total_payable_amount', $currency);
 
 	$success_url = get_site_url() . '/voucher-payment-successful/?voucheritem=' . $lastid . '&orderkey=' . rawurlencode($order_key);
 	$cancel_url = get_site_url() . '/voucher-payment-cancel/?voucheritem=' . $lastid . '&orderkey=' . rawurlencode($order_key);
@@ -264,7 +264,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 					// Call API with your client and get a response for your call
 					$response = $client->execute($request);
 					$paypal_order_id = strval($response->result->id);
-					update_post_meta($lastid, 'wpgv_paypal_order_id', $paypal_order_id);
+					wpgv_update_voucher_meta($lastid, 'wpgv_paypal_order_id', $paypal_order_id);
 					// If call returns body in response, you can get the deserialized version from the result attribute of the response
 					// Initialize an empty approve_link variable
 					$approve_link = '';

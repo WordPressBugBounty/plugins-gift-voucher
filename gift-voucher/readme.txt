@@ -1,228 +1,143 @@
 ﻿=== Gift Cards (Gift Vouchers and Packages) (WooCommerce Supported) ===
 Contributors: codemenschen
-Tags: gift cards, gift certificates, gift voucher, premium vouchers, generate gift cards
+Tags: gift cards, gift vouchers, gift certificates, woocommerce gift card, voucher
 Requires at least: 4.0
 Tested up to: 7.1
-Stable tag: 4.8.1
+Stable tag: 4.8.3
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Let your customers buy gift cards/certificates for your services & products directly on your website.
+Sell gift cards, gift vouchers and gift packages on your WordPress site. Customers design the card, pay online and receive a PDF by email.
 
 == Description ==
 
-Are you looking for creating and selling unlimited gift vouchers on your WordPress/WooCommerce powered website? Then, your search ends here!
+Gift Cards by **Codemenschen** lets you sell gift cards for your services, products and experiences. It works on any WordPress site, with or without WooCommerce.
 
-We bring you our top-notch product and an excellent customizable WordPress plugin that will cater to all your needs.
+Your customers pick a design, enter the amount and a personal message, and see a live preview of the card. After payment they receive the gift card as a PDF by email, or you send a printed card by post. The voucher code can later be redeemed in your shop or at your counter.
 
-The Gift Cards by **CodeMenschen** is a multi-supported (Woocommerce and WordPress) plugin and a perfect solution for generating and selling gift cards.  Be it a product, service or experience, your gift cards/gift packages can include a variety of things.
-From rewards & promotions to fitness packages & event tickets, spread happiness across your customers and gift them the love they deserve from their loved ones.
+A spa, a restaurant, a hotel, a fitness studio or an online shop can be set up in a few minutes. One click in Settings creates the pages and sample content, so the forms work right away.
 
-Any merchant whose website is powered by WordPress can use this plugin.
+[See how it works in the video guide](https://www.wp-giftcard.com/docs/documentation/video-guide/)
 
-We have made the process of creating basic vouchers for events like birthdays, anniversaries, new years, Valentine’s Day, etc extremely simple. This plugin not only reduces manual efforts but also saves you a lot of time. All you need to do is select a template of your choice from available options, set your logo or event image and you are DONE! Could it be any more simple?
+= Three ways to sell =
 
-Plugin Gift Cards by **CodeMenschen** is very easy to set up!
-* One-click creation of the Gift Card product.
-* Easily customizable to suit your needs.
-* <a href="https://www.wp-giftcard.com/docs/documentation/video-guide/" target="_blank">checkout the video how it works.</a>
+* **Gift Cards** `[wpgv_giftcard]`: customers choose one of six designed templates, in landscape or portrait format. They fill in the value, the names and a message, and watch the card update as they type.
+* **Gift Items** `[wpgv_giftitems]`: sell fixed packages such as "60 minute massage" or "Dinner for two", grouped in categories. An item without a price becomes "Enter your amount", so the customer chooses the value.
+* **Gift Vouchers** `[wpgv_giftvoucher]`: a simple voucher form. Set a price on a Gift Voucher to sell it at a fixed value, or leave it empty and let customers type any amount between your minimum and maximum.
 
-Now, this plugin is also WooCommerce compatible. So customers can redeem the vouchers in your WooCommerce store also.
+= Features =
 
-<h3>Highlights</h3>
-> **Read out the highlights and features to explore what’s more this plugin has in store for you.**
->
-> * **ONE FOR ALL -** Allows customers to buy gift cards/vouchers much like any other product. Several customizable options: choosing card designs, assigning card values, writing personal messages in addition to offering regular product characteristics.
-> * **BOOST YOUR BUSINESS -** Connects your online store with your on-the-ground business making life easier for your customers with great customer service.
-> * **WooCommerce COMPATIBLE -** This plugin supports the WooCommerce store. Customers can check their voucher balance from ‘My Account’ and redeem the voucher/package from the checkout page. <a href="https://www.wp-giftcard.com/" target="_blank">Pro</a>
-> * **GENERATE GIFT VOUCHERS -** Admin can create gift vouchers from backend. <a href="https://www.wp-giftcard.com/" target="_blank">Pro</a>
-> * **BARCODE ON VOUCHERS -** Show Barcode on vouchers and redeem at store easily. <a href="https://www.wp-giftcard.com/" target="_blank">Pro</a>
-> * **ADD COMMISSION -** Can charge an additional amount on every voucher order of customers. <a href="https://www.wp-giftcard.com/" target="_blank">Pro</a>
-> * **EXPIRATION DATES -** Automatically set an expiration date according to your choice (fixed date or in days) based on the purchase date.
-> * **BALANCE ADJUSTMENTS -** Perform balance adjustments in the admin area. <a href="https://www.wp-giftcard.com/" target="_blank">Pro</a>
-> * **CHECK BALANCE PAGE -** A shortcode to let customers check their gift card balances. <a href="https://www.wp-giftcard.com/" target="_blank">Pro</a>
-> * **SAFER REDEMPTION -** Convenient and secured modes for purchasing & payments. Proven valid and authentic gift cards (with coupon codes)that deliver your product or service on a later date at a physical location.
-> * **TRACKING -** Powerful reporting and tracking features enable you to track the purchased voucher codes. Once the gift card is purchased, its further use can be tracked by the administrator through the unique gift card codes.
-> * **EASY DESIGNING -** Design templates for different themes as ‘Birthday’, ‘New Year’, ‘Valentine’s day’, ‘Independence day’ etc.
-> * **POSTAL DELIVERY -** You can accept postal orders for your gift cards. If you want, you can turn on the ability for your customers to buy your own printed gift cards/certificates. So you can send gift cards via post basis directly to the recipient.
-> * **INSPIRATIONAL QUOTES -** Enhance your gift cards with meaningful quotes! The plugin now includes a collection of inspirational quotes that customers can easily add to their personal messages. This feature provides suggested quotes for various occasions, making gift cards more thoughtful and personal.
+* Live preview of the gift card while the customer types.
+* Six ready-made gift card designs: three in landscape and three in portrait format.
+* Ready-made quotes that customers can add to their message with one click.
+* PDF voucher sent to the buyer and the recipient by email.
+* Postal delivery with your own shipping methods, if you also send printed cards.
+* Payments with Stripe, PayPal, Sofort and bank transfer or invoice.
+* Expiry date as a fixed date or a number of days after purchase.
+* Redeem vouchers at the WooCommerce checkout.
+* A balance check page. Logged-in customers see what is left on their own vouchers, and admins can look up any code.
+* One Orders list for gift cards, gift items and gift vouchers, with a Type filter and search.
+* Mark orders as paid or used, resend the email and regenerate the PDF from the order list.
+* Export the complete gift card database to a JSON file and import it on another site.
+* Editable emails for the buyer, the recipient and the admin.
+* Translated into Czech, Danish, French, German, Hindi, Spanish, Swedish and more.
 
-**Voucher Booking Forms**
-This plugin provides two types of voucher booking forms. They are,
-* **<a href="https://www.wp-giftcard.com/gift-items/">Fixed Value Vouchers</a>:** Administrators can provide their customers with a certain set of fixed priced gift items.
-* **<a href="https://www.wp-giftcard.com/gift-voucher/">Custom Priced Vouchers</a>:**  Price of the vouchers can be defined as per one’s requirement.
+= Gift Cards Pro =
 
-<h3><a href="https://www.wp-giftcard.com/docs/documentation/video-guide/" target="_blank">checkout the video how it works</a></h3>
+**New: AI backgrounds.** Describe the artwork you want, for example "spring flowers on soft pink", choose a style (Photo, Illustration or Abstract) and the card format. The Codemenschen AI service creates background images for your gift card templates in seconds. They are saved in your media library and ready to use in the template builder. Your Pro license is all you need. There is no API key to set up, and every license starts with free AI credits.
 
-= Main Plugin Features =
+Gift Cards Pro also adds:
 
-**Front end:**
+* A template builder for your own gift card designs, with your backgrounds, logo, texts and colors.
+* Scheduled delivery: the card reaches the recipient on the date the buyer picks.
+* An Email Delivery Center to see, retry and resend every recipient email.
+* WooCommerce gift card products, gift options on product pages, and Cart and Checkout Blocks.
+* Partial redemption from the frontend for your staff, with a balance history for every voucher.
+* More payment methods: Klarna, Mollie and MultiSafepay, plus Stripe embedded checkout.
+* Barcodes on vouchers, invoices as PDF, extra charges and incremental voucher codes.
+* Polylang support for settings, emails and PDFs in several languages.
+* One year of updates and support, and a 30-day money-back guarantee.
 
-* Create and design templates with your own logo as per the occasions or fests.
-* Customers can pick from a variety of templates uploaded by the admin and can sort by events (Anniversaries, Birthdays, Valentine’s day, Weddings, etc.)
-* Redeem gift cards from the WooCommerce Checkout page.
-* Customers can view coupon balance.
-* Admins can create fixed price gift items for different services and products for their customers.
-* Customers can preview their Gift Card on their booking page.
-* Purchased gift card/voucher is sent to the recipient’s email address.
-* Add messages to be printed on the PDF  gift card/voucher.
-* Access to inspirational quote suggestions to enhance personal messages on gift cards.
-* Redeem gift cards/vouchers using unique auto-generated coupon codes.
-* Multiple payment gateway integrations available such as Stripe, PayPal, Sofort Pay, and Bank Transfer.
-* Invoice based payment solutions i.e. your customers can directly pay to your bank account after purchasing the voucher
-* Provides 3 varieties for voucher styles in PDF formats (See Demo)
-* Set voucher expiry as fixed dates or number of days
-* Remove Expiry date from vouchers
-* Hide Price from vouchers
-* Send customer receipt after successful order placement.
+[Try the live demo](https://www.wp-giftcard.com/demo/) or [compare the plans on wp-giftcard.com](https://www.wp-giftcard.com/).
 
-**Backend:**
+= Help us translate =
 
-* View all gift orders.
-* Track the status of all gift cards/vouchers such as usage or payment status.
-* Add edit/delete/view options to your voucher/card templates and gift items.
-* View details of each gift card such as full amount, credit left, associated gift-card order, orders on which it has been applied and the total spend it generated.
-* Create unlimited gift categories.
-* Generate Gift Vouchers from admin.
-* Export all orders from order page.
-* Export the whole gift card database (gift cards + activity history) to a JSON file, and import it back on another site.
-* Admin can set options like sender name, email, company name along with company details on templates from plugin settings.
-* Manage and customize inspirational quotes collection for customer use in personal messages.
-* Admin can customize email templates both for itself and its customers.
-* Admin can also enable the postal delivery options for its customers.
-* Customers can view a list of their gift cards used so far, the order in which they have been used and the available credit left.
-
-= <a href="https://wp-giftcard.com/">PREMIUM FEATURES of Gift cards Plugin</a> =
-* Design and customize modern gift card templates with your own backgrounds, logo, text, colors, and layout.
-* Let customers choose a gift card template, preview it before payment, and schedule delivery to the recipient.
-* Sell gift vouchers through WooCommerce, including gift voucher products, product-page gift options, Cart and Checkout Blocks, and voucher redemption at checkout.
-* Offer secure partial voucher redemption from the frontend, voucher balance history, and balance resync tools for administrators.
-* Accept payments with Stripe (redirect, modal, or embedded checkout), PayPal, Klarna, Mollie, MultiSafepay, Sofort, bank transfer, and invoice payment.
-* Generate voucher, receipt, and invoice PDFs; regenerate PDFs from the admin area when needed.
-* Add barcodes, surcharges, custom voucher values, incremental voucher codes, and detailed order management with import and export.
-* Use Polylang-compatible settings, checkout text, emails, and PDF/invoice output for multilingual stores.
-* Includes 1 year of updates and support, and a 30-day money-back guarantee.
-
-= Premium Live Demos =
-
-Want to discover all plugin features? Try it out in just a single click.
-
-For an easy and simple understanding of our plugin, click the links below for quick demos -
-
-– **[Gift Cards Demo](https://www.wp-giftcard.com/demo/)**
-
-Copy this shortcode and paste it where you want the gift voucher form to appear; `[wpgv_giftvoucher]`
-
-– **[Gift Items/Packages Demo](https://www.wp-giftcard.com/gift-items/)**
-
-- **Fixed-value gift items/packages:**
-    Copy `[wpgv_giftitems]` to display all gift items/packages.
-    Use `[wpgv_giftitems item_id=1]` to display one gift item/package.
-    Use `[wpgv_giftitems item_cat_id=1]` to display gift items/packages from one category.
-
-- **Modern gift card templates:**
-    Copy `[wpgv_giftcard]` to display the modern gift card template picker and purchase form.
-
-
-By accessing our testing platform, you will be able to discover all plugin features and test them as per your preference in front-end mode.
-
-For more information about the PREMIUM version of Gift Cards (Gift Vouchers and Packages) (WooCommerce Supported), visit the official page on **[wp-giftcard.com](https://www.wp-giftcard.com/ "Gift Cards (Gift Vouchers and Packages) (WooCommerce Supported) Plugin")**
-
-= This plugin is already translated in Czech (Czech Republic), Danish, Deutsch, French, Hindi, Spanish and Swedish Languages =
-
-If you help us in translating this plugin in your language, It would be very helpful for us.
-You can translate this plugin by clicking on the link [here](https://translate.wordpress.org/projects/wp-plugins/gift-voucher/dev "Gift Cards Plugin").
+You can translate the plugin into your language on [translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/gift-voucher/dev "Gift Cards Plugin").
 
 == Installation ==
-1. Unzip the downloaded zip file.
-2. Upload the plugin folder into the wp-content/plugins/ directory of your WordPress site.
-3. Activate 'Gift Cards (Gift Vouchers and Packages) (WooCommerce Supported)' from the Plugins page.
+1. Go to Plugins > Add New, search for "Gift Cards Codemenschen" and click Install, then Activate.
+2. Open Gift Cards > Settings and click "Set Up Pages and Sample Content".
+3. Fill in your company name, currency and payment method. Your gift card pages are ready.
 
 == Frequently Asked Questions ==
-= Installation instructions
-1. Unzip the downloaded plugin zip file.
-2. Upload the plugin folder into the wp-content/plugins/ directory of your WordPress site.
-3. Activate 'Gift Cards (Gift Vouchers and Packages) (WooCommerce Supported)' from the plugins page.
 
-**CONFIGURATION**
-Gift Cards will add a new tab called ‘Settings’ in ‘Gift Vouchers’ menu item. There you will find quick access to the plugin settings page.
+= Do I need WooCommerce? =
 
-= Can I share the gift card?
+No. The plugin has its own forms and payments. If you use WooCommerce, customers can also redeem their vouchers at the WooCommerce checkout.
 
-It can be shared with the recipient’s email address in PDF format
+= How does the customer receive the gift card? =
 
-= Is multiple website licensing available for the premium version?
+As a PDF by email, sent to the buyer and the recipient. You can also offer postal delivery for printed cards.
 
-We provide two kinds of licensing
-* <a href="https://www.wp-giftcard.com/">Single website licensing</a> at $49
-* <a href="https://www.wp-giftcard.com/">Unlimited website licensing</a> at $79
-* <a href="https://www.wp-giftcard.com/">Lifetime & Unlimited websites licensing</a> at $99
+= What happens if the customer spends less than the voucher value? =
 
-= Which format will be used in coupon codes?
+The rest stays on the voucher and can be used later. Logged-in customers can see the balance on the balance check page.
 
-The plugin will auto-generate a 16 digit unique code and it will be sent as a pdf format to the recipient’s billing email address.
+= Which format do the voucher codes have? =
 
-= Can the voucher be sent as a postal delivery?
+The plugin creates a unique 16 digit code for every voucher.
 
-Yes, this plugin provides a postal delivery option.
+= Can I change the emails? =
 
-= Can I customize the email that is sent?
+Yes. The emails to the buyer, the recipient and the admin can be edited in Settings.
 
-Yes, admin can customize the email template for customers and himself.
+= Does it work on WordPress Multisite? =
 
-= What happens if the customers spend less than the total voucher value?
+Yes.
 
-Customers can view the voucher balance from ‘ My accounts” page and use the remaining amount later on.
+= Is my data deleted when I deactivate the plugin? =
 
-= How do we receive voucher codes?
+No. Deactivating the plugin does not delete any data.
 
-The voucher codes are sent on the recipient’s email address.
+= Can I install Gift Cards Pro when the free plugin is active? =
 
-= Does it work with Multisite WordPress Environment?
+Deactivate the free plugin first, then install Gift Cards Pro. Your data stays and Pro uses it.
 
-Yes, This plugin will work.
+= How do the AI backgrounds work? =
 
-= Will data delete after deactivating the plugin?
+AI backgrounds are part of Gift Cards Pro. Describe the picture you want, choose a style and a format, and the images are created for you. Every Pro license starts with free credits. A render costs 1 to 10 credits depending on the image quality, and failed renders are never charged.
 
-No data will delete on plugin deactivation.
+= How can I translate or change texts? =
 
-= Can I install the pro plugin if free plugin already installed?
-
-No, First you have to deactivate the free plugin then install the pro plugin. No data will delete on deactivation of the plugin.
-
-= How to translate or change strings of the plugins?
-
-There are two ways to fill up translations:
-* Using Loco Translate plugin
-* Using the PoEdit platform
-
-= Can customers add inspirational quotes to their gift cards?
-
-Yes, the plugin now includes a collection of inspirational quotes that customers can easily select and add to their personal messages when creating gift cards. This feature helps make gift cards more meaningful and personal for special occasions.
+Use translate.wordpress.org, the Loco Translate plugin or Poedit.
 
 == Documentation ==
-Please, read the [official documentation of Gift Cards (Gift Cards and Packages)](https://www.wp-giftcard.com/docs/documentation/ "Documentation of Gift Cards") to learn more about all plugin features.
+Please read the [documentation of Gift Cards](https://www.wp-giftcard.com/docs/documentation/ "Documentation of Gift Cards") to learn more about all features.
 
 == Suggestions ==
 
-If you have suggestions about how to improve Gift Cards plugin, you can [write to us](https://wp-sofa.chat/ "Codemenschen").
+If you have ideas for the plugin, please [write to us](https://wp-sofa.chat/ "Codemenschen").
 
 == Screenshots ==
-1. Gift Voucher Form Step 1
-2. Gift Voucher Form Step 2
-3. Gift Voucher Form Step 3
-4. Gift Voucher Form Step 4
-5. Gift Items Form Step 1
-6. Gift Items Form Step 2
-7. Gift Items Form Step 3
-8. Plugin Settings Page
-9. All Voucher Orders
-10. WooCommerce Checkout
-11. WooCommerce Order Page
-12. Check Voucher Balance
+1. Customers choose a gift card design, filtered by format and category.
+2. Live preview: the card updates while the customer enters the value, the names and a message.
+3. Delivery by email or post, and the payment method.
+4. Overview of the order before payment.
+5. All gift cards, gift items and gift vouchers in one list, with a Type filter.
+6. Choose the gift card design in the admin, grouped in landscape and portrait.
+7. One Orders list for every order type, with payment status, PDF and actions.
+8. Settings, with one click to set up the pages and sample content.
 
 == Changelog ==
+
+= Version 4.8.3 - Released: October 1, 2026 =
+* Fix: The form of the [wpgv-check-voucher-balance] shortcode appeared above the page header on block themes such as Twenty Twenty-Five. It now shows inside the page content.
+* Fix: The order list showed the remaining balance with six decimals, for example "€ 150.000000". It now shows "€ 150". The voucher code also stays on one line.
+* Update: New plugin description and screenshots for the current version.
+
+= Version 4.8.2 - Released: October 1, 2026 =
+* Fix: After paying with Stripe, some buyers came back to "This URL is invalid. You can not access this page directly." and received no confirmation email, although the payment went through. This started in 4.7.0. The order key checked on the success page was sometimes saved on a different post, when the voucher's ID matched the ID of a post revision. The key and the other order data are now always saved on the voucher itself.
 
 = Version 4.8.1 - Released: September 26, 2026 =
 * Fix: A new installation now saves the Currency Symbol, Currency Position, the email shown in the PDF footer, the Voucher Expiry Type and the Shipping Methods correctly. Each was being stored as 0, which left prices with no currency symbol, expiry dates measured against a unit that does not exist, and no shipping options for customers to pick from.

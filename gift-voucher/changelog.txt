@@ -2,6 +2,14 @@
 
 Full release history of Gift Cards (Gift Vouchers and Packages). The plugin page on WordPress.org shows only recent versions.
 
+= Version 4.8.3 - Released: October 1, 2026 =
+* Fix: The form of the [wpgv-check-voucher-balance] shortcode appeared above the page header on block themes such as Twenty Twenty-Five. It now shows inside the page content.
+* Fix: The order list showed the remaining balance with six decimals, for example "€ 150.000000". It now shows "€ 150". The voucher code also stays on one line.
+* Update: New plugin description and screenshots for the current version.
+
+= Version 4.8.2 - Released: October 1, 2026 =
+* Fix: After paying with Stripe, some buyers came back to "This URL is invalid. You can not access this page directly." and received no confirmation email, although the payment went through. This started in 4.7.0. The order key checked on the success page was sometimes saved on a different post, when the voucher's ID matched the ID of a post revision. The key and the other order data are now always saved on the voucher itself.
+
 = Version 4.8.1 - Released: September 26, 2026 =
 * Fix: A new installation now saves the Currency Symbol, Currency Position, the email shown in the PDF footer, the Voucher Expiry Type and the Shipping Methods correctly. Each was being stored as 0, which left prices with no currency symbol, expiry dates measured against a unit that does not exist, and no shipping options for customers to pick from.
 * Fix: Sites installed before this version still hold those values, and are not changed for you. The Gift Cards screens now name which settings need filling in and link you to them.

@@ -602,11 +602,12 @@ if (!class_exists('WPGV_Voucher_List')) :
 		function column_couponcode($item)
 		{
 			$gift_voucher = new WPGV_Gift_Voucher($item['couponcode']);
-			$couponcode = '<strong>' . esc_attr($item['couponcode']) . '</strong>';
+			$couponcode = '<strong style="white-space:nowrap">' . esc_attr($item['couponcode']) . '</strong>';
 			$remainingbalance = '';
 
 			if ($item['payment_status'] == 'Paid') {
-				$remainingbalance = __('Remaining Balance:', 'gift-voucher') . ' ' . wpgv_price_format($gift_voucher->get_balance());
+				// SUM() comes back as a DECIMAL string such as "150.000000"; print it as a number.
+				$remainingbalance = __('Remaining Balance:', 'gift-voucher') . ' ' . wpgv_price_format((float) $gift_voucher->get_balance());
 			}
 
 			return $couponcode . $remainingbalance;

@@ -76,14 +76,14 @@ function wpgv_fulfill_verified_stripe_voucher($checkout_session, $payment_intent
         'Paid'
     ));
 
-    update_post_meta($voucher_id, 'wpgv_stripe_session_key', $session_id);
-    update_post_meta($voucher_id, 'wpgv_stripe_payment_intent_key', $payment_intent_id);
+    wpgv_update_voucher_meta($voucher_id, 'wpgv_stripe_session_key', $session_id);
+    wpgv_update_voucher_meta($voucher_id, 'wpgv_stripe_payment_intent_key', $payment_intent_id);
     if ($event_id !== '') {
-        update_post_meta($voucher_id, 'wpgv_stripe_webhook_event_id', $event_id);
+        wpgv_update_voucher_meta($voucher_id, 'wpgv_stripe_webhook_event_id', $event_id);
     }
     // Preserve the existing success-page metadata format for compatibility.
     $stripe_publishable_key = $settings && isset($settings->stripe_publishable_key) ? (string) $settings->stripe_publishable_key : '';
-    update_post_meta($voucher_id, 'wpgv_stripe_mode_for_transaction', $stripe_publishable_key);
+    wpgv_update_voucher_meta($voucher_id, 'wpgv_stripe_mode_for_transaction', $stripe_publishable_key);
 
     if ((int) $updated > 0) {
         $activity_table = $wpdb->prefix . 'giftvouchers_activity';

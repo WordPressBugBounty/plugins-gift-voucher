@@ -149,8 +149,8 @@ function wc_wpgv_voucher_pdf_save_func($value, $for, $from, $email, $shipping_em
     }
     $value += $wpgv_add_extra_charges;
     $currency = wpgv_price_format($value);
-    update_post_meta($lastid, 'wpgv_extra_charges', $wpgv_add_extra_charges);
-    update_post_meta($lastid, 'wpgv_total_payable_amount', $currency);
+    wpgv_update_voucher_meta($lastid, 'wpgv_extra_charges', $wpgv_add_extra_charges);
+    wpgv_update_voucher_meta($lastid, 'wpgv_total_payable_amount', $currency);
 
     if ($wpgv_customer_receipt) {
         wpgv_generate_receipt_pdf_for_voucher($lastid);

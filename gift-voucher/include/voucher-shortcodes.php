@@ -73,8 +73,8 @@ function wpgv_voucher_successful_shortcode()
 							array('%d')
 						);
 
-						update_post_meta($voucheritem, 'wpgv_paypal_payment_key', $result_getId, true);
-						update_post_meta($voucheritem, 'wpgv_paypal_mode_for_transaction', (!$setting_options->test_mode) ? 'Livemode' : 'Testmode', true);
+						wpgv_update_voucher_meta($voucheritem, 'wpgv_paypal_payment_key', $result_getId, true);
+						wpgv_update_voucher_meta($voucheritem, 'wpgv_paypal_mode_for_transaction', (!$setting_options->test_mode) ? 'Livemode' : 'Testmode', true);
 						WPGV_Gift_Voucher_Activity::record($voucheritem, 'firsttransact', $voucher_options->amount, 'Voucher payment recieved.');
 
 						$voucher_options->payment_status = 'Paid';
@@ -337,8 +337,8 @@ function wpgv_stripe_success_page_shortcode()
 						array('%d', '%s')
 					);
 				}
-				update_post_meta($orderid, 'wpgv_stripe_session_key', $sessionid);
-				update_post_meta($orderid, 'wpgv_stripe_mode_for_transaction', $setting_options->stripe_publishable_key);
+				wpgv_update_voucher_meta($orderid, 'wpgv_stripe_session_key', $sessionid);
+				wpgv_update_voucher_meta($orderid, 'wpgv_stripe_mode_for_transaction', $setting_options->stripe_publishable_key);
 
 
 				$voucherrow = $wpdb->get_row(
@@ -474,6 +474,8 @@ function wpgv_claim_voucher_mail_send($voucher_id)
 
 function wpgv_check_voucher_balance_shortcode()
 {
+	// A shortcode must return its markup. Echoing it printed the form above the page header on block themes.
+	ob_start();
 	$voucher_code = '';
 	if (isset($_REQUEST['voucher_code'])) {
 		$voucher_code = sanitize_text_field($_REQUEST['voucher_code']);
@@ -547,5 +549,6 @@ function wpgv_check_voucher_balance_shortcode()
 			echo esc_html__('This voucher code is invalid or you do not have permission to view it.', 'gift-voucher');
 		}
 	}
+	return ob_get_clean();
 }
 add_shortcode('wpgv-check-voucher-balance', 'wpgv_check_voucher_balance_shortcode');

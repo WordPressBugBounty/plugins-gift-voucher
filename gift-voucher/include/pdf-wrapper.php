@@ -724,6 +724,24 @@ function wpgv_pdf_render_standard_document($args)
     ));
 }
 
+/**
+ * Voucher meta is stored as post meta keyed by the giftvouchers_list row id, which is not a post id.
+ *
+ * update_post_meta() and delete_post_meta() redirect a revision id to its parent post. Whenever a
+ * voucher id happened to match the id of a revision, the meta (including the order key checked on
+ * the payment success page) was written to another post, and the buyer saw "This URL is invalid".
+ * These helpers write the raw id. Reads already use get_post_meta(), which does no such redirect.
+ */
+function wpgv_update_voucher_meta($voucher_id, $meta_key, $meta_value, $prev_value = '')
+{
+    return update_metadata('post', intval($voucher_id), $meta_key, $meta_value, $prev_value);
+}
+
+function wpgv_delete_voucher_meta($voucher_id, $meta_key)
+{
+    return delete_metadata('post', intval($voucher_id), $meta_key);
+}
+
 function wpgv_save_voucher_pdf_style($voucher_id, $style)
 {
     $voucher_id = intval($voucher_id);
@@ -731,7 +749,7 @@ function wpgv_save_voucher_pdf_style($voucher_id, $style)
         return false;
     }
 
-    return (bool) update_post_meta($voucher_id, 'wpgv_pdf_style', intval($style));
+    return (bool) wpgv_update_voucher_meta($voucher_id, 'wpgv_pdf_style', intval($style));
 }
 
 function wpgv_get_voucher_pdf_style($voucher_id, $default_style = 0)
@@ -759,8 +777,8 @@ function wpgv_save_voucher_pdf_context($voucher_id, $context = array())
         return false;
     }
 
-    update_post_meta($voucher_id, 'wpgv_pdf_template_kind', $kind);
-    update_post_meta($voucher_id, 'wpgv_pdf_source_id', $template_id);
+    wpgv_update_voucher_meta($voucher_id, 'wpgv_pdf_template_kind', $kind);
+    wpgv_update_voucher_meta($voucher_id, 'wpgv_pdf_source_id', $template_id);
 
     if (array_key_exists('style', $context) && $context['style'] !== null && $context['style'] !== '') {
         wpgv_save_voucher_pdf_style($voucher_id, intval($context['style']));
@@ -797,7 +815,7 @@ function wpgv_create_voucher_order_key($voucher_id)
     }
 
     $order_key = wp_generate_password(20, false, false);
-    update_post_meta($voucher_id, 'wpgv_order_key', $order_key);
+    wpgv_update_voucher_meta($voucher_id, 'wpgv_order_key', $order_key);
 
     return $order_key;
 }
@@ -849,7 +867,7 @@ function wpgv_cleanup_failed_voucher_order($voucher_id, $voucher_pdf_link = '')
     );
 
     foreach ($meta_keys as $meta_key) {
-        delete_post_meta($voucher_id, $meta_key);
+        wpgv_delete_voucher_meta($voucher_id, $meta_key);
     }
 
     $voucher_pdf_link = sanitize_file_name($voucher_pdf_link);
