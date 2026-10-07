@@ -251,7 +251,7 @@ function wpgv__doajax_gift_card_pdf_save_func()
 	if ($paymentmethod == 'Paypal') {
 		if (empty($wpgv_paypal_client_id) || empty($wpgv_paypal_secret_key)) {
 			$error_message = "PayPal Client ID or Secret Key are both empty.";
-			wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
+			wpgv_mark_voucher_order_pending($lastid);
 			wp_send_json_error(array('message' => $error_message));
 		} else {
 			require_once(WPGIFT__PLUGIN_DIR . '/vendor/autoload.php');
@@ -259,7 +259,7 @@ function wpgv__doajax_gift_card_pdf_save_func()
 
 			if (!PayPalAuth::isCredentialsValid()) {
 				$error_message = "PayPal Client ID or Secret Key is invalid or the PayPal Mode is not compatible with the provided credentials.";
-				wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
+				wpgv_mark_voucher_order_pending($lastid);
 				wp_send_json_error(array('message' => $error_message));
 			} else {
 				$client = PayPalAuth::client();
@@ -299,11 +299,11 @@ function wpgv__doajax_gift_card_pdf_save_func()
 					if (!empty($approve_link)) {
 						wp_send_json_success(array('message' => "PayPal valid.", 'approve_link' => $approve_link));
 					} else {
-						wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
+						wpgv_mark_voucher_order_pending($lastid);
 						wp_send_json_error(array('message' => "No PayPal approve link found."));
 					}
 				} catch (HttpException $ex) {
-					wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
+					wpgv_mark_voucher_order_pending($lastid);
 					wp_send_json_error(array('message' => "PayPal order creation failed."));
 				}
 			}
@@ -325,7 +325,7 @@ function wpgv__doajax_gift_card_pdf_save_func()
 		if ($Sofortueberweisung->isError()) {
 			//SOFORT-API didn't accept the data
 			$error_message = "Sofort is invalid.";
-			wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
+			wpgv_mark_voucher_order_pending($lastid);
 			wp_send_json_error(array('message' => $error_message));
 		} else {
 			//buyer must be redirected to $paymentUrl else payment cannot be successfully completed!
@@ -336,7 +336,7 @@ function wpgv__doajax_gift_card_pdf_save_func()
 
 		if (empty($setting_options->stripe_publishable_key) || empty($setting_options->stripe_secret_key)) {
 			$error_message = "Stripe Publishable key or Stripe Secret Key are both empty.";
-			wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
+			wpgv_mark_voucher_order_pending($lastid);
 			wp_send_json_error(array('message' => $error_message));
 		} else {
 			$stripeimage = $image_url;
@@ -409,7 +409,7 @@ function wpgv__doajax_gift_card_pdf_save_func()
 				$stripesuccesspageurl = get_option('wpgv_stripesuccesspage');
 				wp_send_json_success(array('message' => "Stripe valid.", 'approve_link' => $session->url));
 			} catch (Exception $ex) {
-				wpgv_cleanup_failed_voucher_order($lastid, $upload_url);
+				wpgv_mark_voucher_order_pending($lastid);
 				wp_send_json_error(array('message' => "Stripe session creation failed."));
 			}
 		}

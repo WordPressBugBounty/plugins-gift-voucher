@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.8.3
+ * Version: 4.8.4
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.8.3');
+define('WPGIFT_VERSION', '4.8.4');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -1447,9 +1447,6 @@ function wpgv_plugin_activation()
   if (!wp_next_scheduled('wpgv_check_voucher_status')) {
     wp_schedule_event(time(), 'hourly', 'wpgv_check_voucher_status');
   }
-  if (!wp_next_scheduled('wpgv_cleanup_unpaid_cron')) {
-    wp_schedule_event(time(), 'hourly', 'wpgv_cleanup_unpaid_cron');
-  }
   set_transient('wpgv_activated', 1);
   require_once(WPGIFT__PLUGIN_DIR . '/classes/class-nag.php');
   WPGIFT_Nag::insert_install_date();
@@ -1598,6 +1595,24 @@ function wpgv_display_install_notice()
   }
 }
 add_action('admin_notices', 'wpgv_display_install_notice');
+
+/**
+ * Drop cron events for jobs this plugin no longer runs.
+ *
+ * wpgv_cleanup_unpaid_cron (4.7.2 - 4.8.3) permanently deleted every order still
+ * "Not Pay" after 24 hours. That included orders the buyer had paid through
+ * Stripe when the payment never got recorded on the order - the buyer returned
+ * late or not at all and no webhook was set up - so the buyer paid and the shop
+ * kept no trace of it. The job is gone; sites that ran an older version still
+ * carry its hourly schedule, cleared here once.
+ */
+function wpgv_unschedule_removed_crons()
+{
+  if (wp_next_scheduled('wpgv_cleanup_unpaid_cron')) {
+    wp_clear_scheduled_hook('wpgv_cleanup_unpaid_cron');
+  }
+}
+add_action('init', 'wpgv_unschedule_removed_crons');
 
 function wpgv_plugin_deactivation()
 {

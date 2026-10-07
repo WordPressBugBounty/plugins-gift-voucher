@@ -226,7 +226,7 @@ function wpgv_voucher_cancel_shortcode()
 			return '<div class="error"><p>' . esc_html__('Paid orders can not be cancelled from this page.', 'gift-voucher') . '</p></div>';
 		}
 
-		wpgv_cleanup_failed_voucher_order($voucheritem, $voucher_options->voucherpdf_link);
+		wpgv_mark_voucher_order_pending($voucheritem, 'Buyer returned through the payment Cancel page. Order kept as Pending.');
 		$return .= stripslashes($cancelpagemessage);
 	}
 	return $return;

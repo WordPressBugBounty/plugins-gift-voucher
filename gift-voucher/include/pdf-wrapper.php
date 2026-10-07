@@ -837,7 +837,21 @@ function wpgv_is_valid_voucher_order_key($voucher_id, $provided_key)
     return hash_equals($stored_key, $provided_key);
 }
 
-function wpgv_cleanup_failed_voucher_order($voucher_id, $voucher_pdf_link = '')
+/**
+ * Keep an order whose payment did not go through, marked as Pending.
+ *
+ * Orders are never deleted by the plugin. Until 4.8.3 a failed payment start,
+ * a return through the Cancel page and an hourly 24-hour cleanup all deleted
+ * the order row with its history, meta and PDF. A buyer whose payment had in
+ * fact gone through then had nothing on the site to match it to. The order now
+ * stays, its status shows "Pending", and the reason goes into its history. A
+ * paid order is never downgraded. Only an admin can delete orders, by hand.
+ *
+ * @param int    $voucher_id giftvouchers_list row id.
+ * @param string $reason     Note recorded in the order history.
+ * @return bool True when the order is now Pending.
+ */
+function wpgv_mark_voucher_order_pending($voucher_id, $reason = '')
 {
     global $wpdb;
 
@@ -847,84 +861,20 @@ function wpgv_cleanup_failed_voucher_order($voucher_id, $voucher_pdf_link = '')
     }
 
     $voucher_table = $wpdb->prefix . 'giftvouchers_list';
-    $activity_table = $wpdb->prefix . 'giftvouchers_activity';
+    $updated = $wpdb->query($wpdb->prepare(
+        "UPDATE `{$voucher_table}` SET `payment_status` = %s WHERE `id` = %d AND `payment_status` <> %s",
+        'Pending',
+        $voucher_id,
+        'Paid'
+    ));
 
-    $wpdb->delete($activity_table, array('voucher_id' => $voucher_id), array('%d'));
-    $wpdb->delete($voucher_table, array('id' => $voucher_id), array('%d'));
-
-    $meta_keys = array(
-        'wpgv_pdf_style',
-        'wpgv_pdf_template_kind',
-        'wpgv_pdf_source_id',
-        'wpgv_total_payable_amount',
-        'wpgv_extra_charges',
-        'wpgv_order_key',
-        'wpgv_paypal_order_id',
-        'wpgv_paypal_payment_key',
-        'wpgv_paypal_mode_for_transaction',
-        'wpgv_stripe_session_key',
-        'wpgv_stripe_mode_for_transaction',
-    );
-
-    foreach ($meta_keys as $meta_key) {
-        wpgv_delete_voucher_meta($voucher_id, $meta_key);
+    if ($updated && class_exists('WPGV_Gift_Voucher_Activity')) {
+        $note = $reason !== '' ? $reason : 'Payment could not be started. Order kept as Pending.';
+        WPGV_Gift_Voucher_Activity::record($voucher_id, 'note', null, $note);
     }
 
-    $voucher_pdf_link = sanitize_file_name($voucher_pdf_link);
-    if ($voucher_pdf_link !== '') {
-        $upload = wp_upload_dir();
-        $pdf_dir = trailingslashit($upload['basedir']) . 'voucherpdfuploads/';
-        $files = array(
-            $pdf_dir . $voucher_pdf_link . '.pdf',
-            $pdf_dir . $voucher_pdf_link . '-receipt.pdf',
-        );
-
-        foreach ($files as $file_path) {
-            if (file_exists($file_path)) {
-                wp_delete_file($file_path);
-            }
-        }
-    }
-
-    return true;
+    return (bool) $updated;
 }
-
-/**
- * Cleanup stale unpaid voucher records and their files.
- * Removes rows with payment_status = 'Not Pay' older than configured retention.
- * Option: 'wpgv_unpaid_retention_hours' (int) - default 24 hours.
- */
-function wpgv_cleanup_stale_unpaid_vouchers()
-{
-    global $wpdb;
-
-    $retention_hours = intval(get_option('wpgv_unpaid_retention_hours', 24));
-    if ($retention_hours <= 0) {
-        $retention_hours = 24;
-    }
-
-    $cutoff = gmdate('Y-m-d H:i:s', time() - ($retention_hours * HOUR_IN_SECONDS));
-
-    $voucher_table = $wpdb->prefix . 'giftvouchers_list';
-
-    $rows = $wpdb->get_results($wpdb->prepare("SELECT id, voucherpdf_link FROM $voucher_table WHERE payment_status = %s AND voucheradd_time < %s", 'Not Pay', $cutoff));
-    if (empty($rows)) {
-        return 0;
-    }
-
-    $deleted = 0;
-    foreach ($rows as $row) {
-        $id = intval($row->id);
-        $link = isset($row->voucherpdf_link) ? $row->voucherpdf_link : '';
-        if (wpgv_cleanup_failed_voucher_order($id, $link)) {
-            $deleted++;
-        }
-    }
-
-    return $deleted;
-}
-
-add_action('wpgv_cleanup_unpaid_cron', 'wpgv_cleanup_stale_unpaid_vouchers');
 
 function wpgv_get_standard_pdf_args_for_voucher($voucher_data, $style = null)
 {

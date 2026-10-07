@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift vouchers, gift certificates, woocommerce gift card, voucher
 Requires at least: 4.0
 Tested up to: 7.1
-Stable tag: 4.8.3
+Stable tag: 4.8.4
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -130,6 +130,9 @@ If you have ideas for the plugin, please [write to us](https://wp-sofa.chat/ "Co
 8. Settings, with one click to set up the pages and sample content.
 
 == Changelog ==
+
+= Version 4.8.4 - Released: October 7, 2026 =
+* Update: Orders are no longer removed automatically. An order whose payment could not be started, or whose buyer came back through the payment Cancel page, now stays in Gift Cards > Orders with the payment status "Pending", and the reason is noted in its history. Orders that remain unpaid are kept until an admin deletes them; the hourly removal of orders left unpaid for 24 hours has been retired.
 
 = Version 4.8.3 - Released: October 1, 2026 =
 * Fix: The form of the [wpgv-check-voucher-balance] shortcode appeared above the page header on block themes such as Twenty Twenty-Five. It now shows inside the page content.
