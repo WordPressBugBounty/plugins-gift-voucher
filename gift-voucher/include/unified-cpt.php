@@ -955,8 +955,23 @@ function wpgv_migrate_legacy_templates($batch = 50)
         return 0;
     }
 
+    // Only rows without a mirror post. Reading "the first $batch rows" every
+    // time stopped at row 50: once those were mirrored the call created
+    // nothing, reported no work left, and later rows were never migrated.
+    // Trashed posts do not count as a mirror, as in
+    // wpgv_find_post_by_legacy_template_id().
     $rows = $wpdb->get_results($wpdb->prepare(
-        "SELECT * FROM `{$table}` ORDER BY id ASC LIMIT %d",
+        "SELECT t.* FROM `{$table}` t
+         WHERE NOT EXISTS (
+             SELECT 1 FROM {$wpdb->postmeta} pm
+             JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+             WHERE pm.meta_key = %s
+               AND pm.meta_value = CAST(t.id AS CHAR)
+               AND p.post_type = 'voucher_template'
+               AND p.post_status NOT IN ('trash', 'auto-draft')
+         )
+         ORDER BY t.id ASC LIMIT %d",
+        WPGV_LEGACY_TEMPLATE_META,
         max(1, (int) $batch)
     ));
 

@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.8.4
+ * Version: 4.8.6
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.8.4');
+define('WPGIFT_VERSION', '4.8.6');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -401,6 +401,33 @@ function wpgv_is_legacy_stripe_payment_intent_bound_to_voucher($payment_intent, 
     && isset($payment_intent->amount)
     && (int) $payment_intent->amount === (int) $amount_minor
     && strtoupper((string) ($payment_intent->currency ?? '')) === strtoupper((string) $currency);
+}
+
+/**
+ * Stripe API version every plugin request is made with.
+ *
+ * The bundled stripe-php library does not pin a version, so requests used the
+ * account's default. Accounts created on or after Stripe's 2026-09-30 release
+ * default to a version that rejects payment_method_types when creating a
+ * Checkout Session, which the plugin sends to offer card (and iDEAL) only: the
+ * session failed with a 400 and buyers saw "Stripe session creation failed".
+ * Pinning a version keeps the same behaviour on every account whatever its
+ * default. The fields the plugin reads (session url, id, metadata,
+ * payment_intent, status; payment intent status, amount, currency, metadata)
+ * are the same in this version as in the older ones.
+ */
+define('WPGV_STRIPE_API_VERSION', '2024-06-20');
+
+/**
+ * Set the Stripe secret key and the pinned API version before any Stripe call.
+ *
+ * @param string $secret_key Stripe secret key from the plugin settings.
+ * @return void
+ */
+function wpgv_stripe_set_api($secret_key)
+{
+  \Stripe\Stripe::setApiKey($secret_key);
+  \Stripe\Stripe::setApiVersion(WPGV_STRIPE_API_VERSION);
 }
 
 function wpgv_is_stripe_webhook_fulfillment_enabled()

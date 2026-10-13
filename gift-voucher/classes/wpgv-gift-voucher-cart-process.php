@@ -590,16 +590,9 @@ if (!class_exists('wpgv-')) :
                 if (isset($_GET['per_invoice']) && $_GET['per_invoice'] == 1) {
                     $return .= $setting_options->bank_info;
                 }
-                $toadmin = null;
-                if ($setting_options->is_order_form_enable == 1) {
-                    $toadmin = $voucher_options->from_name . '<' . $billing_email . '>';
-                } else {
-                    if ($voucher_options->email == null) {
-                        $toadmin = $setting_options->sender_name . ' <' . $billing_email . '>';
-                    } else {
-                        $toadmin = $voucher_options->from_name . '<' . $voucher_options->email . '>';
-                    }
-                }
+                // The new-order notice is for the shop. It used to go to the
+                // billing or buyer address, so the customer got the admin mail.
+                $toadmin = $setting_options->sender_name . ' <' . $setting_options->sender_email . '>';
 
                 if ( function_exists('wpgv_mailvarstr_multiple_admin') ) {
                     $subadmin = wpgv_mailvarstr_multiple_admin($adminemailsubject, $setting_options, $voucher_options_results);

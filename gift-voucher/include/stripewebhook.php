@@ -108,7 +108,7 @@ function wpgv_handle_stripe_webhook_rest_request(WP_REST_Request $request)
         if (!$settings || empty($settings->stripe_secret_key)) {
             return new WP_Error('wpgv_stripe_secret_missing', __('Stripe secret key is not configured.', 'gift-voucher'), array('status' => 503));
         }
-        \Stripe\Stripe::setApiKey($settings->stripe_secret_key);
+        wpgv_stripe_set_api($settings->stripe_secret_key);
         $payment_intent = \Stripe\PaymentIntent::retrieve($payment_intent_id);
         $result = wpgv_fulfill_verified_stripe_voucher($session, $payment_intent, $event->id ?? '');
     } catch (\Exception $exception) {

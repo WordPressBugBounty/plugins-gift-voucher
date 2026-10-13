@@ -351,7 +351,7 @@ function wpgv__doajax_gift_card_pdf_save_func()
 			$camount = wpgv_get_stripe_amount_minor_units($value);
 			$stripe_order_metadata = wpgv_get_stripe_order_binding_metadata($lastid, $order_key, $value, $setting_options->currency_code);
 
-			\Stripe\Stripe::setApiKey($stripe['secret_key']);
+			wpgv_stripe_set_api($stripe['secret_key']);
 
 			$is_stripe_ideal_enable = get_option('wpgv_stripe_ideal');
 

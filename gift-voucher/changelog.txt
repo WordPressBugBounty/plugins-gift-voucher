@@ -2,6 +2,9 @@
 
 Full release history of Gift Cards (Gift Vouchers and Packages). The plugin page on WordPress.org shows only recent versions.
 
+= Version 4.8.5 - Released: October 13, 2026 =
+* Fix: Stripe checkout now works on Stripe accounts that use Stripe's newest API version (2026-09-30), the default for new accounts. On those accounts the checkout stopped with "Stripe session creation failed." The plugin now makes all its Stripe requests with a fixed API version, so checkout behaves the same on every account. No settings need to change.
+
 = Version 4.8.4 - Released: October 7, 2026 =
 * Update: Orders are no longer removed automatically. An order whose payment could not be started, or whose buyer came back through the payment Cancel page, now stays in Gift Cards > Orders with the payment status "Pending", and the reason is noted in its history. Orders that remain unpaid are kept until an admin deletes them; the hourly removal of orders left unpaid for 24 hours has been retired.
 

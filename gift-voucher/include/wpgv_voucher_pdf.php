@@ -331,7 +331,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 			$stripe_order_metadata = wpgv_get_stripe_order_binding_metadata($lastid, $order_key, $total_value, $setting_options->currency_code);
 			$stripeemail = ($email) ? $email : $shipping_email;
 
-			\Stripe\Stripe::setApiKey($stripe['secret_key']);
+			wpgv_stripe_set_api($stripe['secret_key']);
 
 			//fix new
 			try {

@@ -456,6 +456,12 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
         function debit_gift_voucher($order_id, $order, $note)
         {
             foreach ($order->get_items('wpgv_gift_voucher') as $order_item_id => $line) {
+                // A voucher applied after the cart was already covered carries 0.
+                // debit() refuses a zero amount with wp_die(), which broke checkout.
+                if ((float) $line->get_amount() <= 0) {
+                    continue;
+                }
+
                 $gift_voucher = new WPGV_Gift_Voucher($line->get_card_number());
 
                 if ($gift_voucher->get_id()) {

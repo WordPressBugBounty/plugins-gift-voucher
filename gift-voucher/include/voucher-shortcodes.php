@@ -272,7 +272,7 @@ function wpgv_stripe_success_page_shortcode()
 			"secret_key"      => $setting_options->stripe_secret_key,
 		);
 
-		\Stripe\Stripe::setApiKey($stripe['secret_key']);
+		wpgv_stripe_set_api($stripe['secret_key']);
 
 		$sessionid = sanitize_text_field(wp_unslash($_GET['sessionid']));
 		try {

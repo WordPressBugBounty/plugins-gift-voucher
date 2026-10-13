@@ -366,7 +366,7 @@ function wpgv__doajax_item_pdf_save_func()
 			$stripe_order_metadata = wpgv_get_stripe_order_binding_metadata($lastid, $order_key, $value, $setting_options->currency_code);
 			$stripeemail = ($receipt_email) ? $receipt_email : $shipping_email;
 
-			\Stripe\Stripe::setApiKey($stripe['secret_key']);
+			wpgv_stripe_set_api($stripe['secret_key']);
 
 			// Fix new
 			try {

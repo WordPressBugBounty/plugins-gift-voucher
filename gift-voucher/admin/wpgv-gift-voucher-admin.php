@@ -73,7 +73,7 @@ if (! class_exists('wpgv_gift_voucher_admin')) :
                     foreach ($variations as $variation) {
                         if ($variation->get_regular_price() > 0) {
                             $variations_html .= '
-                        <span class="wpgv-tag wpgv-amount-container" data-variation_id="' . $variation->get_id() . '">' . $wpgv_gift_voucher->pretty_price($variation->get_regular_price()) . '<span class="wpgv-remove-amount-button wpgv-price-remove" data-role="remove">×</span> </span>';
+                        <span id="wpgv_variation_' . esc_attr($variation->get_id()) . '" class="wpgv-tag wpgv-amount-container" data-variation_id="' . esc_attr($variation->get_id()) . '">' . esc_html($wpgv_gift_voucher->pretty_price($variation->get_regular_price())) . '<span class="wpgv-remove-amount-button wpgv-price-remove" data-variation_id="' . esc_attr($variation->get_id()) . '" data-role="remove">×</span> </span>';
                         }
                     }
                     wp_send_json_success(array('succsess' => 1, 'variations_html' => $variations_html));

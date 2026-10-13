@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift vouchers, gift certificates, woocommerce gift card, voucher
 Requires at least: 4.0
 Tested up to: 7.1
-Stable tag: 4.8.4
+Stable tag: 4.8.6
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -130,6 +130,15 @@ If you have ideas for the plugin, please [write to us](https://wp-sofa.chat/ "Co
 8. Settings, with one click to set up the pages and sample content.
 
 == Changelog ==
+
+= Version 4.8.6 - Released: October 13, 2026 =
+* Fix: WooCommerce: the "New Voucher Order Received" notice for a Gift Voucher product went to the customer's billing address. It now goes to the shop's sender email, like the notices of the plugin's own order forms.
+* Fix: WooCommerce: when a second voucher was applied to a cart that the first voucher already covered in full, checkout stopped with "There was an error processing your order." The unused voucher is now left untouched and the order goes through.
+* Fix: WooCommerce product editor: an amount just added on the Gift Voucher tab could not be removed until the page was reloaded. It can now be removed straight away.
+* Fix: When a site upgrades from a version before 4.8.0 and has more than 50 voucher templates, all of them are now moved to the Gift Cards list. Before, only the first 50 were moved.
+
+= Version 4.8.5 - Released: October 13, 2026 =
+* Fix: Stripe checkout now works on Stripe accounts that use Stripe's newest API version (2026-09-30), the default for new accounts. On those accounts the checkout stopped with "Stripe session creation failed." The plugin now makes all its Stripe requests with a fixed API version, so checkout behaves the same on every account. No settings need to change.
 
 = Version 4.8.4 - Released: October 7, 2026 =
 * Update: Orders are no longer removed automatically. An order whose payment could not be started, or whose buyer came back through the payment Cancel page, now stays in Gift Cards > Orders with the payment status "Pending", and the reason is noted in its history. Orders that remain unpaid are kept until an admin deletes them; the hourly removal of orders left unpaid for 24 hours has been retired.
