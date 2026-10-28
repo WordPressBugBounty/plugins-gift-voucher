@@ -30,6 +30,7 @@ if (!function_exists('wpgv_is_plugin_admin_screen')) {
 			'view-voucher-details',
 			'voucher-setting',
 			'vouchers-lists',
+			'wpgv-add-order',
 		);
 		$allowed_post_types = array(
 			'voucher_template',
@@ -148,10 +149,12 @@ class WPGiftVoucherAdminPages
 		wp_enqueue_style('wp-color-picker');
 		wp_enqueue_style('voucher-style', WPGIFT__PLUGIN_URL . '/assets/css/admin-style.css');
 		wp_enqueue_script('konva-js', WPGIFT__PLUGIN_URL . '/assets/js/konva.min.js', array('jquery'), 'v8.0.4', true);
-		wp_enqueue_script('voucher-script', WPGIFT__PLUGIN_URL  . '/assets/js/admin-script.js', array('wp-color-picker', 'konva-js'), '1.0.0', true);
+		wp_enqueue_script('voucher-script', WPGIFT__PLUGIN_URL  . '/assets/js/admin-script.js', array('wp-color-picker', 'konva-js'), WPGIFT_VERSION, true);
 		wp_localize_script('voucher-script', 'WPGiftAjax', array(
 			'ajaxurl' => admin_url('admin-ajax.php'),
 			'redeemNonce' => wp_create_nonce('wpgv_redeem_voucher'),
+			// Loaded only when a gift card PDF is regenerated, so the admin screens fetch nothing from outside.
+			'cardFontCss' => WPGIFT__PLUGIN_URL . '/assets/css/voucher-template-fonts.css',
 			'messages' => array(
 				'invalidAmount' => __('Please enter a valid voucher amount.', 'gift-voucher'),
 				'requestFailed' => __('Request failed. Please try again.', 'gift-voucher'),
@@ -184,6 +187,7 @@ class WPGiftVoucherAdminPages
 		add_submenu_page('wpgv-gift-cards', __('View Voucher Details', 'gift-voucher'), __('View Voucher Details', 'gift-voucher'), 'manage_options', 'view-voucher-details', array($this, 'view_voucher_details'));
 
 		$hook = add_submenu_page('wpgv-gift-cards', __('Orders', 'gift-voucher'), __('Orders', 'gift-voucher'), 'manage_options', 'vouchers-lists', array($this, 'voucher_list'));
+		add_submenu_page('wpgv-gift-cards', __('Add Order', 'gift-voucher'), __('Add Order', 'gift-voucher'), 'manage_options', 'wpgv-add-order', array($this, 'add_manual_order'));
 		add_submenu_page('wpgv-gift-cards', __('Settings', 'gift-voucher'), __('Settings', 'gift-voucher'), 'manage_options', 'voucher-setting', array($this, 'voucher_settings'));
 
 		add_action("load-$hook", array($this, 'screen_option_voucher'));
@@ -196,6 +200,14 @@ class WPGiftVoucherAdminPages
 	public function voucher_list()
 	{
 		require_once WPGIFT__PLUGIN_DIR . '/include/voucher_list.php';
+	}
+
+	/**
+	 * Add Order page: an administrator issues a paid voucher by hand.
+	 */
+	public function add_manual_order()
+	{
+		require_once WPGIFT__PLUGIN_DIR . '/include/manual-order-page.php';
 	}
 
 	/**
@@ -322,4 +334,3 @@ function wpgv_get_image_url($ids)
 	}
 }
 
-add_action('admin_post_save_voucher_settings_option', 'process_voucher_settings_options');

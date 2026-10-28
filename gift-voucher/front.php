@@ -30,7 +30,9 @@ function wpgv_voucher_shortcode()
     $wpgv_stripe_alternative_text = get_option('wpgv_stripe_alternative_text') ? get_option('wpgv_stripe_alternative_text') : 'Stripe';
 
     $wpgv_buying_for = get_option('wpgv_buying_for') ? get_option('wpgv_buying_for') : 'both';
-    $wpgv_add_extra_charges = 0;
+    // The same commission the order handler charges; it was hard-coded to 0, so the form
+    // showed no commission and a lower total than the buyer was then asked to pay.
+    $wpgv_add_extra_charges = wpgv_get_configured_extra_charge('wpgv_add_extra_charges_voucher');
 
     if ($wpgv_buying_for == 'both') {
         $buying_for_html = '<div class="buying-for flex-field">
@@ -590,7 +592,7 @@ function wpgv_voucher_shortcode()
     </fieldset>
 </form>';
 
-    $html .= '<style>' . esc_html(stripslashes($wpgv_custom_css)) . '</style>';
+    $html .= '<style>' . wp_strip_all_tags(stripslashes($wpgv_custom_css)) . '</style>'; // esc_html() turned the > of child selectors into &gt;
 
     return $html;
 }
@@ -602,7 +604,8 @@ function wpgv__doajax_front_template()
 
     // template_id rác -> get_row() trả null. Chốt ở đây thay vì để PHP 8 cảnh báo
     // "Attempt to read property on null" ở mỗi dòng phía dưới.
-    if (!$template_options) {
+    // A switched-off or unpublished template is not shown either (KB-19).
+    if (!$template_options || !WPGV_Template_Repository::is_orderable($template_id)) {
         wp_send_json_error(array('message' => __('Invalid template.', 'gift-voucher')), 400);
     }
 

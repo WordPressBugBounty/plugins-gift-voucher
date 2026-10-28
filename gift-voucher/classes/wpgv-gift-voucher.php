@@ -81,18 +81,26 @@ if (! class_exists('WPGV_Gift_Voucher')) :
 
         public function has_expired()
         {
-            $expired_time = $this->get_expiration_date();
-            if (!empty($expired_time)) {
-                if ($expired_time == 'No Expiry') {
-                    return false;
-                } else {
-                    $expiration_date = strtotime($this->get_expiration_date());
-                    $todays_date = strtotime(current_time('Y-m-d'));
-                    return ($expiration_date < $todays_date);
-                }
-            } else {
+            $expired_time = trim((string) $this->get_expiration_date());
+            if ($expired_time === '' || $expired_time === 'No Expiry') {
                 return false;
             }
+
+            // Read the date in the format it was written with first: strtotime() takes
+            // 05/07/2027 as May 7th. Text that is no date at all is the translated
+            // "No Expiry" ("Kein Ablaufdatum"...), which counted as expired before.
+            $format = get_option('wpgv_expiry_date_format') ? get_option('wpgv_expiry_date_format') : 'd.m.Y';
+            $date = DateTime::createFromFormat('!' . $format, $expired_time);
+            $parse_errors = DateTime::getLastErrors();
+            if ($parse_errors && ($parse_errors['warning_count'] || $parse_errors['error_count'])) {
+                $date = false; // e.g. month 31: createFromFormat() rolls it over instead of failing
+            }
+            $expiration_date = $date ? $date->getTimestamp() : strtotime($expired_time);
+            if ($expiration_date === false) {
+                return false;
+            }
+
+            return ($expiration_date < strtotime(current_time('Y-m-d')));
         }
 
         public function get_balance()

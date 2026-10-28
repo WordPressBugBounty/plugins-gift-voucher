@@ -325,9 +325,13 @@ function wpt_save_voucher_meta($post_id, $post)
   // We'll put it into an array to make it easier to loop though.
   $events_meta['description'] = sanitize_textarea_field($_POST['description']);
   // Empty stays empty: an item without a price lets the customer choose the
-  // amount (wpgv_item_is_open_price). absint() would have stored it as 0.
-  $events_meta['price'] = (isset($_POST['price']) && trim((string) $_POST['price']) !== '') ? absint($_POST['price']) : '';
-  $events_meta['special_price'] = absint($_POST['special_price']);
+  // amount (wpgv_item_is_open_price). Decimals are kept: absint() turned 49.90 into 49.
+  $wpgv_item_money = function ($key) {
+    $amount = isset($_POST[$key]) ? wpgv_normalize_decimal_amount($_POST[$key]) : null;
+    return ($amount === null || $amount <= 0) ? '' : (string) $amount;
+  };
+  $events_meta['price'] = $wpgv_item_money('price');
+  $events_meta['special_price'] = $wpgv_item_money('special_price');
   $events_meta['style1_image'] = sanitize_text_field($_POST['style1_image']);
   $events_meta['style2_image'] = sanitize_text_field($_POST['style2_image']);
   $events_meta['style3_image'] = sanitize_text_field($_POST['style3_image']);

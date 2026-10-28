@@ -4,6 +4,45 @@ if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
 use PayPalCheckoutSdk\Orders\OrdersCaptureRequest;
 
+/**
+ * Has Sofort received the money for this order?
+ *
+ * Sofort orders were never marked Paid: the success page only knew PayPal. It
+ * now asks Sofort about the transaction saved with the order. received,
+ * untraceable and pending (Sofort's "not credited yet", which it guarantees)
+ * count as paid; loss and refunded do not. The answer can be given through the
+ * wpgv_sofort_transaction_status filter (used by the plugin's tests).
+ *
+ * @param int    $voucher_id
+ * @param object $setting_options
+ * @return bool
+ */
+function wpgv_sofort_payment_received($voucher_id, $setting_options)
+{
+	$transaction_id = (string) get_metadata('post', (int) $voucher_id, 'wpgv_sofort_transaction_id', true);
+	if ($transaction_id === '') {
+		return false;
+	}
+
+	$status = apply_filters('wpgv_sofort_transaction_status', null, $transaction_id, (int) $voucher_id);
+	if ($status === null) {
+		if (empty($setting_options->sofort_configure_key)) {
+			return false;
+		}
+		require_once WPGIFT__PLUGIN_DIR . '/vendor/sofort/core/sofortLibTransactionData.inc.php';
+		try {
+			$transaction = new SofortLibTransactionData($setting_options->sofort_configure_key);
+			$transaction->addTransaction($transaction_id);
+			$transaction->sendRequest();
+			$status = $transaction->isError() ? '' : (string) $transaction->getStatus();
+		} catch (Exception $ex) {
+			$status = '';
+		}
+	}
+
+	return in_array((string) $status, array('received', 'untraceable', 'pending'), true);
+}
+
 // Function for Voucher Payment Successful Shortcode
 function wpgv_voucher_successful_shortcode()
 {
@@ -86,6 +125,23 @@ function wpgv_voucher_successful_shortcode()
 				}
 			}
 
+			if ($voucher_options->pay_method === 'Sofort' && wpgv_sofort_payment_received($voucheritem, $setting_options)) {
+				// Conditional update: only one request (buyer's return or Sofort's notification) credits it.
+				$updated = $wpdb->query($wpdb->prepare(
+					"UPDATE `{$voucher_table}` SET `payment_status` = %s, `voucheradd_time` = %s WHERE `id` = %d AND `payment_status` <> %s",
+					'Paid',
+					current_time('mysql'),
+					$voucheritem,
+					'Paid'
+				));
+				if ($updated) {
+					WPGV_Gift_Voucher_Activity::record($voucheritem, 'firsttransact', $voucher_options->amount, 'Voucher payment recieved.');
+				}
+				$voucher_options->payment_status = 'Paid';
+				$voucher_options->voucheradd_time = current_time('mysql');
+				$payment_verified = true;
+			}
+
 			if (!$payment_verified) {
 				return '<div class="error"><p>' . esc_html__('Payment has not been verified yet. This page cannot complete the order directly.', 'gift-voucher') . '</p></div>';
 			}
@@ -149,8 +205,12 @@ function wpgv_voucher_successful_shortcode()
 			// reload of this URL sends another set, each with the PDFs attached.
 			$can_send = ($check_send_mail === 'unsent') && wpgv_claim_voucher_mail_send($voucheritem);
 
+			// A Per Invoice order is not paid yet: the recipient gets nothing and the
+			// buyer gets the receipt, not the voucher, until the shop has the money.
+			$before_payment = $is_per_invoice_request && !$payment_verified;
+
 			/* Recipient Mail */
-			if ($can_send && $voucher_options->shipping_type != 'shipping_as_post') {
+			if ($can_send && !$before_payment && $voucher_options->shipping_type != 'shipping_as_post') {
 				$recipientsub = wpgv_mailvarstr($recipientemailsubject, $setting_options, $voucher_options);
 				$recipientmsg = wpgv_mailvarstr($recipientemailbody, $setting_options, $voucher_options);
 				$recipientto = $voucher_options->to_name . '<' . $voucher_options->shipping_email . '>';
@@ -168,9 +228,9 @@ function wpgv_voucher_successful_shortcode()
 			if ($can_send) {
 				/* Buyer Mail */
 				$buyersub = wpgv_mailvarstr($emailsubject, $setting_options, $voucher_options);
-				$buyermsg = wpgv_mailvarstr($emailbody, $setting_options, $voucher_options);
+				$buyermsg = wpgv_mailvarstr($before_payment ? str_replace('{pdf_link}', '{receipt_link}', $emailbody) : $emailbody, $setting_options, $voucher_options);
 				$buyerto = $voucher_options->from_name . '<' . $voucher_options->email . '>';
-				$mail_sent = wp_mail($buyerto, $buyersub, $buyermsg, $headers, $attachments);
+				$mail_sent = wp_mail($buyerto, $buyersub, $buyermsg, $headers, $before_payment ? array($attachments[1]) : $attachments);
 
 				/* Admin Mail — sent once regardless of the buyer result, so the
 				   shop still gets its copy when the buyer address bounces. */
@@ -504,7 +564,7 @@ function wpgv_check_voucher_balance_shortcode()
 				}
 			</style>
 			<h4>
-				<strong><?php esc_html_e('Current Voucher Balance:', 'gift-voucher'); ?> <?php wpgv_price_format($gift_voucher->get_balance()); ?></strong>
+				<strong><?php esc_html_e('Current Voucher Balance:', 'gift-voucher'); ?> <?php echo esc_html(wpgv_price_format($gift_voucher->get_balance())); ?></strong>
 			</h4>
 			<table class="wpgv-balance-activity-table">
 				<tr>
@@ -515,12 +575,14 @@ function wpgv_check_voucher_balance_shortcode()
 					<th><?php esc_html_e('Balance', 'gift-voucher'); ?></th>
 				</tr>
 				<?php
-				$running_balance = $gift_voucher->get_balance();
+				// Newest first: each row shows the balance right after that entry, then
+				// steps back to the balance before it for the next (older) row.
+				$running_balance = (float) $gift_voucher->get_balance();
 				foreach ($gift_voucher->get_activity() as $activity) {
 				?>
 					<tr>
 						<td>
-							<?php date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($activity->activity_date)); ?>
+							<?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($activity->activity_date))); ?>
 						</td>
 						<td>
 							<?php echo esc_html(ucwords($activity->action)); ?>
@@ -541,6 +603,7 @@ function wpgv_check_voucher_balance_shortcode()
 						</td>
 					</tr>
 				<?php
+					$running_balance -= (float) $activity->amount;
 				}
 				?>
 			</table>

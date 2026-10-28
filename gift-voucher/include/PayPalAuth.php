@@ -47,6 +47,10 @@ class PayPalAuth
             } else {
                 return false;
             }
+        } catch (\Exception $e) {
+            // PayPal could not be reached (network, SSL: PayPalHttp\IOException). Was uncaught,
+            // a fatal error that left the order as Not Pay; now the order is kept as Pending.
+            return false;
         }
     }
 }

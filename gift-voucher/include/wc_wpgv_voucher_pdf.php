@@ -191,18 +191,23 @@ function wc_wpgv_voucher_pdf_save_func($value, $for, $from, $email, $shipping_em
             $recipientto = $voucher_options->from_name . '<' . $voucher_options->email . '>';
         }
 
-        if ($voucher_options->email_send_date_time == 'send_instantly') {
-            wp_mail($recipientto, $recipientsub, $recipientmsg, $headers, $attachments);
-        } else {
+        $email_send_time = isset($voucher_options->email_send_date_time) ? $voucher_options->email_send_date_time : 'send_instantly';
+        // The send time is the site's local time. wp_schedule_single_event() needs a Unix
+        // timestamp; it was given a date string, so nothing was scheduled.
+        $send_at = false;
+        if ($email_send_time !== 'send_instantly' && !empty($email_send_time)) {
+            try {
+                $send_at = (new DateTime($email_send_time, wp_timezone()))->getTimestamp();
+            } catch (Exception $e) {
+                $send_at = false;
+            }
+        }
 
-            $timezone = get_option('timezone_string') ? get_option('timezone_string') : 'UTC';
-
-            $send_gift_voucher_email_event_date_time = strtotime($voucher_options->email_send_date_time);
-
-            $send_gift_voucher_email_event_date_time = get_date_from_gmt(gmdate('Y-m-d H:i:s', $send_gift_voucher_email_event_date_time), 'Y-m-d H:i:s');
-
+        if ($send_at && $send_at > time()) {
             $send_gift_voucher_email_event_args = array($recipientto, $recipientsub, $recipientmsg, $headers, $attachments);
-            wp_schedule_single_event($send_gift_voucher_email_event_date_time, 'send_gift_voucher_email_event', $send_gift_voucher_email_event_args);
+            wp_schedule_single_event($send_at, 'send_gift_voucher_email_event', $send_gift_voucher_email_event_args);
+        } else {
+            wp_mail($recipientto, $recipientsub, $recipientmsg, $headers, $attachments);
         }
     }
 

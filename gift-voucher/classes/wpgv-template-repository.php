@@ -121,4 +121,40 @@ class WPGV_Template_Repository
 
         return $row ? $row : null;
     }
+
+    /**
+     * Can this standard template still be ordered?
+     *
+     * Switched off in the old table (active = 0) or its gift card not published
+     * means no: the order form hides such templates, and the order handlers and
+     * the public template lookup now refuse them too. Both places are checked,
+     * because either one can be the one that was changed.
+     *
+     * @param int $id Legacy template id.
+     * @return bool
+     */
+    public static function is_orderable($id)
+    {
+        global $wpdb;
+
+        $id = (int) $id;
+        if ($id <= 0) {
+            return false;
+        }
+
+        $active = $wpdb->get_var($wpdb->prepare(
+            "SELECT active FROM `{$wpdb->prefix}giftvouchers_template` WHERE id = %d",
+            $id
+        ));
+        if ($active !== null && !(int) $active) {
+            return false;
+        }
+
+        $post_id = function_exists('wpgv_find_post_by_legacy_template_id') ? wpgv_find_post_by_legacy_template_id($id) : 0;
+        if ($post_id) {
+            return get_post_status($post_id) === 'publish';
+        }
+
+        return $active !== null;
+    }
 }

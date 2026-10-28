@@ -147,17 +147,19 @@ function wpgv__doajax_item_pdf_save_func()
 	$preview = false;
 
 	if ($setting_options->is_style_choose_enable) {
-		$voucher_style = sanitize_text_field(base64_decode($_POST['style']));
+		// A missing or odd style is style 1; '' + 1 below was a PHP 8 fatal error.
+		$voucher_style = isset($_POST['style']) ? absint(base64_decode(sanitize_text_field(wp_unslash($_POST['style'])))) : 0;
+		$voucher_style = ($voucher_style <= 2) ? $voucher_style : 0;
 		$style_image = esc_html(get_post_meta($itemid, 'style' . ($voucher_style + 1) . '_image', true));
 		$image_attributes = get_attached_file($style_image);
 		$image = ($image_attributes) ? $image_attributes : get_option('wpgv_demoimageurl_item');
-		$stripeimage = (wp_get_attachment_image_src($style_image)) ? wp_get_attachment_image_src($style_image) : get_option('wpgv_demoimageurl_item');
+		$stripeimage = wpgv_stripe_image_url($style_image, get_option('wpgv_demoimageurl_item'));
 	} else {
 		$voucher_style = 0;
 		$style_image = esc_html(wpgv_item_meta($itemid, 'style1_image'));
 		$image_attributes = get_attached_file($style_image);
 		$image = ($image_attributes) ? $image_attributes : get_option('wpgv_demoimageurl_item');
-		$stripeimage = (wp_get_attachment_image_src($style_image)) ? wp_get_attachment_image_src($style_image) : get_option('wpgv_demoimageurl_item');
+		$stripeimage = wpgv_stripe_image_url($style_image, get_option('wpgv_demoimageurl_item'));
 	}
 
 	switch ($voucher_style) {
@@ -317,7 +319,9 @@ function wpgv__doajax_item_pdf_save_func()
 						wpgv_mark_voucher_order_pending($lastid);
 						wp_send_json_error(array('message' => "No PayPal approve link found."));
 					}
-				} catch (HttpException $ex) {
+				} catch (\Exception $ex) {
+					// Any failure, not only PayPal's HTTP errors: a network or SSL error was a fatal error.
+					// (The old catch named HttpException without its namespace, so it never matched.)
 					wpgv_mark_voucher_order_pending($lastid);
 					wp_send_json_error(array('message' => "PayPal order creation failed."));
 				}
@@ -344,6 +348,8 @@ function wpgv__doajax_item_pdf_save_func()
 			wp_send_json_error(array('message' => $error_message));
 		} else {
 			//buyer must be redirected to $paymentUrl else payment cannot be successfully completed!
+			// The success page asks Sofort about this transaction before it marks the order Paid.
+			wpgv_update_voucher_meta($lastid, 'wpgv_sofort_transaction_id', sanitize_text_field((string) $Sofortueberweisung->getTransactionId()));
 			$paymentUrl = $Sofortueberweisung->getPaymentUrl();
 			wp_send_json_success(array('message' => "Sofort valid.", 'approve_link' => $paymentUrl));
 		}
@@ -377,11 +383,7 @@ function wpgv__doajax_item_pdf_save_func()
 							'price_data' => [
 								'currency' => $setting_options->currency_code,
 								'unit_amount' => $camount,
-								'product_data' => [
-									'name' => get_the_title($itemid),
-									// fix minh
-									'images' => [wp_sanitize_redirect($stripeimage)],
-								],
+								'product_data' => wpgv_stripe_product_data(get_the_title($itemid), $stripeimage),
 							],
 							'quantity' => 1,
 						]],
@@ -401,10 +403,7 @@ function wpgv__doajax_item_pdf_save_func()
 							'price_data' => [
 								'currency' => $setting_options->currency_code,
 								'unit_amount' => $camount,
-								'product_data' => [
-									'name' => get_the_title($itemid),
-									'images' => [wp_sanitize_redirect($stripeimage)],
-								],
+								'product_data' => wpgv_stripe_product_data(get_the_title($itemid), $stripeimage),
 							],
 							'quantity' => 1,
 						]],

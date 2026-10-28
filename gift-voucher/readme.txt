@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift vouchers, gift certificates, woocommerce gift card, voucher
 Requires at least: 4.0
 Tested up to: 7.1
-Stable tag: 4.8.6
+Stable tag: 4.9.0
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -39,6 +39,7 @@ A spa, a restaurant, a hotel, a fitness studio or an online shop can be set up i
 * A balance check page. Logged-in customers see what is left on their own vouchers, and admins can look up any code.
 * One Orders list for gift cards, gift items and gift vouchers, with a Type filter and search.
 * Mark orders as paid or used, resend the email and regenerate the PDF from the order list.
+* Create paid orders by hand for counter sales, presents or refunds, and email the voucher right away.
 * Export the complete gift card database to a JSON file and import it on another site.
 * Editable emails for the buyer, the recipient and the admin.
 * Translated into Czech, Danish, French, German, Hindi, Spanish, Swedish and more.
@@ -130,6 +131,36 @@ If you have ideas for the plugin, please [write to us](https://wp-sofa.chat/ "Co
 8. Settings, with one click to set up the pages and sample content.
 
 == Changelog ==
+
+= Version 4.9.0 - Released: October 28, 2026 =
+* New: Gift Cards > Add Order. Create a paid gift voucher or gift item order by hand, for example for a sale at the counter, a present or a refund. The voucher gets its code and PDF straight away and can be emailed to the recipient, the buyer and your shop in one step. You can also set your own voucher code and expiry date.
+* Update: The admin script now carries the plugin version, so browsers load the new version after an update.
+* Fix: A gift card bought through the [wpgv_giftcard] form could get a PDF showing a different voucher code from the one saved with the order, so the printed code could not be redeemed. The PDF now always shows the order's code. For gift cards sold with an earlier version, open the order in Gift Cards > Orders, use Regenerate PDF and send the voucher again.
+* Fix: Regenerate PDF on a gift card order drew the template's sample text (code 1234567812345678, $250, "FIRST & LAST NAME") without the card picture. It now draws the card the way the [wpgv_giftcard] form does, with the order's code, names, value, message and expiry date.
+* Fix: The "Check Voucher Balance" tab in WooCommerce My Account was empty. It now shows the form, and customers can check the vouchers they bought or received.
+* Fix: Bulk Delete on the old Voucher Templates page now checks that the request comes from the page itself, and a template that orders still use is switched off instead of deleted.
+* Fix: The customer receipt now shows the buyer's email address instead of the recipient's.
+* Fix: Pressing Mark as Paid again on an order that is already paid (one order or in bulk) added the voucher's value to its balance a second time. It is now credited once.
+* Fix: Mark as Used took the full face value off a voucher that was already partly spent, leaving a negative balance. It now takes only what is left.
+* Fix: Changing the price of a paid voucher on its details page added the new price on top of the old balance, so 40 changed to 60 left 100 to spend. The balance now moves by the difference. An unpaid voucher gets its new price when it is marked as paid. The price box now shows the order's price instead of 0.
+* Fix: Per Invoice with "Customer receipt" on sent the voucher to the recipient, and the voucher PDF to the buyer, before the buyer had paid. The buyer now gets the receipt to pay against, and the recipient gets nothing until the payment is in. The shop's copy is unchanged.
+* Fix: Sofort payments were never marked as paid, so the vouchers were not sent. The payment success page now asks Sofort about the payment and completes the order once Sofort has the money.
+* Fix: When PayPal could not be reached or refused the order, the order form stopped with a PHP fatal error. The buyer now sees an error message and the order is kept as Pending.
+* Fix: The [wpgv-check-voucher-balance] shortcode did not show the balance or the dates of the voucher's history, and every row showed the same balance. Each row now shows the balance after that entry.
+* Fix: Send Mail on the Orders screen sent the mails without the shop's sender name and address, sent the recipient's copy to the buyer's name, and left out the receipt. It now sends like the payment success page does.
+* Fix: A voucher whose expiry was stored as a translated "No Expiry" (for example "Kein Ablaufdatum") counted as expired. Expiry dates are now read in the date format set in Settings.
+* Fix: The Gift Voucher form showed the Website Commission as 0 and a lower total than the buyer was then charged. It now shows the commission set in Settings.
+* Fix: iDEAL was never offered on Stripe Checkout for orders from the Gift Voucher form. It now is when it is switched on, like on the Gift Items form.
+* Fix: Stripe Checkout could not open for a voucher without a picture on a site whose Settings were never saved, and a voucher's own picture never reached Stripe. The picture is now sent as a link, and left out when there is none.
+* Fix: A gift item price lost its decimals when saved, so 49.90 became 49.
+* Fix: Custom CSS lost its line breaks when saved, and child selectors (a > b) did not work on the Gift Voucher form.
+* Fix: Each click on Set Up Pages added another "Demo Item". It is now created once.
+* Fix: [wpgv_giftitems item_id=..] showed a PHP warning and a Buy button without its category.
+* Fix: A voucher template that is switched off or not published could still be loaded by the form and ordered. Both are refused now.
+* Fix: WooCommerce: the order thank-you page stopped after the first gift voucher line for some payment methods.
+* Fix: WooCommerce: gift voucher emails scheduled for a later date were never sent.
+* Fix: Gift Items orders sent without a style while the style chooser was on stopped with a PHP fatal error.
+* Fix: The PDF of an unpaid voucher could be opened by its link. The plugin now hands out voucher PDFs itself: a voucher opens once its order is paid, the administrator can open every PDF, and receipts open as before. Links already sent by email do not change. This needs a server that reads .htaccess files (Apache or LiteSpeed); on nginx PDF links work as before.
 
 = Version 4.8.6 - Released: October 13, 2026 =
 * Fix: WooCommerce: the "New Voucher Order Received" notice for a Gift Voucher product went to the customer's billing address. It now goes to the shop's sender email, like the notices of the plugin's own order forms.

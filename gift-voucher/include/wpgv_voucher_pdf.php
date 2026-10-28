@@ -59,6 +59,12 @@ function wpgv__doajax_voucher_pdf_save_func()
 	$setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM $setting_table WHERE id = %d", 1));
 	$template_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM $template_table WHERE id = %d", $template));
 
+	// A template that is switched off or not published any more can not be ordered,
+	// even by a form that was opened before the change.
+	if (!WPGV_Template_Repository::is_orderable($template)) {
+		wp_send_json_error(array('message' => __('This voucher is no longer available.', 'gift-voucher')));
+	}
+
 	// A template with a price set in admin sells at that price: the value the
 	// browser sent is ignored, and Special Price, when set, is what the buyer pays.
 	// A template without a price keeps the old behaviour - the customer's value,
@@ -106,6 +112,8 @@ function wpgv__doajax_voucher_pdf_save_func()
 	$wpgv_expiry_date_format = get_option('wpgv_expiry_date_format') ? get_option('wpgv_expiry_date_format') : 'd.m.Y';
 	$wpgv_enable_pdf_saving = get_option('wpgv_enable_pdf_saving') ? get_option('wpgv_enable_pdf_saving') : 0;
 	$wpgv_add_extra_charges = wpgv_get_configured_extra_charge('wpgv_add_extra_charges_voucher');
+	// Read like the Gift Items handler does; it was never set here, so iDEAL was never offered.
+	$is_stripe_ideal_enable = get_option('wpgv_stripe_ideal') ? get_option('wpgv_stripe_ideal') : 0;
 
 	if ($wpgv_hide_expiry == 'no') {
 		$expiry = __('No Expiry', 'gift-voucher');
@@ -126,12 +134,12 @@ function wpgv__doajax_voucher_pdf_save_func()
 		$voucher_style = isset($_POST['style']) ? absint(wp_unslash($_POST['style'])) : 0;
 		$image_attributes = get_attached_file($images[$voucher_style]);
 		$image = ($image_attributes) ? $image_attributes : get_option('wpgv_demoimageurl_voucher');
-		$stripeimage = (wp_get_attachment_image_src($images[$voucher_style])) ? wp_get_attachment_image_src($images[$voucher_style]) : get_option('wpgv_demoimageurl_voucher');
+		$stripeimage = wpgv_stripe_image_url(isset($images[$voucher_style]) ? $images[$voucher_style] : 0, get_option('wpgv_demoimageurl_voucher'));
 	} else {
 		$voucher_style = 0;
 		$image_attributes = get_attached_file($images[0]);
 		$image = ($image_attributes) ? $image_attributes : get_option('wpgv_demoimageurl_voucher');
-		$stripeimage = (wp_get_attachment_image_src($images[0])) ? wp_get_attachment_image_src($images[0]) : get_option('wpgv_demoimageurl_voucher');
+		$stripeimage = wpgv_stripe_image_url(isset($images[0]) ? $images[0] : 0, get_option('wpgv_demoimageurl_voucher'));
 	}
 
 	switch ($voucher_style) {
@@ -283,7 +291,9 @@ function wpgv__doajax_voucher_pdf_save_func()
 						wpgv_mark_voucher_order_pending($lastid);
 						wp_send_json_error(array('message' => "No PayPal approve link found."));
 					}
-				} catch (HttpException $ex) {
+				} catch (\Exception $ex) {
+					// Any failure, not only PayPal's HTTP errors: a network or SSL error was a fatal error.
+					// (The old catch named HttpException without its namespace, so it never matched.)
 					wpgv_mark_voucher_order_pending($lastid);
 					wp_send_json_error(array('message' => "PayPal order creation failed."));
 				}
@@ -310,6 +320,8 @@ function wpgv__doajax_voucher_pdf_save_func()
 			wp_send_json_error(array('message' => $error_message));
 		} else {
 			//buyer must be redirected to $paymentUrl else payment cannot be successfully completed!
+			// The success page asks Sofort about this transaction before it marks the order Paid.
+			wpgv_update_voucher_meta($lastid, 'wpgv_sofort_transaction_id', sanitize_text_field((string) $Sofortueberweisung->getTransactionId()));
 			$paymentUrl = $Sofortueberweisung->getPaymentUrl();
 			wp_send_json_success(array('message' => "Sofort valid.", 'approve_link' => $paymentUrl));
 		}
@@ -342,10 +354,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 							'price_data' => [
 								'currency' => $setting_options->currency_code,
 								'unit_amount' => $camount,
-								'product_data' => [
-									'name' => $template_options->title,
-									'images' => [wp_sanitize_redirect($stripeimage)],
-								],
+								'product_data' => wpgv_stripe_product_data($template_options->title, $stripeimage),
 							],
 							'quantity' => 1,
 						]],
@@ -366,10 +375,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 							'price_data' => [
 								'currency' => $setting_options->currency_code,
 								'unit_amount' => $camount,
-								'product_data' => [
-									'name' => $template_options->title,
-									'images' => [wp_sanitize_redirect($stripeimage)],
-								],
+								'product_data' => wpgv_stripe_product_data($template_options->title, $stripeimage),
 							],
 							'quantity' => 1,
 						]],

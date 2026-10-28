@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.8.6
+ * Version: 4.9.0
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.8.6');
+define('WPGIFT_VERSION', '4.9.0');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -49,6 +49,8 @@ define('WPGV_MESSAGE_META_KEY', 'wpgv_message');
 // and needs wpgv_unified_cpt_enabled() at that point. The file only declares
 // constants and functions, so loading it this early is safe.
 require_once(WPGIFT__PLUGIN_DIR . '/include/unified-cpt.php');
+// Loaded at the top so the PDF link handler and the (de)activation hooks have it.
+require_once(WPGIFT__PLUGIN_DIR . '/include/pdf-access.php');
 
 if (is_admin()) {
   require_once(WPGIFT__PLUGIN_DIR . '/include/unified-cpt-admin.php');
@@ -497,6 +499,33 @@ function wpgv_get_configured_extra_charge($option_name)
   return ($amount === null || $amount < 0) ? 0.0 : $amount;
 }
 
+/**
+ * Picture URL for a Stripe Checkout line: the attachment's full-size URL, else the
+ * fallback URL, else ''. wp_get_attachment_image_src() returns an array; passing that
+ * on went out to Stripe as the text "Array".
+ */
+function wpgv_stripe_image_url($attachment_id, $fallback_url = '')
+{
+  $src = $attachment_id ? wp_get_attachment_image_src((int) $attachment_id, 'full') : false;
+  $url = $src ? $src[0] : (string) $fallback_url;
+
+  return esc_url_raw(trim($url), array('http', 'https'));
+}
+
+/**
+ * product_data for a Stripe Checkout line. The picture is left out when there is
+ * none: Stripe refuses an empty image URL, and the whole checkout failed with it.
+ */
+function wpgv_stripe_product_data($name, $image_url)
+{
+  $data = array('name' => (string) $name);
+  if ($image_url !== '') {
+    $data['images'] = array($image_url);
+  }
+
+  return $data;
+}
+
 function wpgv_get_shipping_charge_amount($shipping_type, $shipping_method, $setting_options)
 {
   $shipping_type = sanitize_text_field((string) $shipping_type);
@@ -815,6 +844,7 @@ add_action('init', function() {
   require_once(WPGIFT__PLUGIN_DIR . '/include/wpgv_giftcard_pdf.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/edit-order-voucher.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/receipt-functions.php');
+  require_once(WPGIFT__PLUGIN_DIR . '/include/manual-order.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/admin_regenerate_modern_pdf.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/admin_regenerate_standard_pdf.php');
   require_once(WPGIFT__PLUGIN_DIR . '/include/db-transfer-common.php');
@@ -1474,6 +1504,8 @@ function wpgv_plugin_activation()
   if (!wp_next_scheduled('wpgv_check_voucher_status')) {
     wp_schedule_event(time(), 'hourly', 'wpgv_check_voucher_status');
   }
+  wpgv_pdf_access_install();
+
   set_transient('wpgv_activated', 1);
   require_once(WPGIFT__PLUGIN_DIR . '/classes/class-nag.php');
   WPGIFT_Nag::insert_install_date();
@@ -1641,10 +1673,24 @@ function wpgv_unschedule_removed_crons()
 }
 add_action('init', 'wpgv_unschedule_removed_crons');
 
+/**
+ * Send a voucher email that WooCommerce orders scheduled for a later date.
+ *
+ * The orders scheduled 'send_gift_voucher_email_event' with the finished mail as
+ * its arguments, but nothing listened to that event, so those vouchers were never
+ * delivered.
+ */
+function wpgv_send_scheduled_voucher_email($to, $subject, $message, $headers = '', $attachments = array())
+{
+  wp_mail($to, $subject, $message, $headers, $attachments);
+}
+add_action('send_gift_voucher_email_event', 'wpgv_send_scheduled_voucher_email', 10, 5);
+
 function wpgv_plugin_deactivation()
 {
   wp_clear_scheduled_hook('wpgv_check_voucher_status');
   wp_clear_scheduled_hook('wpgv_cleanup_unpaid_cron');
+  wpgv_pdf_access_uninstall();
 }
 register_deactivation_hook(__FILE__, 'wpgv_plugin_deactivation');
 
@@ -2171,26 +2217,43 @@ function wpgv_create_plugin_pages()
     update_option('wpgv_stripesuccesspage', $lastpageIds[7]);
   }
 
-  $lastCategoryID = wp_insert_term(
-    'Demo Category',
-    'wpgv_voucher_category',
-    array(
-      'description' => 'Demo Category Description',
-      'slug'        => 'demo-category',
-    )
-  );
-  $demoItem = array(
-    'post_title'    => 'Demo Item',
-    'post_status'   => 'publish',
-    'post_author'   => get_current_user_id(),
-    'post_type'     => 'wpgv_voucher_product',
-  );
-  $lastItemID = wp_insert_post($demoItem);
-  add_post_meta($lastItemID, 'description', 'Demo Description');
-  add_post_meta($lastItemID, 'price', '100');
-  add_post_meta($lastItemID, 'special_price', '80');
-  if (!isset($lastCategoryID)) {
-    wp_set_object_terms($lastItemID, $lastCategoryID, 'wpgv_voucher_category');
+  // The legacy demo item is made once. Every click used to add another "Demo Item",
+  // and the category was never set on it (the check read !isset() of a value just set).
+  $demo_category = term_exists('demo-category', 'wpgv_voucher_category');
+  if (!$demo_category) {
+    $demo_category = wp_insert_term(
+      'Demo Category',
+      'wpgv_voucher_category',
+      array(
+        'description' => 'Demo Category Description',
+        'slug'        => 'demo-category',
+      )
+    );
+  }
+  // Also look among gift cards: the merge into the unified list moves legacy items there.
+  $demo_items = get_posts(array(
+    'post_type'   => array('wpgv_voucher_product', 'voucher_template'),
+    'title'       => 'Demo Item',
+    'post_status' => 'any',
+    'numberposts' => 1,
+    'fields'      => 'ids',
+  ));
+  if (!$demo_items) {
+    $demoItem = array(
+      'post_title'    => 'Demo Item',
+      'post_status'   => 'publish',
+      'post_author'   => get_current_user_id(),
+      'post_type'     => 'wpgv_voucher_product',
+    );
+    $lastItemID = wp_insert_post($demoItem);
+    if ($lastItemID && !is_wp_error($lastItemID)) {
+      add_post_meta($lastItemID, 'description', 'Demo Description');
+      add_post_meta($lastItemID, 'price', '100');
+      add_post_meta($lastItemID, 'special_price', '80');
+      if (is_array($demo_category) && !empty($demo_category['term_id'])) {
+        wp_set_object_terms($lastItemID, (int) $demo_category['term_id'], 'wpgv_voucher_category');
+      }
+    }
   }
 
   if (!$lastpageIds[2])

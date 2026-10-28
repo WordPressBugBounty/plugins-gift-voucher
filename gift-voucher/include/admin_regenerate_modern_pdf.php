@@ -132,135 +132,80 @@ function wpgv_admin_get_voucher_regen_data_func()
         ? intval($template_info['template_id'])
         : 0;
 
-    // ── Resolve template background image URL ────────────────────────────────
+    // ── Template picture and Konva JSON ──────────────────────────────────────
+    // The same files the [wpgv_giftcard] form draws the card from (getSelectTemplateVoucher()
+    // in giftcard.php), so the regenerated card looks like the one the customer bought.
     $select_status  = get_post_meta($template_id, 'wpgv_customize_template_select_template', true);
-    $template_style = get_post_meta($template_id, 'wpgv_customize_template_template-style', true);
-    $bg_result      = get_post_meta($template_id, 'wpgv_customize_template_bg_result', true);
+    $template_style = sanitize_file_name(basename((string) get_post_meta($template_id, 'wpgv_customize_template_template-style', true)));
     $id_bg          = get_post_meta($template_id, 'wpgv_customize_template_id_bg_template', true);
     $json_template  = get_post_meta($template_id, 'wpgv_customize_template_json_template', true);
 
     $image_url = '';
+    $json = '';
     if ($select_status === 'custom') {
-        // Fallback: id_bg_template (may be a URL or attachment ID)
-        if (empty($image_url) && !empty($id_bg)) {
+        // id_bg_template may be an attachment ID or a URL.
+        if (!empty($id_bg)) {
             if (is_numeric($id_bg)) {
                 $src = wp_get_attachment_image_src(intval($id_bg), 'large');
                 $image_url = $src ? $src[0] : '';
             } else {
-                $image_url = $id_bg; // already a URL
+                $image_url = $id_bg;
             }
         }
-    } else {
-        // Default template — bg is an S3 PNG filename
-        if (!empty($template_style)) {
-            $title_svg = str_replace('.png', '.svg', $template_style);
-            if (function_exists('wpgv_get_template_image_url')) {
-                $image_url = wpgv_get_template_image_url($title_svg);
-            }
-            if (empty($image_url)) {
-                $image_url = 'https://gift-card-pro.s3.eu-central-1.amazonaws.com/templates/png/' . $template_style;
-            }
-        }
-    }
-
-    // ── Resolve Konva JSON ────────────────────────────────────────────────────
-    $json = '';
-    if ($select_status === 'custom') {
         $json = $json_template;
-    } else {
-        $name_template = str_replace('.png', '.json', $template_style);
-        if (function_exists('wpgv_fetch_cached_template_json')) {
-            $json = wpgv_fetch_cached_template_json($name_template);
+    } elseif ($template_style !== '') {
+        $svg_name  = str_replace('.png', '.svg', $template_style);
+        $json_name = str_replace('.png', '.json', $template_style);
+
+        if (file_exists(WPGIFT__PLUGIN_DIR . '/assets/img/templates/svg/' . $svg_name)) {
+            $image_url = WPGIFT__PLUGIN_URL . '/assets/img/templates/svg/' . $svg_name;
+        } else {
+            $image_url = 'https://gift-card-pro.s3.eu-central-1.amazonaws.com/templates/png/' . $template_style;
         }
-        if (empty($json) && !empty($name_template)) {
-            $json_url  = 'https://gift-card-pro.s3.eu-central-1.amazonaws.com/templates/version-1.2/json/' . str_replace('.png', '.json', $template_style);
-            $response  = wp_remote_get($json_url, array('timeout' => 15));
+
+        $json_file = WPGIFT__PLUGIN_DIR . '/assets/img/templates/json/' . $json_name;
+        if (file_exists($json_file)) {
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- reading a file shipped with the plugin.
+            $json = file_get_contents($json_file);
+        } else {
+            $response = wp_remote_get('https://gift-card-pro.s3.eu-central-1.amazonaws.com/templates/version-1.2/json/' . $json_name, array('timeout' => 15));
             if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
                 $json = wp_remote_retrieve_body($response);
             }
         }
     }
 
-    // ── Parse label text from JSON ────────────────────────────────────────────
-    $giftto = __('Gift To', 'gift-voucher');
-    $giftfrom  = __('Gift From', 'gift-voucher');
-    $date_of   = __('Date of Expiry', 'gift-voucher');
-    $counpon   = __('Coupon Code', 'gift-voucher');
-    $value_text = __('Value', 'gift-voucher');
-
-    if (!empty($json)) {
-        $json_array = is_array($json) ? $json : json_decode($json, true);
-        if (is_array($json_array) && isset($json_array['children'])) {
-            foreach ($json_array['children'] as $child) {
-                if (!isset($child['children'])) continue;
-                foreach ($child['children'] as $item) {
-                    if (!isset($item['attrs']['id'])) continue;
-                    switch ($item['attrs']['id']) {
-                        case 'giftto_label':
-                            if (isset($item['attrs']['text']) && is_string($item['attrs']['text']) && $item['attrs']['text'] !== '') {
-                                $giftto = sanitize_text_field($item['attrs']['text']);
-                            }
-                            break;
-                        case 'giftfrom_label':
-                            if (isset($item['attrs']['text']) && is_string($item['attrs']['text']) && $item['attrs']['text'] !== '') {
-                                $giftfrom = sanitize_text_field($item['attrs']['text']);
-                            }
-                            break;
-                        case 'giftcard_date_gift_label':
-                            if (isset($item['attrs']['text']) && is_string($item['attrs']['text']) && $item['attrs']['text'] !== '') {
-                                $date_of = sanitize_text_field($item['attrs']['text']);
-                            }
-                            break;
-                        case 'giftcard_counpon_label':
-                            if (isset($item['attrs']['text']) && is_string($item['attrs']['text']) && $item['attrs']['text'] !== '') {
-                                $counpon = sanitize_text_field($item['attrs']['text']);
-                            }
-                            break;
-                        case 'giftcard_monney_label':
-                            if (isset($item['attrs']['text']) && is_string($item['attrs']['text']) && $item['attrs']['text'] !== '') {
-                                $value_text = sanitize_text_field($item['attrs']['text']);
-                            }
-                            break;
-                    }
-                }
-            }
-        }
-    }
-
-    // ── Company / settings ────────────────────────────────────────────────────
-    $currency     = !empty($setting_opts->currency)         ? $setting_opts->currency         : '';
-    $company_name = !empty($setting_opts->company_name)     ? $setting_opts->company_name     : '';
-    $company_logo = get_option('wpgv_company_logo', '');
-    $web          = !empty($setting_opts->pdf_footer_url)   ? $setting_opts->pdf_footer_url   : '';
-    $email        = !empty($setting_opts->pdf_footer_email) ? $setting_opts->pdf_footer_email : '';
-    $notice       = get_option('wpgv_leftside_notice', __('Cash payment is not possible. The terms and conditions apply.', 'gift-voucher'));
+    // ── What goes on the card, as the form puts it there ─────────────────────
+    $amount = (float) $voucher_data->amount;
+    $amount_text = (floor($amount) == $amount) ? (string) intval($amount) : rtrim(rtrim(sprintf('%.2f', $amount), '0'), '.');
+    $currency = isset($setting_opts->currency) ? (string) $setting_opts->currency : '';
+    $currency_right = isset($setting_opts->currency_position) && $setting_opts->currency_position !== 'Left';
 
     wp_send_json_success(array(
         // Order data
-        'voucher_id'  => $voucher_id,
-        'template_id' => $template_id,
-        'to_name'     => $voucher_data->to_name,
-        'from_name'   => $voucher_data->from_name,
-        'amount'      => $voucher_data->amount,
-        'couponcode'  => $voucher_data->couponcode,
-        'message'     => $voucher_data->message,
-        'expiry'      => $voucher_data->expiry,
+        'voucher_id'   => $voucher_id,
+        'template_id'  => $template_id,
+        'to_name'      => $voucher_data->to_name,
+        'from_name'    => $voucher_data->from_name,
+        'amount'       => $voucher_data->amount,
+        'amount_text'  => $currency_right ? $amount_text . $currency : $currency . $amount_text,
+        'couponcode'   => $voucher_data->couponcode,
+        'message'      => $voucher_data->message,
+        'expiry'       => trim((string) $voucher_data->expiry),
         // Template / canvas data — always send JSON as string for Konva.Node.create()
-        'image_url'   => $image_url,
-        'json'        => is_array($json) ? json_encode($json) : $json,
-        // Settings
-        'currency'      => $currency,
-        'company_name'  => $company_name,
-        'company_logo'  => $company_logo,
-        'web'           => $web,
-        'email'         => $email,
-        'notice'        => $notice,
-        // Labels parsed from JSON
-        'giftto'      => $giftto,
-        'giftfrom'    => $giftfrom,
-        'date_of'     => $date_of,
-        'counpon'     => $counpon,
-        'value_text'  => $value_text,
+        'image_url'    => $image_url,
+        'json'         => is_array($json) ? wp_json_encode($json) : $json,
+        // Settings, with the form's defaults
+        'company_name' => !empty($setting_opts->company_name) ? $setting_opts->company_name : get_bloginfo('name'),
+        'email'        => !empty($setting_opts->pdf_footer_email) ? $setting_opts->pdf_footer_email : get_option('admin_email'),
+        'web'          => !empty($setting_opts->pdf_footer_url) ? $setting_opts->pdf_footer_url : get_site_url(),
+        'notice'       => get_option('wpgv_leftside_notice', __('Cash payment is not possible. The terms and conditions apply.', 'gift-voucher')),
+        // Labels
+        'giftto'       => __('Gift To', 'gift-voucher'),
+        'giftfrom'     => __('Gift From', 'gift-voucher'),
+        'date_of'      => __('Date', 'gift-voucher'),
+        'counpon'      => __('Coupon', 'gift-voucher'),
+        'value_text'   => __('Value', 'gift-voucher'),
     ));
 }
 add_action('wp_ajax_wpgv_admin_get_voucher_regen_data', 'wpgv_admin_get_voucher_regen_data_func');

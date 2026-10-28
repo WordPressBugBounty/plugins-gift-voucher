@@ -553,7 +553,7 @@ if ($voucher_options->order_type == 'vouchers') {
 					<label class="voucher-label">
 						<?php esc_html_e('Price:', 'gift-voucher'); ?>
 					</label>
-					<input type="number" id="data-price" value="<?php echo esc_attr(is_object($activity) ? intval($activity->amount) : intval($voucher_options->amount)); ?>" />
+					<input type="number" id="data-price" step="any" min="0" value="<?php echo esc_attr((float) $voucher_options->amount); ?>" />
 				</div>
 			</div>
 			<div class="wp-core-ui-modal-footer modal-footer">

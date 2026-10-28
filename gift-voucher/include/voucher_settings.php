@@ -85,7 +85,8 @@ if (isset($_POST['submit'])) {
 	$demo_image_item = isset($_POST['demo_image_item']) ? sanitize_text_field(wp_unslash($_POST['demo_image_item'])) : '';
 	$cancelpagemessage = isset($_POST['cancelpagemessage']) ? wp_kses_post(wp_unslash($_POST['cancelpagemessage'])) : '';
 	$successpagemessage = isset($_POST['successpagemessage']) ? wp_kses_post(wp_unslash($_POST['successpagemessage'])) : '';
-	$wpgv_custom_css = isset($_POST['wpgv_custom_css']) ? sanitize_text_field(wp_unslash($_POST['wpgv_custom_css'])) : '';
+	// sanitize_textarea_field() keeps the line breaks; sanitize_text_field() joined the whole stylesheet into one line.
+	$wpgv_custom_css = isset($_POST['wpgv_custom_css']) ? sanitize_textarea_field(wp_unslash($_POST['wpgv_custom_css'])) : '';
 	$pdf_footer_url = isset($_POST['pdf_footer_url']) ? sanitize_text_field(wp_unslash($_POST['pdf_footer_url'])) : '';
 	$pdf_footer_email = isset($_POST['pdf_footer_email']) ? sanitize_email(wp_unslash($_POST['pdf_footer_email'])) : '';
 	$leftside_notice = isset($_POST['leftside_notice']) ? sanitize_text_field(wp_unslash($_POST['leftside_notice'])) : '';

@@ -109,8 +109,7 @@ function update_voucher_price()
         wp_send_json_error(__('You do not have permission to perform this action.', 'gift-voucher'), 403);
     }
 
-    if (isset($_POST['activity_id']) && isset($_POST['data_price']) && isset($_POST['voucher_id'])) {
-        $activity_id = absint($_POST['activity_id']);
+    if (isset($_POST['data_price']) && isset($_POST['voucher_id'])) {
         $voucher_id = absint($_POST['voucher_id']);
         $data_price = floatval($_POST['data_price']);
 
@@ -122,30 +121,10 @@ function update_voucher_price()
         $giftvouchers_activity = $wpdb->prefix . 'giftvouchers_activity';
         $giftvouchers_list = $wpdb->prefix . 'giftvouchers_list';
 
-        // The screen sends the 'create' activity row of this voucher, or 0 when
-        // the voucher has none. Anything else would let one voucher rewrite the
-        // ledger row of another one.
-        if ($activity_id > 0) {
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name built from $wpdb->prefix.
-            $owns_activity = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM `{$giftvouchers_activity}` WHERE `id` = %d AND `voucher_id` = %d",
-                $activity_id,
-                $voucher_id
-            ));
-
-            if (!$owns_activity) {
-                wp_send_json_error('Invalid data', 400);
-            }
-
-            $wpdb->update(
-                $giftvouchers_activity,
-                // No thousands separator: number_format() would emit "1,000.00000"
-                // and MySQL truncates that to 1 on a decimal column.
-                array('amount' => number_format($data_price, 5, '.', '')),
-                array('id' => $activity_id),
-                array('%s'),
-                array('%d')
-            );
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name built from $wpdb->prefix.
+        $voucher = $wpdb->get_row($wpdb->prepare("SELECT `amount`, `payment_status`, `status` FROM `{$giftvouchers_list}` WHERE `id` = %d", $voucher_id));
+        if (!$voucher) {
+            wp_send_json_error('Invalid data', 400);
         }
 
         $wpdb->update(
@@ -155,6 +134,20 @@ function update_voucher_price()
             array('%s'),
             array('%d')
         );
+
+        // The balance is SUM(activity.amount). Writing the new price into the
+        // 'create' row added it on top of the payment already credited, so a paid
+        // voucher held both. Now a paid, unused voucher moves by the change in
+        // price, never below zero; an unpaid one is credited its new price when
+        // it is marked Paid.
+        if ($voucher->payment_status === 'Paid' && $voucher->status !== 'used') {
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name built from $wpdb->prefix.
+            $balance = (float) $wpdb->get_var($wpdb->prepare("SELECT IFNULL(SUM(amount), 0) FROM `{$giftvouchers_activity}` WHERE `voucher_id` = %d", $voucher_id));
+            $change = max($data_price - (float) $voucher->amount, -max($balance, 0));
+            if (abs($change) >= 0.00001) {
+                WPGV_Gift_Voucher_Activity::record($voucher_id, 'transaction', $change, 'Voucher price changed by an administrator.');
+            }
+        }
         wp_send_json_success('Price updated successfully');
     } else {
         wp_send_json_error('Invalid data');

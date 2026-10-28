@@ -30,7 +30,7 @@ function wpgv_generate_receipt_pdf_for_voucher($voucher_id)
     $template_vars = array(
         'customer_name' => isset($voucher->from_name) ? $voucher->from_name : '',
         'recipient_name' => isset($voucher->to_name) ? $voucher->to_name : '',
-        'buyer_email' => ($voucher->shipping_email != '') ? $voucher->shipping_email : $voucher->email,
+        'buyer_email' => ($voucher->email != '') ? $voucher->email : $voucher->shipping_email,
         'amount_display' => wpgv_price_format(isset($voucher->amount) ? $voucher->amount : 0),
         'coupon_code' => isset($voucher->couponcode) ? $voucher->couponcode : '',
         'expiry_display' => isset($voucher->expiry) ? $voucher->expiry : '',

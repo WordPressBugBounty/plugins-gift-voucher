@@ -62,6 +62,7 @@ $wpgv_import_result = $wpgv_is_import_tab ? wpgv_handle_giftcard_db_import() : n
 		<h2 class="nav-tab-wrapper">
 			<a class="nav-tab <?php if (!$woocommerce && !$wpgv_is_import_tab): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists"><?php echo esc_html_e('Orders', 'gift-voucher') ?></a>
 			<a class="nav-tab <?php if ($woocommerce && !$wpgv_is_import_tab): ?>nav-tab-active<?php endif; ?>" href="?page=vouchers-lists&woocommerce=1"><?php echo esc_html_e('WooCommerce Orders', 'gift-voucher') ?></a>
+			<a class="nav-tab" href="<?php echo esc_url(admin_url('admin.php?page=wpgv-add-order')); ?>"><?php esc_html_e('Add Order', 'gift-voucher'); ?></a>
 			<a class="nav-tab" href="<?php echo esc_url(wpgv_db_transfer_export_url()); ?>"><?php echo esc_html_e('Export Database', 'gift-voucher') ?></a>
 			<a class="nav-tab <?php if ($wpgv_is_import_tab): ?>nav-tab-active<?php endif; ?>" href="<?php echo esc_url(wpgv_db_transfer_import_url()); ?>"><?php echo esc_html_e('Import Database', 'gift-voucher') ?></a>
 		</h2>

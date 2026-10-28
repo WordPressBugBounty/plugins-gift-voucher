@@ -269,6 +269,9 @@ function wpgv_giftitems_shortcode($atts = '')
             $special_price = esc_html(wpgv_item_meta($item_id, 'special_price'));
             $subprice = ($special_price) ? $special_price : $price;
             $pricestring = wpgv_item_price_html($item_id, $price, $special_price);
+            // This branch has no category loop: take the item's own category for the order form.
+            $item_cat_ids = wp_get_post_terms($item_id, WPGV_CATEGORY_TAXONOMY, array('fields' => 'ids'));
+            $item_cat_id = (!is_wp_error($item_cat_ids) && $item_cat_ids) ? (int) $item_cat_ids[0] : 0;
 
             $html .= '<div class="wpgv-item">
 
@@ -276,7 +279,7 @@ function wpgv_giftitems_shortcode($atts = '')
 
                     <div class="wpgv-price">' . $pricestring . '</div>
 
-                    <div class="wpgv-buy"><button type="button" data-item-id="' . $item_id . '" data-cat-id="' . $category->term_id . '" data-item-price="' . $subprice . '">' . __('Buy', 'gift-voucher') . '</button></div>
+                    <div class="wpgv-buy"><button type="button" data-item-id="' . $item_id . '" data-cat-id="' . $item_cat_id . '" data-item-price="' . $subprice . '">' . __('Buy', 'gift-voucher') . '</button></div>
                 </div>';
         }
         $html .= '</div>';
@@ -716,7 +719,7 @@ function wpgv_giftitems_shortcode($atts = '')
         }
     }
 
-    $html .= '</div><style>' . $wpgv_custom_css . '</style>';
+    $html .= '</div><style>' . wp_strip_all_tags($wpgv_custom_css) . '</style>';
 
     return $html;
 }

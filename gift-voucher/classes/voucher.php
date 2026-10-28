@@ -278,8 +278,12 @@ if (!class_exists('WPGV_Voucher_List')) :
 				array('id' => $id)
 			);
 
-			$amount = $wpdb->get_var($wpdb->prepare("SELECT amount FROM `{$wpdb->prefix}giftvouchers_list` WHERE `id` = %d", $id));
-			WPGV_Gift_Voucher_Activity::record($id, 'transaction', '-' . $amount, 'Voucher used completely.');
+			// Take only what is left on the voucher: debiting the face value pushed
+			// a partly spent voucher below zero, and a second press debited it again.
+			$balance = (float) $wpdb->get_var($wpdb->prepare("SELECT IFNULL(SUM(amount), 0) FROM `{$wpdb->prefix}giftvouchers_activity` WHERE `voucher_id` = %d", $id));
+			if ($balance > 0) {
+				WPGV_Gift_Voucher_Activity::record($id, 'transaction', -$balance, 'Voucher used completely.');
+			}
 		}
 
 		/**
@@ -291,27 +295,31 @@ if (!class_exists('WPGV_Voucher_List')) :
 		public static function paid_voucher($id)
 		{
 			global $wpdb;
-			$wpdb->update(
-				$wpdb->prefix . 'giftvouchers_list',
-				array('payment_status' => 'Paid'),
-				array('id' => $id)
-			);
-			$results = $wpdb->get_results($wpdb->prepare("SELECT * FROM `{$wpdb->prefix}giftvouchers_list` WHERE `id` = %d", $id));
-			if ($results) {
-				$result = $results[0];
-				WPGV_Gift_Voucher_Activity::record($id, 'transaction', $result->amount, 'Voucher payment received.');
+			// Only the change from unpaid to Paid credits the voucher, so pressing
+			// Mark as Paid again (row action or bulk) does not add its value twice.
+			$updated = $wpdb->query($wpdb->prepare(
+				"UPDATE `{$wpdb->prefix}giftvouchers_list` SET `payment_status` = %s WHERE `id` = %d AND (`payment_status` IS NULL OR `payment_status` <> %s)",
+				'Paid',
+				$id,
+				'Paid'
+			));
+			if ($updated) {
+				$amount = $wpdb->get_var($wpdb->prepare("SELECT amount FROM `{$wpdb->prefix}giftvouchers_list` WHERE `id` = %d", $id));
+				WPGV_Gift_Voucher_Activity::record($id, 'transaction', $amount, 'Voucher payment received.');
 			}
 		}
 
 		public static function send_mail($id)
 		{
 			global $wpdb;
-			$setting_table 	= $wpdb->prefix . 'giftvouchers_setting';
-			$setting_options = $wpdb->get_row(
-				$wpdb->prepare("SELECT * FROM {$wpdb->prefix}%s WHERE id = %d", 'giftvouchers_settings', 1)
-			);
+			// The settings row lives in giftvouchers_setting; the old query named a table that
+			// does not exist, so the mails went out without the shop's sender name and address.
+			$setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM `{$wpdb->prefix}giftvouchers_setting` WHERE id = %d", 1));
 
 			$result = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_list WHERE id = %d", $id));
+			if (!$result || !$setting_options) {
+				return false;
+			}
 
 			$upload = wp_upload_dir();
 			$upload_dir = $upload['basedir'];
@@ -330,21 +338,25 @@ if (!class_exists('WPGV_Voucher_List')) :
 			$recipientemailsubject = get_option('wpgv_recipientemailsubject') ? get_option('wpgv_recipientemailsubject') : 'Gift Voucher - Your have received voucher from {company_name}';
 			$recipientemailbody = get_option('wpgv_recipientemailbody') ? get_option('wpgv_recipientemailbody') : '<p>Dear <strong>{recipient_name}</strong>,</p><p>You have received gift voucher from <strong>{customer_name}</strong>.</p><p>You can download the voucher from {pdf_link}.</p><p>- For any clarifications please feel free to email us at {sender_email}.</p><p><strong>Warm Regards, <br /></strong> <strong>{company_name}<br />{website_url}</strong></p>';
 
-			$email = ($result->shipping_email != '') ? $result->shipping_email : $result->email;
+			// The recipient gets the voucher, like on the payment success page. Nothing goes out
+			// when the buyer bought it for themselves (the buyer mail below has it) or it ships by post.
+			if ($result->buying_for !== 'yourself' && $result->shipping_email != '' && $result->shipping_type != 'shipping_as_post') {
+				$emailto = $result->to_name . '<' . $result->shipping_email . '>';
+				$recipientemailsubject = wpgv_mailvarstr($recipientemailsubject, $setting_options, $result);
+				$recipientemailbody = wpgv_mailvarstr($recipientemailbody, $setting_options, $result);
+				wp_mail($emailto, $recipientemailsubject, $recipientemailbody, $headers, $attachments);
+			}
 
-			$emailto = $result->from_name . '<' . $email . '>';
-			$recipientemailsubject = wpgv_mailvarstr($recipientemailsubject, $setting_options, $result);
-			$recipientemailbody = wpgv_mailvarstr($recipientemailbody, $setting_options, $result);
-
-			$recipientmail_sent = wp_mail($emailto, $recipientemailsubject, $recipientemailbody, $headers, $attachments);
-
-			$attachments[1] = wpgv_get_voucher_pdf_path($voucher_options->voucherpdf_link, '-receipt');
+			$receipt = wpgv_get_voucher_pdf_path($result->voucherpdf_link, '-receipt');
+			if ($receipt !== '' && file_exists($receipt)) {
+				$attachments[1] = $receipt;
+			}
 
 			/* Buyer Mail */
 			$buyersub = wpgv_mailvarstr($emailsubject, $setting_options, $result);
 			$buyermsg = wpgv_mailvarstr($emailbody, $setting_options, $result);
 			$buyerto = $result->from_name . '<' . $result->email . '>';
-			$mail_sent = wp_mail($buyerto, $buyersub, $buyermsg, $headers, $attachments);
+			return wp_mail($buyerto, $buyersub, $buyermsg, $headers, $attachments);
 		}
 
 		/**

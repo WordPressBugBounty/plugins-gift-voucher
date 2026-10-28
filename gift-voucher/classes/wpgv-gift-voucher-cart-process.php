@@ -335,14 +335,16 @@ if (!class_exists('wpgv-')) :
                 }
                 // For paid Orders with all others payment methods (paid order status "processing")
                 elseif ($order->has_status('processing')) {
-                    if ($options->is_stripe_enable == 0) {
+                    if (empty($options->is_stripe_enable)) {
                         $order->update_status('processing');
                     } else {
                         $order->update_status('completed');
                     }
                 }
 
-                exit();
+                // One gift voucher line decides it. exit() here cut the thank-you page off
+                // after the first line, so the rest of the page (and its footer) never showed.
+                break;
             }
         }
 

@@ -74,7 +74,14 @@ function wpgv__doajax_gift_card_pdf_save_func()
 		wp_die();
 	}
 
-	$code = wpgv_generate_unique_couponcode();
+	// The card picture the browser sends was drawn with a code (#voucher-couponcode,
+	// 16 digits). Keep that code so the PDF and the order agree: the server used to
+	// make a new one, and the code printed on the gift card could not be redeemed.
+	// Only a code that is malformed or already taken is replaced; the PDF is then
+	// drawn from the order data instead of the picture, so it shows the real code.
+	$posted_code = isset($_POST['couponcode']) ? sanitize_text_field(base64_decode(wp_unslash($_POST['couponcode']))) : '';
+	$wpgv_use_card_picture = (bool) preg_match('/^[1-9][0-9]{15}$/', $posted_code) && !wpgv_couponcode_exists($posted_code);
+	$code = $wpgv_use_card_picture ? $posted_code : wpgv_generate_unique_couponcode();
 	if (is_wp_error($code)) {
 		wp_send_json_error(array('message' => $code->get_error_message()));
 		wp_die();
@@ -183,10 +190,15 @@ function wpgv__doajax_gift_card_pdf_save_func()
 		0,
 		(object) array(
 			'couponcode' => $code,
+			'from_name'  => $for,
+			'to_name'    => $from,
+			'amount'     => $priceVoucher,
+			'message'    => $message,
+			'expiry'     => trim($expiry),
 		),
 		intval($idVoucher),
 		null,
-		$image_path,
+		$wpgv_use_card_picture ? $image_path : '',
 		$upload_url
 	);
 	if (!$pdf_created || !file_exists($upload_dir)) {
@@ -302,7 +314,9 @@ function wpgv__doajax_gift_card_pdf_save_func()
 						wpgv_mark_voucher_order_pending($lastid);
 						wp_send_json_error(array('message' => "No PayPal approve link found."));
 					}
-				} catch (HttpException $ex) {
+				} catch (\Exception $ex) {
+					// Any failure, not only PayPal's HTTP errors: a network or SSL error was a fatal error.
+					// (The old catch named HttpException without its namespace, so it never matched.)
 					wpgv_mark_voucher_order_pending($lastid);
 					wp_send_json_error(array('message' => "PayPal order creation failed."));
 				}
@@ -329,6 +343,8 @@ function wpgv__doajax_gift_card_pdf_save_func()
 			wp_send_json_error(array('message' => $error_message));
 		} else {
 			//buyer must be redirected to $paymentUrl else payment cannot be successfully completed!
+			// The success page asks Sofort about this transaction before it marks the order Paid.
+			wpgv_update_voucher_meta($lastid, 'wpgv_sofort_transaction_id', sanitize_text_field((string) $Sofortueberweisung->getTransactionId()));
 			$paymentUrl = $Sofortueberweisung->getPaymentUrl();
 			wp_send_json_success(array('message' => "Sofort valid.", 'approve_link' => $paymentUrl));
 		}
@@ -339,7 +355,7 @@ function wpgv__doajax_gift_card_pdf_save_func()
 			wpgv_mark_voucher_order_pending($lastid);
 			wp_send_json_error(array('message' => $error_message));
 		} else {
-			$stripeimage = $image_url;
+			$stripeimage = wpgv_stripe_image_url(0, $image_url);
 			$stripesuccesspageurl = get_option('wpgv_stripesuccesspage');
 
 			//set api key
@@ -364,10 +380,7 @@ function wpgv__doajax_gift_card_pdf_save_func()
 							'price_data' => [
 								'currency' => $setting_options->currency_code,
 								'unit_amount' => $camount,
-								'product_data' => [
-									'name' => $titleVoucher,
-									'images' => [wp_sanitize_redirect($stripeimage)],
-								],
+								'product_data' => wpgv_stripe_product_data($titleVoucher, $stripeimage),
 							],
 							'quantity' => 1,
 						]],
@@ -387,10 +400,7 @@ function wpgv__doajax_gift_card_pdf_save_func()
 							'price_data' => [
 								'currency' => $setting_options->currency_code,
 								'unit_amount' => $camount,
-								'product_data' => [
-									'name' => $titleVoucher,
-									'images' => [wp_sanitize_redirect($stripeimage)],
-								],
+								'product_data' => wpgv_stripe_product_data($titleVoucher, $stripeimage),
 							],
 							'quantity' => 1,
 						]],

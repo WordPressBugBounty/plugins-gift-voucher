@@ -238,10 +238,26 @@ if (!class_exists('WPGV_Voucher_Template')) :
 		{
 			//Detect when a bulk action is being triggered...
 			if ('bulk-delete' === $this->current_action()) {
+				// The bulk form carries WP_List_Table's nonce; a bare link must not delete anything.
+				if (!current_user_can('manage_options')) {
+					wp_die(esc_html__('You are not allowed to delete templates.', 'gift-voucher'), 403);
+				}
+				check_admin_referer('bulk-' . $this->_args['plural']);
 				if (!empty($_REQUEST['template_id']) && is_array($_REQUEST['template_id'])) {
+					global $wpdb;
 					$template_ids = array_map('absint', wp_unslash($_REQUEST['template_id']));
 					foreach ($template_ids as $template_id) {
-						self::delete_template($template_id);
+						// Orders are filed under this id: a template that orders use is only
+						// switched off, so their PDFs and details keep working.
+						$in_use = (int) $wpdb->get_var($wpdb->prepare(
+							"SELECT COUNT(*) FROM `{$wpdb->prefix}giftvouchers_list` WHERE template_id = %d",
+							$template_id
+						));
+						if ($in_use > 0) {
+							$wpdb->update("{$wpdb->prefix}giftvouchers_template", array('active' => 0), array('id' => $template_id));
+						} else {
+							self::delete_template($template_id);
+						}
 					}
 				}
 				wp_safe_redirect(esc_url_raw(add_query_arg([], "admin.php?page=voucher-templates")));

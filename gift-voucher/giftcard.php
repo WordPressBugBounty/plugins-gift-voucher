@@ -164,7 +164,7 @@ function wpgv_voucher_template_shortcode()
             </div>
         </div>';
     $html .= '</div>';
-    $html .= '<style>' . stripslashes($wpgv_custom_css) . '</style>';
+    $html .= '<style>' . wp_strip_all_tags(stripslashes($wpgv_custom_css)) . '</style>';
     return $html;
 }
 add_shortcode('wpgv_giftcard', 'wpgv_voucher_template_shortcode');

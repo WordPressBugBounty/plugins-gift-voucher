@@ -214,7 +214,9 @@ if (! class_exists('WPGV_Redeem_Voucher')) :
             echo '<h3>';
             esc_html_e('Check Voucher Balance', 'gift-voucher');
             echo '</h3>';
-            echo wp_kses_post(do_shortcode(' [wpgv-check-voucher-balance] '));
+            // Not through wp_kses_post(): it strips the form and its input, which left this tab empty.
+            // The shortcode escapes everything it prints itself.
+            echo do_shortcode(' [wpgv-check-voucher-balance] '); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside wpgv_check_voucher_balance_shortcode().
         }
 
         function woocommerce_after_cart_contents()
