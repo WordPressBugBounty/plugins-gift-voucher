@@ -388,56 +388,83 @@ jQuery(document).ready(function ($) {
         var style = $('#chooseStyle').val();
         var code = $('.codeCard').val();
 
-        $.ajax({
-            url: frontend_ajax_object.ajaxurl,
-            type: "POST",
-            data: {
-                action: 'wpgv_doajax_voucher_pdf_save_func',
-                nonce: nonce,
-                template: templates_id,
-                buying_for: buying_for,
-                for: forName,
-                from: fromName,
-                value: voucherValue,
-                message: message,
-                expiry: expiry,
-                code: code,
-                shipping: shipping,
-                shipping_email: shipping_email,
-                firstname: firstName,
-                lastname: lastName,
-                email: email,
-                address: address,
-                pincode: pincode,
-                shipping_method: shipping_method,
-                style: style,
-                paymentmethod: paymentMethod
-            },
-            beforeSend: function (xhr) {
-                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-            },
-            success: function (response) {
-                if (response.success) {
-                    if (response.data.approve_link) {
-                        window.location = response.data.approve_link;
-                    } else {
-                        alert("No redirect link found.");
-                    };
-                } else {
-                    alert(response.data.message);
-                }
-            },
-            error: function () {
-                alert(frontend_ajax_object.error_occur);
-                // Remove clicked state and re-enable the button and all form controls so user can try again
-                $('#voucherPaymentButton').removeClass('clicked').prop('disabled', false);
-                if (typeof form !== 'undefined' && form && form.length) {
-                    form.find('input,select,textarea,button').prop('disabled', false);
-                } else {
-                    $('#voucher-multistep-form').find('input,select,textarea,button').prop('disabled', false);
-                }
+        // Back to a usable form: nothing was ordered, so pressing Pay again is safe.
+        function unlockVoucherForm() {
+            $('#voucherPaymentButton').removeClass('clicked').prop('disabled', false);
+            if (typeof form !== 'undefined' && form && form.length) {
+                form.find('input,select,textarea,button').prop('disabled', false);
+            } else {
+                $('#voucher-multistep-form').find('input,select,textarea,button').prop('disabled', false);
             }
-        });
+        }
+
+        function sendVoucherOrder(nonce, retried) {
+            $.ajax({
+                url: frontend_ajax_object.ajaxurl,
+                type: "POST",
+                data: {
+                    action: 'wpgv_doajax_voucher_pdf_save_func',
+                    nonce: nonce,
+                    template: templates_id,
+                    buying_for: buying_for,
+                    for: forName,
+                    from: fromName,
+                    value: voucherValue,
+                    message: message,
+                    expiry: expiry,
+                    code: code,
+                    shipping: shipping,
+                    shipping_email: shipping_email,
+                    firstname: firstName,
+                    lastname: lastName,
+                    email: email,
+                    address: address,
+                    pincode: pincode,
+                    shipping_method: shipping_method,
+                    style: style,
+                    paymentmethod: paymentMethod
+                },
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                },
+                success: function (response) {
+                    if (response.success) {
+                        if (response.data.approve_link) {
+                            window.location = response.data.approve_link;
+                        } else {
+                            alert("No redirect link found.");
+                        };
+                    } else if (response.data.nonce_expired && !retried) {
+                        // The page outlived its token: get a fresh one and send once more.
+                        $.post(frontend_ajax_object.ajaxurl, { action: 'wpgv_refresh_form_nonce', form: 'voucher' }).done(function (fresh) {
+                            if (fresh && fresh.success) {
+                                $('input[name=voucher_form_verify]').val(fresh.data.nonce);
+                                sendVoucherOrder(fresh.data.nonce, true);
+                            } else {
+                                alert(response.data.message);
+                                unlockVoucherForm();
+                            }
+                        }).fail(function () {
+                            alert(response.data.message);
+                            unlockVoucherForm();
+                        });
+                    } else if (response.data.order_kept) {
+                        // The order stays as Pending; another press would add a second one, so the form stays locked.
+                        alert(response.data.message + ' ' + frontend_ajax_object.reload_to_retry);
+                    } else {
+                        alert(response.data.message);
+                        unlockVoucherForm();
+                    }
+                },
+                error: function () {
+                    alert(frontend_ajax_object.error_occur);
+                    // Remove clicked state and re-enable the button and all form controls so user can try again
+                    unlockVoucherForm();
+                }
+            });
+        }
+
+        sendVoucherOrder(nonce, false);
     });
     $('#voucher-multistep-form').ajaxStart(function () { $('.wizard>.content>.body.current').addClass('loading'); })
         .ajaxStop(function () { $('.wizard>.content>.body.current').removeClass('loading'); });

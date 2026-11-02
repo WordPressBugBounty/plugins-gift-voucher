@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.9.0
+ * Version: 4.9.1
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.9.0');
+define('WPGIFT_VERSION', '4.9.1');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -526,6 +526,71 @@ function wpgv_stripe_product_data($name, $image_url)
   return $data;
 }
 
+/**
+ * The locale for a PayPal order, from the site's language; '' when there is none to send.
+ *
+ * Without one PayPal ignores the buyer's browser and picks a language itself. PayPal refuses
+ * the whole order for a value like en_AU, de-DE-formal or an empty string, so the WordPress
+ * locale is reduced to language-REGION (de_DE_formal => de-DE) and anything else is left out.
+ * Filter wpgv_paypal_locale to choose another language, or return '' to leave it to PayPal.
+ */
+function wpgv_paypal_locale()
+{
+  $parts = explode('_', (string) get_locale());
+  $locale = (isset($parts[1]) && preg_match('/^[A-Z]{2}$/', $parts[1])) ? $parts[0] . '-' . $parts[1] : $parts[0];
+  $locale = str_replace('_', '-', (string) apply_filters('wpgv_paypal_locale', $locale));
+
+  return preg_match('/^[a-z]{2}(-[A-Z]{2})?$/', $locale) ? $locale : '';
+}
+
+/** application_context of a PayPal order. */
+function wpgv_paypal_application_context($cancel_url, $return_url)
+{
+  $context = array('cancel_url' => $cancel_url, 'return_url' => $return_url);
+  $locale = wpgv_paypal_locale();
+  if ($locale !== '') {
+    $context['locale'] = $locale;
+  }
+
+  return $context;
+}
+
+/**
+ * Answer an order whose form token no longer fits the visitor: the page is older than the
+ * token's life, was served from a cache, or the visitor logged in or out since it opened.
+ * The form scripts get a fresh token and send once more; nothing has been ordered yet.
+ */
+function wpgv_send_expired_form_error()
+{
+  wp_send_json_error(array(
+    'message' => __('This page has expired. Please reload the page and try again.', 'gift-voucher'),
+    'nonce_expired' => true,
+  ));
+}
+
+/**
+ * A fresh token for an order form. It gives nothing a visitor can not get by opening the
+ * form's public page, and only proves the request comes from the site's own form.
+ */
+function wpgv_refresh_form_nonce_func()
+{
+  nocache_headers();
+
+  $actions = array(
+    'voucher' => 'voucher_form_verify',
+    'items' => 'wpgv_giftitems_form_verify',
+    'card' => 'wpgv_giftitems_form_verify',
+  );
+  $form = isset($_POST['form']) ? sanitize_key(wp_unslash($_POST['form'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- it hands out the nonce.
+  if (!isset($actions[$form])) {
+    wp_send_json_error(array('message' => __('Unknown form.', 'gift-voucher')), 400);
+  }
+
+  wp_send_json_success(array('nonce' => wp_create_nonce($actions[$form])));
+}
+add_action('wp_ajax_nopriv_wpgv_refresh_form_nonce', 'wpgv_refresh_form_nonce_func');
+add_action('wp_ajax_wpgv_refresh_form_nonce', 'wpgv_refresh_form_nonce_func');
+
 function wpgv_get_shipping_charge_amount($shipping_type, $shipping_method, $setting_options)
 {
   $shipping_type = sanitize_text_field((string) $shipping_type);
@@ -1002,6 +1067,7 @@ function wpgv_front_enqueue()
     'via_post' => __('Shipping via Post', 'gift-voucher'),
     'via_email' => __('Shipping via Email', 'gift-voucher'),
     'checkemail' => __('Please check email address.', 'gift-voucher'),
+    'reload_to_retry' => __('Please reload the page to try again.', 'gift-voucher'),
     'required' => __('This field is required.', 'gift-voucher'),
     'remote' => __('Please fix this field.', 'gift-voucher'),
     'maxlength' => __('Please enter no more than {0} characters.', 'gift-voucher'),

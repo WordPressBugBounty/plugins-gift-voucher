@@ -577,11 +577,9 @@ jQuery(document).ready(function ($) {
         changeStepVoucher(step);
     });
     // payment
-    jQuery(document).on('click', '#payment-voucher-template', function (event) {
-        var data = voucherTemplate.find('#dataVoucher').val();
-        var dataURL = voucherTemplate.find('#show-preview-gift-card').attr('href');
-        var nonce = jQuery('#wpgv_giftitems_form_verify').val();
-        voucherTemplate.find('#setup-voucher-template').addClass('loading');
+    function wpgvSendCardOrder(data, dataURL, nonce, retried) {
+        var $pay = voucherTemplate.find('#payment-voucher-template');
+        var $setup = voucherTemplate.find('#setup-voucher-template');
         $.ajax({
             url: frontend_ajax_object.ajaxurl,
             type: "POST",
@@ -590,19 +588,49 @@ jQuery(document).ready(function ($) {
                 if (response.success) {
                     if (response.data.approve_link) {
                         window.location = response.data.approve_link;
-                        voucherTemplate.find('#setup-voucher-template').removeClass('loading');
+                        $setup.removeClass('loading');
                     } else {
                         alert("No redirect link found.");
                     };
+                } else if (response.data.nonce_expired && !retried) {
+                    // The page outlived its token: get a fresh one and send once more.
+                    $.post(frontend_ajax_object.ajaxurl, { action: 'wpgv_refresh_form_nonce', form: 'card' }).done(function (fresh) {
+                        if (fresh && fresh.success) {
+                            jQuery('#wpgv_giftitems_form_verify').val(fresh.data.nonce);
+                            wpgvSendCardOrder(data, dataURL, fresh.data.nonce, true);
+                        } else {
+                            alert(response.data.message);
+                            $setup.removeClass('loading');
+                        }
+                    }).fail(function () {
+                        alert(response.data.message);
+                        $setup.removeClass('loading');
+                    });
+                } else if (response.data.order_kept) {
+                    // The order stays as Pending; another press would add a second one.
+                    alert(response.data.message + ' ' + frontend_ajax_object.reload_to_retry);
+                    $setup.removeClass('loading');
+                    $pay.addClass('wpgv-pay-locked').css({ opacity: 0.5, 'pointer-events': 'none' });
                 } else {
                     alert(response.data.message);
+                    $setup.removeClass('loading');
                 }
             },
             error: function () {
                 alert(frontend_ajax_object.error_occur);
-                voucherTemplate.find('#setup-voucher-template').removeClass('loading');
+                $setup.removeClass('loading');
             }
         });
+    }
+    jQuery(document).on('click', '#payment-voucher-template', function (event) {
+        if (jQuery(this).hasClass('wpgv-pay-locked')) {
+            return false;
+        }
+        var data = voucherTemplate.find('#dataVoucher').val();
+        var dataURL = voucherTemplate.find('#show-preview-gift-card').attr('href');
+        var nonce = jQuery('#wpgv_giftitems_form_verify').val();
+        voucherTemplate.find('#setup-voucher-template').addClass('loading');
+        wpgvSendCardOrder(data, dataURL, nonce, false);
         return false;
     });
     var stage = null;

@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift vouchers, gift certificates, woocommerce gift card, voucher
 Requires at least: 4.0
 Tested up to: 7.1
-Stable tag: 4.9.0
+Stable tag: 4.9.1
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -131,6 +131,13 @@ If you have ideas for the plugin, please [write to us](https://wp-sofa.chat/ "Co
 8. Settings, with one click to set up the pages and sample content.
 
 == Changelog ==
+
+= Version 4.9.1 - Released: November 2, 2026 =
+* Fix: PayPal's checkout page could appear in a language neither the shop nor the buyer uses, because the plugin sent no language with the order. It now follows your site's language. To choose another one use the wpgv_paypal_locale filter, or return an empty value to leave it to PayPal.
+* Fix: An order form left open for more than a day, served from a page cache, or opened before logging in or out stopped at the last step with "Invalid security token". The form now gets a new token by itself and the order goes through.
+* Fix: On the Gift Items and Gift Card forms, pressing Pay again after a failed payment added another order each time. Pay now stays locked after a failed payment and the buyer is asked to reload the page.
+* Fix: On the Gift Voucher form, a request that was refused without creating an order, such as an invalid code, locked the whole form. It now stays usable.
+* Fix: Regenerate PDF stopped with "Template id is invalid for standard voucher." on Gift Item orders made with Add Order. It now rebuilds their PDF. The same error on older Gift Item and WooCommerce orders is fixed too. Nothing needs to be changed on existing orders.
 
 = Version 4.9.0 - Released: October 28, 2026 =
 * New: Gift Cards > Add Order. Create a paid gift voucher or gift item order by hand, for example for a sale at the counter, a present or a refund. The voucher gets its code and PDF straight away and can be emailed to the recipient, the buyer and your shop in one step. You can also set your own voucher code and expiry date.

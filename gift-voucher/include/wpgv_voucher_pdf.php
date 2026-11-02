@@ -10,7 +10,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 {
 	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	if (! isset($_POST['nonce']) || ! wp_verify_nonce(wp_unslash($_POST['nonce']), 'voucher_form_verify')) {
-		wp_send_json_error(array('message' => 'Invalid security token'));
+		wpgv_send_expired_form_error();
 		wp_die();
 	}
 
@@ -241,14 +241,14 @@ function wpgv__doajax_voucher_pdf_save_func()
 		if (empty($wpgv_paypal_client_id) || empty($wpgv_paypal_secret_key)) {
 			$error_message = "PayPal Client ID or Secret Key are both empty.";
 			wpgv_mark_voucher_order_pending($lastid);
-			wp_send_json_error(array('message' => $error_message));
+			wp_send_json_error(array('message' => $error_message, 'order_kept' => true));
 		} else {
 			require_once(WPGIFT__PLUGIN_DIR . '/vendor/autoload.php');
 			require_once(WPGIFT__PLUGIN_DIR . '/include/PayPalAuth.php');
 			if (!PayPalAuth::isCredentialsValid()) {
 				$error_message = "PayPal Client ID or Secret Key is invalid or the PayPal Mode is not compatible with the provided credentials.";
 				wpgv_mark_voucher_order_pending($lastid);
-				wp_send_json_error(array('message' => $error_message));
+				wp_send_json_error(array('message' => $error_message, 'order_kept' => true));
 			} else {
 				$client = PayPalAuth::client();
 				$request = new OrdersCreateRequest();
@@ -262,10 +262,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 							"currency_code" => $setting_options->currency_code
 						]
 					]],
-					"application_context" => [
-						"cancel_url" => $cancel_url,
-						"return_url" => $success_url
-					]
+					"application_context" => wpgv_paypal_application_context($cancel_url, $success_url)
 				];
 
 				try {
@@ -289,13 +286,13 @@ function wpgv__doajax_voucher_pdf_save_func()
 						wp_send_json_success(array('message' => "PayPal valid.", 'approve_link' => $approve_link));
 					} else {
 						wpgv_mark_voucher_order_pending($lastid);
-						wp_send_json_error(array('message' => "No PayPal approve link found."));
+						wp_send_json_error(array('message' => "No PayPal approve link found.", 'order_kept' => true));
 					}
 				} catch (\Exception $ex) {
 					// Any failure, not only PayPal's HTTP errors: a network or SSL error was a fatal error.
 					// (The old catch named HttpException without its namespace, so it never matched.)
 					wpgv_mark_voucher_order_pending($lastid);
-					wp_send_json_error(array('message' => "PayPal order creation failed."));
+					wp_send_json_error(array('message' => "PayPal order creation failed.", 'order_kept' => true));
 				}
 			}
 		}
@@ -317,7 +314,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 			//SOFORT-API didn't accept the data
 			$error_message = "Sofort is invalid.";
 			wpgv_mark_voucher_order_pending($lastid);
-			wp_send_json_error(array('message' => $error_message));
+			wp_send_json_error(array('message' => $error_message, 'order_kept' => true));
 		} else {
 			//buyer must be redirected to $paymentUrl else payment cannot be successfully completed!
 			// The success page asks Sofort about this transaction before it marks the order Paid.
@@ -329,7 +326,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 		if (empty($setting_options->stripe_publishable_key) || empty($setting_options->stripe_secret_key)) {
 			$error_message = "Stripe Publishable key or Stripe Secret Key are both empty.";
 			wpgv_mark_voucher_order_pending($lastid);
-			wp_send_json_error(array('message' => $error_message));
+			wp_send_json_error(array('message' => $error_message, 'order_kept' => true));
 		} else {
 			$stripesuccesspageurl = get_option('wpgv_stripesuccesspage');
 
@@ -395,7 +392,7 @@ function wpgv__doajax_voucher_pdf_save_func()
 				wp_send_json_success(array('message' => "Stripe valid.", 'approve_link' => $session->url));
 			} catch (Exception $ex) {
 				wpgv_mark_voucher_order_pending($lastid);
-				wp_send_json_error(array('message' => "Stripe session creation failed."));
+				wp_send_json_error(array('message' => "Stripe session creation failed.", 'order_kept' => true));
 			}
 		}
 	} elseif ($paymentmethod == 'Per Invoice') {

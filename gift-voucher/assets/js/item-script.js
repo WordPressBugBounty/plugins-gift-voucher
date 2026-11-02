@@ -271,7 +271,48 @@ jQuery(document).ready(function ($) {
         window.open($url + $urlstring, '_blank');
     });
 
+    function wpgvSendItemOrder(datastring, retried) {
+        $.ajax({
+            url: frontend_ajax_object.ajaxurl,
+            type: "POST",
+            data: datastring,
+            success: function (response) {
+                if (response.success) {
+                    if (response.data.approve_link) {
+                        window.location = response.data.approve_link;
+                    } else {
+                        alert("No redirect link found.");
+                    };
+                } else if (response.data.nonce_expired && !retried) {
+                    // The page outlived its token: get a fresh one and send once more (the last nonce in the request wins).
+                    $.post(frontend_ajax_object.ajaxurl, { action: 'wpgv_refresh_form_nonce', form: 'items' }).done(function (fresh) {
+                        if (fresh && fresh.success) {
+                            $('input[name=wpgv_giftitems_form_verify]').val(fresh.data.nonce);
+                            wpgvSendItemOrder(datastring + '&nonce=' + encodeURIComponent(fresh.data.nonce), true);
+                        } else {
+                            alert(response.data.message);
+                        }
+                    }).fail(function () {
+                        alert(response.data.message);
+                    });
+                } else if (response.data.order_kept) {
+                    // The order stays as Pending; another press would add a second one.
+                    alert(response.data.message + ' ' + frontend_ajax_object.reload_to_retry);
+                    $('#paynowbtn').prop('disabled', true);
+                } else {
+                    alert(response.data.message);
+                }
+            },
+            error: function () {
+                alert(frontend_ajax_object.error_occur);
+            }
+        });
+    }
+
     $('#paynowbtn').click(function () {
+        if (this.disabled) { // locked after a failed payment, see wpgvSendItemOrder()
+            return false;
+        }
         var nonce = $('input[name=wpgv_giftitems_form_verify]').val();
         var $error = 0,
             $datastring = '',
@@ -312,25 +353,7 @@ jQuery(document).ready(function ($) {
             return false;
         }
         if (!$error) {
-            $.ajax({
-                url: frontend_ajax_object.ajaxurl,
-                type: "POST",
-                data: $datastring,
-                success: function (response) {
-                    if (response.success) {
-                        if (response.data.approve_link) {
-                            window.location = response.data.approve_link;
-                        } else {
-                            alert("No redirect link found.");
-                        };
-                    } else {
-                        alert(response.data.message);
-                    }
-                },
-                error: function () {
-                    alert(frontend_ajax_object.error_occur);
-                }
-            });
+            wpgvSendItemOrder($datastring, false);
         } else {
             alert(frontend_ajax_object.checkemail);
         }

@@ -22,9 +22,14 @@ function wpgv_get_voucher_template_kind($voucher_data)
     // The stored answer wins. template_id alone is ambiguous - it addresses two
     // different id spaces that can collide - so guessing is a last resort now.
     if (!empty($voucher_data->template_kind)) {
+        // Gift items and WooCommerce products keep their source in item_id / product_id.
+        $template_id = intval($voucher_data->template_id)
+            ?: intval($voucher_data->item_id)
+            ?: intval($voucher_data->product_id);
+
         return array(
             'kind'        => (string) $voucher_data->template_kind,
-            'template_id' => intval($voucher_data->template_id),
+            'template_id' => $template_id,
         );
     }
 
