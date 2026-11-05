@@ -1015,13 +1015,47 @@
 }
 
 @media only screen and (max-width:600px) {
-    #voucher-multistep-form.wizard>.steps>ul>li {
-        width: 50%
+    /* The steps as one short row, so the form starts on the first screen of a phone:
+       the current step shows its number and name, the others only their number. */
+    #voucher-multistep-form.wizard:not(.vertical)>.steps>ul {
+        display: flex;
+        align-items: stretch;
+        gap: 6px;
+        margin: 0 0 .5em;
+        padding: 0
     }
-    #voucher-multistep-form.wizard>.steps a,
-    #voucher-multistep-form.wizard>.steps a:hover,
-    #voucher-multistep-form.wizard>.steps a:active {
-        margin-top: .5em
+    #voucher-multistep-form.wizard:not(.vertical)>.steps>ul>li {
+        flex: 0 0 auto;
+        float: none;
+        width: auto
+    }
+    #voucher-multistep-form.wizard:not(.vertical)>.steps>ul>li.current {
+        flex: 1 1 0;
+        min-width: 0
+    }
+    #voucher-multistep-form.wizard:not(.vertical)>.steps a,
+    #voucher-multistep-form.wizard:not(.vertical)>.steps a:hover,
+    #voucher-multistep-form.wizard:not(.vertical)>.steps a:active {
+        min-width: 44px;
+        height: 44px;
+        margin: 0;
+        padding: 0 10px;
+        box-sizing: border-box;
+        font-size: 0; /* the step's name is a bare text node */
+        line-height: 44px
+    }
+    #voucher-multistep-form.wizard:not(.vertical)>.steps .current a,
+    #voucher-multistep-form.wizard:not(.vertical)>.steps .current a:hover,
+    #voucher-multistep-form.wizard:not(.vertical)>.steps .current a:active {
+        overflow: hidden;
+        font-size: 14px;
+        text-overflow: ellipsis;
+        white-space: nowrap
+    }
+    #voucher-multistep-form.wizard:not(.vertical)>.steps .number {
+        display: inline;
+        font-size: 14px;
+        line-height: inherit
     }
     #voucher-multistep-form.wizard.vertical>.steps,
     #voucher-multistep-form.wizard.vertical>.actions {
@@ -1040,13 +1074,6 @@
         width: 100%
     }
 }
-
-@media only screen and (max-width:480px) {
-    #voucher-multistep-form.wizard>.steps>ul>li {
-        width: 100%
-    }
-}
-
 
 /* Style 2 */
 

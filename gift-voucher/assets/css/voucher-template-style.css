@@ -1135,3 +1135,50 @@
     }
 }
 
+/* Steps as one short row, so the form starts on the first screen of a phone: the current
+   step shows its number and name, the others only their number. After the rules above,
+   whose margins and widths it replaces. */
+@media screen and (max-width:736px) {
+    #giftvoucher-template .giftvoucher-template-steps {
+        flex-wrap: nowrap;
+        gap: 6px;
+        padding: 0;
+    }
+
+    .giftvoucher-template-steps .giftvoucher-step,
+    .giftvoucher-template-steps .giftvoucher-step:not(:last-child),
+    .giftvoucher-template-steps .giftvoucher-step:nth-child(2n+2) {
+        flex: 0 0 auto;
+        width: auto;
+        margin: 0;
+        padding: 4px;
+    }
+
+    .giftvoucher-template-steps .giftvoucher-step.active,
+    .giftvoucher-template-steps .giftvoucher-step.active:not(:last-child),
+    .giftvoucher-template-steps .giftvoucher-step.active:nth-child(2n+2) {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .giftvoucher-template-steps .step-group .step-number {
+        flex: 0 0 auto;
+        width: 36px;
+        height: 36px;
+        margin-right: 0;
+        line-height: 34px;
+    }
+
+    .giftvoucher-template-steps .step-label {
+        display: none;
+    }
+
+    .giftvoucher-template-steps .giftvoucher-step.active .step-label {
+        display: block;
+        overflow: hidden;
+        margin-left: 8px;
+        font-size: 14px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}

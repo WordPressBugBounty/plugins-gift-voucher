@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift vouchers, gift certificates, woocommerce gift card, voucher
 Requires at least: 4.0
 Tested up to: 7.1
-Stable tag: 4.9.1
+Stable tag: 4.9.2
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -131,6 +131,9 @@ If you have ideas for the plugin, please [write to us](https://wp-sofa.chat/ "Co
 8. Settings, with one click to set up the pages and sample content.
 
 == Changelog ==
+
+= Version 4.9.2 - Released: November 5, 2026 =
+* Fix: On phones, the step blocks of the [wpgv_giftvoucher] and [wpgv_giftcard] forms filled much of the first screen, so buyers had to scroll past them to reach the form. The steps are now one short row: the current step shows its number and name, the others their number.
 
 = Version 4.9.1 - Released: November 2, 2026 =
 * Fix: PayPal's checkout page could appear in a language neither the shop nor the buyer uses, because the plugin sent no language with the order. It now follows your site's language. To choose another one use the wpgv_paypal_locale filter, or return an empty value to leave it to PayPal.
