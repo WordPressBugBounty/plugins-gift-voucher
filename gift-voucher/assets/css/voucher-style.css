@@ -1208,3 +1208,20 @@
     float: left;
     width: 100%;
 }
+
+/* [wpgv_giftvoucher] with no voucher to sell */
+.wpgv-form-unavailable {
+    padding: 16px 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.wpgv-form-unavailable p {
+    margin: 0;
+}
+
+.wpgv-form-unavailable .wpgv-form-unavailable-admin {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #ddd;
+}

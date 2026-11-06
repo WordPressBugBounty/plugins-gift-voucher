@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift vouchers, gift certificates, woocommerce gift card, voucher
 Requires at least: 4.0
 Tested up to: 7.1
-Stable tag: 4.9.2
+Stable tag: 4.9.3
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -131,6 +131,9 @@ If you have ideas for the plugin, please [write to us](https://wp-sofa.chat/ "Co
 8. Settings, with one click to set up the pages and sample content.
 
 == Changelog ==
+
+= Version 4.9.3 - Released: November 6, 2026 =
+* Fix: With no active voucher template, the [wpgv_giftvoucher] form opened with an empty first step and refused the buyer at the last step with "This voucher is no longer available." Buyers now see a short message instead of the form, and administrators also see why and where to add a gift voucher.
 
 = Version 4.9.2 - Released: November 5, 2026 =
 * Fix: On phones, the step blocks of the [wpgv_giftvoucher] and [wpgv_giftcard] forms filled much of the first screen, so buyers had to scroll past them to reach the form. The steps are now one short row: the current step shows its number and name, the others their number.

@@ -2,6 +2,48 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
+/**
+ * What [wpgv_giftvoucher] shows when no voucher can be bought.
+ *
+ * The form used to open with an empty first step and let the buyer go through
+ * every step, only to be refused with "This voucher is no longer available" at
+ * the end. Buyers now get a plain message, and administrators are told why and
+ * where to fix it. The admin menu differs before and after the gift card merge,
+ * so the links do too.
+ *
+ * @return string
+ */
+function wpgv_voucher_form_unavailable_html()
+{
+    $html = '<div class="wpgv-form-unavailable"><p>'
+        . esc_html__('Gift vouchers are not available for purchase at the moment. Please check back later.', 'gift-voucher')
+        . '</p>';
+
+    if (current_user_can('manage_options')) {
+        if (wpgv_unified_cpt_enabled()) {
+            $how = __('Add a new gift card, set its Type to Gift Voucher and publish it.', 'gift-voucher');
+            $add_url = admin_url('post-new.php?post_type=voucher_template');
+            $add_label = __('Add New Gift Card', 'gift-voucher');
+            $list_url = admin_url('edit.php?post_type=voucher_template&wpgv_kind=template');
+        } else {
+            $how = __('Add a voucher template and set it to Active.', 'gift-voucher');
+            $add_url = admin_url('admin.php?page=new-voucher-template');
+            $add_label = __('Add New Template', 'gift-voucher');
+            $list_url = admin_url('admin.php?page=voucher-templates');
+        }
+
+        $html .= '<p class="wpgv-form-unavailable-admin"><strong>'
+            . esc_html__('Only administrators see this:', 'gift-voucher') . '</strong> '
+            . esc_html__('this form has no gift voucher to offer, so nobody can buy from it.', 'gift-voucher') . ' '
+            . esc_html($how) . '<br>'
+            . '<a href="' . esc_url($add_url) . '">' . esc_html($add_label) . '</a> | '
+            . '<a href="' . esc_url($list_url) . '">' . esc_html__('Check existing gift vouchers', 'gift-voucher') . '</a>'
+            . '</p>';
+    }
+
+    return $html . '</div>';
+}
+
 // Add Voucher Shortcode
 function wpgv_voucher_shortcode()
 {
@@ -13,6 +55,12 @@ function wpgv_voucher_shortcode()
     $voucher_table     = $wpdb->prefix . 'giftvouchers_list';
     $setting_table     = $wpdb->prefix . 'giftvouchers_setting';
     wp_enqueue_style('wpgv-voucher-style');
+
+    $template_options = WPGV_Template_Repository::get_active_standard();
+    if (empty($template_options)) {
+        return wpgv_voucher_form_unavailable_html();
+    }
+
     wp_enqueue_script('wpgv-jquery-validate');
     wp_enqueue_script('wpgv-jquery-steps');
     wp_enqueue_script('wpgv-stripe-js');
@@ -21,8 +69,6 @@ function wpgv_voucher_shortcode()
     $wpgv_termstext = get_option('wpgv_termstext') ? get_option('wpgv_termstext') : 'I hereby accept the terms and conditions, the revocation of the privacy policy and confirm that all information is correct.';
 
     $setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}giftvouchers_setting WHERE id = %d", 1));
-
-    $template_options = WPGV_Template_Repository::get_active_standard();
 
     $nonce = wp_create_nonce('voucher_form_verify');
     $wpgv_custom_css = get_option('wpgv_custom_css') ? stripslashes(trim(get_option('wpgv_custom_css'))) : '';
