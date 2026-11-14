@@ -69,7 +69,7 @@ if (!function_exists('wpgv_get_voucher_timeline_events')) {
 				// translators: 1: payment method, 2: payment status.
 				__('Payment method: %1$s. Status: %2$s.', 'gift-voucher'),
 				$voucher->pay_method,
-				$voucher->payment_status
+				wpgv_payment_status_label($voucher->payment_status)
 			));
 
 			$events[] = array(

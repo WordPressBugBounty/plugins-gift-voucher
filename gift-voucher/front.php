@@ -155,6 +155,9 @@ function wpgv_voucher_shortcode()
         }
     }
 
+    // Voucher Text Color is for the coloured voucher card only. It also used to
+    // colour the order details of the Overview step, which sit on the page's own
+    // background, so a white card text made them unreadable (KB-39).
     $html .= '<style type="text/css">
         #voucher-multistep-form .secondRightDiv .cardDiv{
             background-color: #' . esc_attr($voucher_bgcolor) . '!important;
@@ -180,8 +183,6 @@ function wpgv_voucher_shortcode()
         #voucher-multistep-form .content .sin-template label.selectImage {
             border-color: #' . esc_attr($voucher_brcolor) . '!important;
         }
-        #voucher-multistep-form .paymentUserInfo .full,
-        #voucher-multistep-form .paymentUserInfo .half,
         #voucher-multistep-form .secondRightDiv .voucherBottomDiv h2,
         #voucher-multistep-form .voucherBottomDiv .termsCard,
         #voucher-multistep-form .voucherBottomDiv .voucherSiteInfo a {

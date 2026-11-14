@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.9.3
+ * Version: 4.9.4
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.9.3');
+define('WPGIFT_VERSION', '4.9.4');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -1941,7 +1941,7 @@ function wpgv_mailvarstr($string, $setting_options, $voucher_options)
     '{customer_postcode}' => $voucher_options->postcode,
     '{coupon_code}'       => $voucher_options->couponcode,
     '{payment_method}'    => $voucher_options->pay_method,
-    '{payment_status}'    => $voucher_options->payment_status,
+    '{payment_status}'    => wpgv_payment_status_label($voucher_options->payment_status),
     '{pdf_link}'          => wpgv_get_voucher_pdf_url($voucher_options->voucherpdf_link),
     '{receipt_link}'      => wpgv_get_voucher_pdf_url($voucher_options->voucherpdf_link, '-receipt'),
   );
@@ -2070,6 +2070,24 @@ function wpgv_redeem_voucher()
     'message' => __('Successful', 'gift-voucher'),
     'balance' => $updated_balance,
   ));
+}
+
+/**
+ * A payment status as people read it.
+ *
+ * "Not Pay" is the value stored for an unpaid order and is compared against in
+ * many places, so it stays in the database. Only the wording shown changes (KB-41).
+ *
+ * @param string $status Stored payment status.
+ * @return string
+ */
+function wpgv_payment_status_label($status)
+{
+  $status = (string) $status;
+  if ($status === 'Not Pay') {
+    return __('Not Paid', 'gift-voucher');
+  }
+  return $status;
 }
 
 function wpgv_price_format($price)

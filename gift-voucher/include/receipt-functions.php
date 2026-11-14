@@ -35,7 +35,7 @@ function wpgv_generate_receipt_pdf_for_voucher($voucher_id)
         'coupon_code' => isset($voucher->couponcode) ? $voucher->couponcode : '',
         'expiry_display' => isset($voucher->expiry) ? $voucher->expiry : '',
         'payment_method' => isset($voucher->pay_method) ? $voucher->pay_method : '',
-        'payment_status' => isset($voucher->payment_status) ? $voucher->payment_status : __('Not Paid', 'gift-voucher'),
+        'payment_status' => isset($voucher->payment_status) ? wpgv_payment_status_label($voucher->payment_status) : __('Not Paid', 'gift-voucher'),
         'order_number' => $voucher_id,
         'order_date' => gmdate('d.m.Y', strtotime(!empty($voucher->voucheradd_time) ? $voucher->voucheradd_time : current_time('mysql'))),
         'company_name' => isset($setting_options->company_name) ? $setting_options->company_name : '',

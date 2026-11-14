@@ -574,9 +574,10 @@ if (isset($_GET['action']) && $_GET['action'] == 'create_default_pages') {
 										<label for="select_number_format"><?php echo esc_html__('Select number format', 'gift-voucher'); ?></label>
 									</th>
 									<td>
-										<select name="select_number_format" id="template_col" class="regular-text">
-											<option value="comma" <?php echo ($wpgv_select_number_format == 'comma') ? 'selected' : ''; ?>>1,000.00 (<?php echo esc_html__('comma-separated', 'gift-voucher'); ?>)</option>
-											<option value="dot" <?php echo ($wpgv_select_number_format == 'dot') ? 'selected' : ''; ?>>1.000,00 (<?php echo esc_html__('dot-separated', 'gift-voucher'); ?>)</option>
+										<?php // Named after the decimal mark. "comma-separated" and "dot-separated" were read as the decimal mark, so shops in the UK picked the one that prints 180,00 (KB-40). ?>
+										<select name="select_number_format" id="select_number_format" class="regular-text">
+											<option value="comma" <?php echo ($wpgv_select_number_format == 'comma') ? 'selected' : ''; ?>>1,000.00 (<?php echo esc_html__('decimal point', 'gift-voucher'); ?>)</option>
+											<option value="dot" <?php echo ($wpgv_select_number_format == 'dot') ? 'selected' : ''; ?>>1.000,00 (<?php echo esc_html__('decimal comma', 'gift-voucher'); ?>)</option>
 										</select>
 									</td>
 								</tr>

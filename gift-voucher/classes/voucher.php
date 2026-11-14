@@ -742,7 +742,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 				<?php } ?>
 				<tr>
 					<th style="font-weight:bold;"><?php echo esc_html__('Payment Status', 'gift-voucher') ?>:</th>
-					<td><?php echo esc_html($item['payment_status']); ?></td>
+					<td><?php echo esc_html(wpgv_payment_status_label($item['payment_status'])); ?></td>
 				</tr>
 				<tr>
 					<th style="font-weight:bold;"><?php echo esc_html__('Expiry', 'gift-voucher') ?>:</th>

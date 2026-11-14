@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift vouchers, gift certificates, woocommerce gift card, voucher
 Requires at least: 4.0
 Tested up to: 7.1
-Stable tag: 4.9.3
+Stable tag: 4.9.4
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -131,6 +131,11 @@ If you have ideas for the plugin, please [write to us](https://wp-sofa.chat/ "Co
 8. Settings, with one click to set up the pages and sample content.
 
 == Changelog ==
+
+= Version 4.9.4 - Released: November 14, 2026 =
+* Fix: The order details on the Overview step of the [wpgv_giftvoucher] form could look empty. The Voucher Text Color, meant for the voucher card, also coloured these details, so a white card text hid them on a white page. It now only colours the voucher card.
+* Tweak: The "Select number format" options are now named after the decimal mark, "1,000.00 (decimal point)" and "1.000,00 (decimal comma)", so the right one is easier to pick. Saved settings stay as they are.
+* Tweak: Unpaid orders now read "Not Paid" instead of "Not Pay" in the order list, order details, receipt and the {payment_status} email tag. Only the wording changed; the stored status is the same.
 
 = Version 4.9.3 - Released: November 6, 2026 =
 * Fix: With no active voucher template, the [wpgv_giftvoucher] form opened with an empty first step and refused the buyer at the last step with "This voucher is no longer available." Buyers now see a short message instead of the form, and administrators also see why and where to add a gift voucher.
