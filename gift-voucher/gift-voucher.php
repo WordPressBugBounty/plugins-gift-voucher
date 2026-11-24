@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.9.4
+ * Version: 4.9.5
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.9.4');
+define('WPGIFT_VERSION', '4.9.5');
 define('WPGIFT__MINIMUM_WP_VERSION', '4.0');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -430,6 +430,43 @@ function wpgv_stripe_set_api($secret_key)
 {
   \Stripe\Stripe::setApiKey($secret_key);
   \Stripe\Stripe::setApiVersion(WPGV_STRIPE_API_VERSION);
+}
+
+/**
+ * Log a failed Checkout Session creation and build the message for the buyer.
+ *
+ * Buyers only see the generic message. A logged-in administrator testing the
+ * form also sees Stripe's own reason (invalid key, restricted key without
+ * Checkout write access, host blocking api.stripe.com, inactive account), so
+ * the cause does not have to be guessed. Anything that looks like a Stripe key
+ * is masked before it is logged or shown.
+ *
+ * @param Exception $ex         The exception thrown by the Stripe library.
+ * @param int|string $voucher_id Voucher order the session was created for.
+ * @return string Message for wp_send_json_error().
+ */
+function wpgv_stripe_session_error_message($ex, $voucher_id = '')
+{
+  $generic = 'Stripe session creation failed.';
+  if (!($ex instanceof Exception) && !($ex instanceof Throwable)) {
+    return $generic;
+  }
+
+  $reason = trim(preg_replace('/\b(sk|rk|pk)_(live|test)_[A-Za-z0-9*]+/', '$1_$2_***', (string) $ex->getMessage()));
+  $details = get_class($ex);
+  if (method_exists($ex, 'getHttpStatus') && $ex->getHttpStatus()) {
+    $details .= ' HTTP ' . $ex->getHttpStatus();
+  }
+  if (method_exists($ex, 'getStripeCode') && $ex->getStripeCode()) {
+    $details .= ' code=' . $ex->getStripeCode();
+  }
+  error_log(sprintf('WPGV: Stripe session creation failed for voucher %s. %s: %s', $voucher_id, $details, $reason));
+
+  if ($reason !== '' && current_user_can('manage_options')) {
+    return 'Stripe session creation failed: ' . $reason;
+  }
+
+  return $generic;
 }
 
 function wpgv_is_stripe_webhook_fulfillment_enabled()

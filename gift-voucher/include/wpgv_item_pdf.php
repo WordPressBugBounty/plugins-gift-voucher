@@ -420,7 +420,7 @@ function wpgv__doajax_item_pdf_save_func()
 				wp_send_json_success(array('message' => "Stripe valid.", 'approve_link' => $session->url));
 			} catch (Exception $ex) {
 				wpgv_mark_voucher_order_pending($lastid);
-				wp_send_json_error(array('message' => "Stripe session creation failed.", 'order_kept' => true));
+				wp_send_json_error(array('message' => wpgv_stripe_session_error_message($ex, $lastid), 'order_kept' => true));
 			}
 		}
 	} elseif ($paymentmethod == 'Per Invoice') {

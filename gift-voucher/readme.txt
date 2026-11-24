@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift vouchers, gift certificates, woocommerce gift card, voucher
 Requires at least: 4.0
 Tested up to: 7.1
-Stable tag: 4.9.4
+Stable tag: 4.9.5
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -131,6 +131,9 @@ If you have ideas for the plugin, please [write to us](https://wp-sofa.chat/ "Co
 8. Settings, with one click to set up the pages and sample content.
 
 == Changelog ==
+
+= Version 4.9.5 - Released: November 24, 2026 =
+* Fix: When Stripe refused to create the checkout, buyers saw "Stripe session creation failed." and the reason was lost. The reason is now written to the PHP error log, and a logged-in administrator testing the form sees it in the message, for example "Invalid API Key provided". Buyers still see the short message. Stripe keys are masked in both places.
 
 = Version 4.9.4 - Released: November 14, 2026 =
 * Fix: The order details on the Overview step of the [wpgv_giftvoucher] form could look empty. The Voucher Text Color, meant for the voucher card, also coloured these details, so a white card text hid them on a white page. It now only colours the voucher card.
