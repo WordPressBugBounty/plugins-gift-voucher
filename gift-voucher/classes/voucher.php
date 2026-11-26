@@ -245,6 +245,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 				$where_clause .= $wpdb->prepare(" AND (`couponcode` = %s OR `email` LIKE %s OR `shipping_email` LIKE %s) ", $voucher_code, $search_email, $search_email);
 			}
 
+			// phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter -- $where_clause is built only from $wpdb->prepare() and the fixed SQL of order_type_where().
 			$result = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT * FROM {$wpdb->prefix}giftvouchers_list {$where_clause} ORDER BY `id` DESC LIMIT %d OFFSET %d",
@@ -253,6 +254,7 @@ if (!class_exists('WPGV_Voucher_List')) :
 				),
 				'ARRAY_A'
 			);
+			// phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 			return $result;
 		}
@@ -418,7 +420,9 @@ if (!class_exists('WPGV_Voucher_List')) :
 				);
 			}
 
+			// phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter -- $where_clause is built only from $wpdb->prepare() and the fixed SQL of order_type_where().
 			$result = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}giftvouchers_list {$where_clause}");
+			// phpcs:enable PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 			return $result;
 		}

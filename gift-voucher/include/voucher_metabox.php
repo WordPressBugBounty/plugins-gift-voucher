@@ -248,7 +248,7 @@ function wpgv_voucher_amount()
   <script>
     jQuery(document).ready(function($) {
       <?php for ($i = 1; $i < 4; $i++) { ?>
-        $('.upload_image<?php echo esc_html($i); ?>').click(function(e) {
+        $('.upload_image<?php echo esc_html($i); ?>').on('click', function(e) {
           e.preventDefault();
 
           var custom_uploader = wp.media({
@@ -283,7 +283,7 @@ function wpgv_voucher_amount()
             })
             .open();
         });
-        $('.remove_image<?php echo esc_html($i); ?>').click(function() {
+        $('.remove_image<?php echo esc_html($i); ?>').on('click', function() {
           $('.image_src<?php echo esc_html($i); ?>').attr('src', '').hide();
           $('.image_url<?php echo esc_html($i); ?>').val('');
           $('.remove_image<?php echo esc_html($i); ?>').hide();
@@ -492,7 +492,7 @@ class Template_Voucher
         if (typeof wp.media !== 'undefined' && wp.media.editor) {
           var _custom_media = true,
             _orig_send_attachment = wp.media.editor.send.attachment;
-          $('.rational-metabox-media').click(function(e) {
+          $('.rational-metabox-media').on('click', function(e) {
             var send_attachment_bkp = wp.media.editor.send.attachment;
             var button = $(this);
             var id = button.attr('id').replace('_button', '');

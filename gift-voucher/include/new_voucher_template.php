@@ -172,7 +172,7 @@ if (function_exists('wp_enqueue_media')) {
 <script>
 	jQuery(document).ready(function($) {
 		<?php for ($i = 0; $i < 3; $i++) { ?>
-			$('.upload_image<?php echo esc_html($i); ?>').click(function(e) {
+			$('.upload_image<?php echo esc_html($i); ?>').on('click', function(e) {
 				e.preventDefault();
 
 				var custom_uploader = wp.media({
@@ -197,7 +197,7 @@ if (function_exists('wp_enqueue_media')) {
 					})
 					.open();
 			});
-			$('.remove_image<?php echo esc_html($i); ?>').click(function() {
+			$('.remove_image<?php echo esc_html($i); ?>').on('click', function() {
 				$('.image_src<?php echo esc_html($i); ?>').attr('src', '').hide();
 				$('.image_url<?php echo esc_html($i); ?>').val('');
 				$('.remove_image<?php echo esc_html($i); ?>').hide();

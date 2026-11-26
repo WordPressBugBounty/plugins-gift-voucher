@@ -35,7 +35,6 @@ function wpgv_giftitems_shortcode($atts = '')
     wp_enqueue_style('wpgv-item-style');
     wp_enqueue_script('wpgv-jquery-validate');
     wp_enqueue_script('wpgv-item-script');
-    wp_enqueue_script('wpgv-stripe-js');
     wp_enqueue_script('wpgv-paypal-js');
 
     $setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
@@ -219,7 +218,7 @@ function wpgv_giftitems_shortcode($atts = '')
         foreach ($wpgv_voucher_categories as $category) {
             $html .= '<div class="wpgv-according-category" id="itemcat' . $category->term_id . '">
     <div class="wpgv-according-title" data-cat-id="' . $category->term_id . '">
-        <h2>' . $category->name . '<span>' . wp_strip_all_tags(term_description($category->term_id, WPGV_CATEGORY_TAXONOMY)) . '</span></h2>
+        <h2>' . $category->name . '<span>' . wp_strip_all_tags(term_description($category->term_id)) . '</span></h2>
     </div>';
 
             $items = get_posts(
@@ -288,7 +287,7 @@ function wpgv_giftitems_shortcode($atts = '')
 
         $html .= '<div class="wpgv-according-category" id="itemcat' . $category->term_id . '">
                     <div class="wpgv-according-title" data-cat-id="' . $category->term_id . '">
-                        <h2>' . $category->name . '<span>' . wp_strip_all_tags(term_description($category->term_id, WPGV_CATEGORY_TAXONOMY)) . '</span></h2>
+                        <h2>' . $category->name . '<span>' . wp_strip_all_tags(term_description($category->term_id)) . '</span></h2>
                     </div>';
 
         $items = get_posts(

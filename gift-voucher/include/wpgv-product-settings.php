@@ -183,7 +183,7 @@ if ($options->is_woocommerce_enable) {
                 var wpgv_nonce = '<?php echo esc_js(wp_create_nonce('wpgv_nonce_action')); ?>';
 
                 // ajax add new price varation
-                $('#wpgv-add-price-button').click(function() {
+                $('#wpgv-add-price-button').on('click', function() {
                     var voucherPrice = $("#wpgv_price").val();
                     var productId = $("#wpgv_product_id").val();
 

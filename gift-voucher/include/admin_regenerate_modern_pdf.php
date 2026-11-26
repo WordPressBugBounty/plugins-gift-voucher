@@ -165,7 +165,7 @@ function wpgv_admin_get_voucher_regen_data_func()
         if (file_exists(WPGIFT__PLUGIN_DIR . '/assets/img/templates/svg/' . $svg_name)) {
             $image_url = WPGIFT__PLUGIN_URL . '/assets/img/templates/svg/' . $svg_name;
         } else {
-            $image_url = 'https://gift-card-pro.s3.eu-central-1.amazonaws.com/templates/png/' . $template_style;
+            $image_url = 'https://wp-giftcard-assets.s3.eu-central-1.amazonaws.com/templates/png/' . $template_style;
         }
 
         $json_file = WPGIFT__PLUGIN_DIR . '/assets/img/templates/json/' . $json_name;
@@ -173,7 +173,7 @@ function wpgv_admin_get_voucher_regen_data_func()
             // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- reading a file shipped with the plugin.
             $json = file_get_contents($json_file);
         } else {
-            $response = wp_remote_get('https://gift-card-pro.s3.eu-central-1.amazonaws.com/templates/version-1.2/json/' . $json_name, array('timeout' => 15));
+            $response = wp_remote_get('https://wp-giftcard-assets.s3.eu-central-1.amazonaws.com/templates/version-1.2/json/' . $json_name, array('timeout' => 15));
             if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
                 $json = wp_remote_retrieve_body($response);
             }
@@ -293,7 +293,7 @@ function wpgv_admin_regenerate_modern_pdf_func()
 
     // Clean up temp canvas
     if (file_exists($canvas_file_path)) {
-        @unlink($canvas_file_path);
+        wp_delete_file($canvas_file_path);
     }
 
     $ok = false;

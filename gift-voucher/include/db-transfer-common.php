@@ -213,7 +213,6 @@ function wpgv_db_transfer_resolve_reference($original_id, $description)
 			'post_status'      => 'any',
 			'posts_per_page'   => 2,
 			'fields'           => 'ids',
-			'suppress_filters' => true,
 			'no_found_rows'    => true,
 		));
 

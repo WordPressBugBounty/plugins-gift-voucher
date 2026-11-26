@@ -7,7 +7,7 @@ jQuery(function() {
     });
 	jQuery('#wpgv_show-gift-card').off('click').on('click', function(e) {
         jQuery('.checkout_wpgv_gift_voucher').slideToggle(400, function() {
-            jQuery('.checkout_wpgv_gift_voucher').find(':input:eq(0)').focus();
+            jQuery('.checkout_wpgv_gift_voucher').find(':input').eq(0).trigger('focus');
         });
 
         e.preventDefault();
@@ -37,7 +37,7 @@ function wpgv_checkout_redeem_gift_voucher(redeemButton) {
     if(!cardNumber.val()) {
     	errorContainer.text('Enter a card number.');
         redeemButton.attr('value', redeemButton.attr('data-apply-text')).prop('disabled', false);
-        cardNumber.focus();
+        cardNumber.trigger('focus');
     	return true;
     }
     jQuery.post(frontend_ajax_object.ajaxurl, {'action': 'wpgv-gift-voucher-redeem', 'voucher_code': cardNumber.val(), 'nonce': frontend_ajax_object.gift_voucher_session_nonce}, function( result ) {
@@ -47,7 +47,7 @@ function wpgv_checkout_redeem_gift_voucher(redeemButton) {
         } else {
             errorContainer.text(result.data.message);
             redeemButton.attr('value', redeemButton.attr('data-apply-text')).prop('disabled', false);
-            cardNumber.focus();
+            cardNumber.trigger('focus');
         }
     }).fail(function(xhr, textStatus, errorThrown) {
         if (errorThrown) {
@@ -56,7 +56,7 @@ function wpgv_checkout_redeem_gift_voucher(redeemButton) {
             errorContainer.text('Unknown Error');
         }
         redeemButton.attr('value', redeemButton.attr('data-apply-text')).prop('disabled', false);
-        cardNumber.focus();
+        cardNumber.trigger('focus');
     });
 }
 

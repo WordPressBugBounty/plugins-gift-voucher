@@ -422,7 +422,7 @@ jQuery(document).ready(function ($) {
     }
 
     // change shipping method
-    voucherTemplate.find('input[name="shipping_method"]').change(function () {
+    voucherTemplate.find('input[name="shipping_method"]').on('change', function () {
         var shippingPrice = jQuery(this).closest('label').data('value');
         voucherTemplate.find('input[name="shipping_method"]').prop("checked", false);
         jQuery(this).prop("checked", true);

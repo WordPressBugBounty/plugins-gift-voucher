@@ -83,7 +83,7 @@ $wpgv_selected = $wpgv_old ? $wpgv_val('type') . ':' . $wpgv_val('source_id') : 
                 <th scope="row"><label for="wpgv_manual_style"><?php esc_html_e('PDF style', 'gift-voucher'); ?></label></th>
                 <td><select name="style" id="wpgv_manual_style">
                     <?php foreach (array(0, 1, 2) as $wpgv_style) : ?>
-                        <option value="<?php echo esc_attr($wpgv_style); ?>" <?php selected((int) $wpgv_val('style', 0), $wpgv_style); ?>><?php echo esc_html(sprintf(__('Style %d', 'gift-voucher'), $wpgv_style + 1)); ?></option>
+                        <option value="<?php echo esc_attr($wpgv_style); ?>" <?php selected((int) $wpgv_val('style', 0), $wpgv_style); ?>><?php echo esc_html(sprintf(/* translators: %d: voucher style number, 1 to 3 */ __('Style %d', 'gift-voucher'), $wpgv_style + 1)); ?></option>
                     <?php endforeach; ?>
                 </select></td>
             </tr>

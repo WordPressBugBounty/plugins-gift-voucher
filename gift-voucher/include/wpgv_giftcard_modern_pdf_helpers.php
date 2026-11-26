@@ -210,11 +210,11 @@ function wpgv_generate_modern_giftcard_pdf($voucher_id, $voucher_data, $template
                 if (file_exists($canvas_image_path)) {
                     if (wpgv_render_modern_canvas_pdf_file($template_id, $canvas_image_path, $pdf_path)) {
                         wpgv_pdf_log('Created the PDF from canvas data. Size: ' . filesize($pdf_path) . ' bytes.');
-                        @unlink($canvas_image_path);
+                        wp_delete_file($canvas_image_path);
                         return $pdf_path;
                     }
 
-                    @unlink($canvas_image_path);
+                    wp_delete_file($canvas_image_path);
                 }
             }
 
@@ -286,8 +286,8 @@ if (! function_exists('wpgv_get_template_image_path')) {
                 }
             }
         } else {
-            wpgv_pdf_log('Using the default template from S3: ' . $selected_voucher_template . '.');
-            $template_url = 'https://gift-card-pro.s3.eu-central-1.amazonaws.com/templates/png/' . $selected_voucher_template;
+            wpgv_pdf_log('Using the default template from the CDN: ' . $selected_voucher_template . '.');
+            $template_url = 'https://wp-giftcard-assets.s3.eu-central-1.amazonaws.com/templates/png/' . $selected_voucher_template;
             $temp_file = $upload_dir . 'temp_' . basename($selected_voucher_template);
 
             if (!file_exists($temp_file)) {

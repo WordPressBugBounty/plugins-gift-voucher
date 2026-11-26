@@ -21,8 +21,8 @@ jQuery(document).ready(function ($) {
             // Needed in some cases if the user went back (clean up)
             if (currentIndex < newIndex) {
                 // To remove error styles
-                form.find(".body:eq(" + newIndex + ") label.error").remove();
-                form.find(".body:eq(" + newIndex + ") .error").removeClass("error");
+                form.find(".body").eq(newIndex).find("label.error").remove();
+                form.find(".body").eq(newIndex).find(".error").removeClass("error");
             }
             form.validate().settings.ignore = ":disabled,:hidden";
             return form.valid();
@@ -106,7 +106,7 @@ jQuery(document).ready(function ($) {
         $('.voucherstyle' + (parseInt($(this).val()) + 1)).show();
 
     });
-    $('.sin-template label').click(function () {
+    $('.sin-template label').on('click', function () {
         $('.sin-template label').removeClass('selectImage');
         $(this).addClass('selectImage');
     });
@@ -255,7 +255,7 @@ jQuery(document).ready(function ($) {
     $(".voucherPaymentInfo").html($('#voucherPayment option:selected').html());
     $('.codeCard').val(Math.floor(1000000000000000 + Math.random() * 9000000000000000));
 
-    $('.buying-options div').click(function (e) {
+    $('.buying-options div').on('click', function (e) {
         $('.buying-options div').removeClass('selected');
         $(this).addClass('selected');
         $('#buying_for').val($(this).data('value'));
@@ -286,7 +286,7 @@ jQuery(document).ready(function ($) {
         $('#shipping_email').closest('.form-group').removeClass('mailhidden');
         $('.shippingasemail').removeClass('mailhidden');
     }
-    $('.shipping-options div').click(function (e) {
+    $('.shipping-options div').on('click', function (e) {
         $('.shipping-options div').removeClass('selected');
         $(this).addClass('selected');
         $shipping.val($(this).data('value'));
@@ -328,7 +328,7 @@ jQuery(document).ready(function ($) {
         }
     });
 
-    $('input[name="shipping_method"]').change(function () {
+    $('input[name="shipping_method"]').on('change', function () {
         var $shippingprice = $(this).closest('label').data('value');
         var $totalprice = (parseFloat($itempricespan.html()) + parseFloat($website_commission_price.data('price')) + parseFloat($shippingprice));
         $shippingpricespan.html($shippingprice);
@@ -339,7 +339,7 @@ jQuery(document).ready(function ($) {
         // $(".voucherAmountInfo span").html($totalprice);
         $('.voucherShippingMethodInfo').html($(this).closest('label').text());
     });
-    $('.voucherPreviewButton button').click(function () {
+    $('.voucherPreviewButton button').on('click', function () {
         var $url = $(this).data('fullurl');
         window.open($url, '_blank');
     });
@@ -469,7 +469,7 @@ jQuery(document).ready(function ($) {
     $('#voucher-multistep-form').ajaxStart(function () { $('.wizard>.content>.body.current').addClass('loading'); })
         .ajaxStop(function () { $('.wizard>.content>.body.current').removeClass('loading'); });
 
-    $('#voucherMessage').keydown(function (e) {
+    $('#voucherMessage').on('keydown', function (e) {
         newLines = $(this).val().split("\n").length;
         if (e.keyCode == 13 && newLines >= 3) {
             return false;

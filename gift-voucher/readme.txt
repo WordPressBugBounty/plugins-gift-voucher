@@ -1,9 +1,9 @@
 ﻿=== Gift Cards (Gift Vouchers and Packages) (WooCommerce Supported) ===
 Contributors: codemenschen
 Tags: gift cards, gift vouchers, gift certificates, woocommerce gift card, voucher
-Requires at least: 4.0
-Tested up to: 7.1
-Stable tag: 4.9.5
+Requires at least: 5.3
+Tested up to: 7.2
+Stable tag: 4.9.7
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -132,6 +132,16 @@ If you have ideas for the plugin, please [write to us](https://wp-sofa.chat/ "Co
 
 == Changelog ==
 
+= Version 4.9.7 - Released: November 26, 2026 =
+* Security: The stock voucher templates for PDFs are now loaded from the plugin's own file storage. The old storage location could be changed by others. Your vouchers look the same and no settings need to change.
+
+= Version 4.9.6 - Released: November 26, 2026 =
+* Tweak: Tested with WordPress 7.2.
+* Tweak: The gift voucher, gift card and gift item forms no longer load a 740 KB copy of Stripe.js that they never used. Stripe payments open Stripe's checkout page as before.
+* Tweak: The plugin scripts no longer use jQuery calls that WordPress 7.2 reports as deprecated (jQuery Migrate 3.6), ahead of jQuery 4. The forms work as before.
+* Tweak: Removed an unused bundled copy of jQuery UI.
+* Tweak: Requires at least WordPress 5.3, the oldest version whose functions the plugin already used.
+
 = Version 4.9.5 - Released: November 24, 2026 =
 * Fix: When Stripe refused to create the checkout, buyers saw "Stripe session creation failed." and the reason was lost. The reason is now written to the PHP error log, and a logged-in administrator testing the form sees it in the message, for example "Invalid API Key provided". Buyers still see the short message. Stripe keys are masked in both places.
 
@@ -234,159 +244,6 @@ If you have ideas for the plugin, please [write to us](https://wp-sofa.chat/ "Co
 * Fix: Corrected a missing branch break in the template settings box that would have converted future text settings to numbers.
 * Improvement: Gift item details are now stored under plugin-specific names, so they can no longer clash with data saved by other plugins. The previous names are kept in step, so any custom code you have that reads them keeps working.
 * Improvement: The release package now excludes internal development notes and test tooling, and those folders also deny direct web access on Apache.
-
-= Version 4.7.5 - Released: August 21, 2026 =
-* Feature: Export the whole gift card database (gift cards + activity history) to a JSON file from Gift Voucher Orders &rarr; Export Database.
-* Feature: Import a JSON export back into any site from Gift Voucher Orders &rarr; Import Database, with a Merge or Add-only mode.
-* Security: The gift voucher success page now sends the order emails only once - reloading it no longer re-sends the buyer, recipient and shop emails with their PDF attachments.
-* Security: The public AJAX helpers now only return published gift items, gift voucher categories and existing templates, so titles and details of draft or private content can no longer be read by visitors.
-* Security: Editing a gift card's price, expiry date or note now requires an administrator; those actions are no longer registered for logged-out visitors and a price change can only touch the activity entry that belongs to the gift card being edited.
-* Security: Debug logging is now written only while WP_DEBUG is enabled, and it no longer records server paths or gift card PDF file names, so the log can no longer be used to look up gift card codes.
-* Fix: Editing the price of a gift card worth 1,000 or more no longer stores a truncated amount in the activity history.
-* Improvement: Import skips gift cards whose code is already used by a different gift card, so existing data is never overwritten by a code clash.
-* Improvement: Import can reconnect imported gift cards to local templates and items that carry the same name, and reports the references it could not match.
-* Improvement: Re-importing the same file is idempotent - gift cards are updated in place and activity entries are de-duplicated instead of piling up.
-* Improvement: The shop is now notified about a new order even when the buyer's confirmation email cannot be delivered, and the success page no longer asks the customer to reload the page to retry.
-* Improvement: Removed a leftover diagnostic that ran a full backtrace on every WooCommerce order status change of a Stripe order.
-
-= Version 4.7.4 - Released: August 03, 2026 =
-* Fix: Prevented output buffer cleanup from interfering with page caching plugins.
-* Security: Upgrade Dompdf from v2.0.4 to v3.1.6.
-* Security: Add safe Stripe webhook endpoint with signature verification and idempotent voucher fulfillment while preserving the existing success-page fallback.
-
-= Version 4.7.3 - Released: July 14, 2026 =
-* Fix: Prevent existing Gift Voucher denominations from being added again when updating a WooCommerce product; clear the amount field after successful AJAX addition and show inline admin errors.
-* Feature: Add WooCommerce Cart and Checkout Blocks voucher redemption with server-side Store API apply/remove handling.
-* Feature: Add voucher redemption placement below the native Add coupons section in Cart and Checkout Blocks.
-* Improvement: Add accessible status/error messaging and responsive styling for the Blocks voucher redemption form.
-
-= Version 4.7.2 - Released: June 19, 2026 =
-* Security: Re-enable Stripe TLS certificate verification in the Stripe success flow (removed `\Stripe\Stripe::setVerifySslCerts(false)` in `include/voucher-shortcodes.php`).
-* Security: Add hourly cleanup for stale unpaid vouchers and transient per-IP rate-limiting on public PDF creation endpoints to remove orphaned PDFs and mitigate automated abuse (see `include/pdf-wrapper.php`, `include/wpgv_voucher_pdf.php`, `include/wpgv_item_pdf.php`, `include/wpgv_giftcard_pdf.php`).
-* Security: Harden the admin voucher redeem AJAX action with capability checks, nonce verification, amount validation, and balance limits to prevent unauthorized balance changes.
-* Fix: Replace deprecated WooCommerce coupon property access in `wpgv_handle_gift_voucher_application()` by using `get_code()` for voucher application compatibility with newer WooCommerce versions.
-
-= Version 4.7.1 - Released: May 27, 2026 =
-* Security: Fix a stored XSS issue in voucher admin screens by sanitizing generated PDF filenames and safely escaping voucher PDF links before rendering them in the WordPress admin.
-* Security: Harden voucher PDF path, URL, receipt, and attachment handling so untrusted `voucherpdf_link` values can no longer inject HTML attributes or unsafe filenames.
-* Improvement: Tighten validation for public voucher creation inputs related to template/style selection while preserving the existing guest checkout voucher flow.
-
-= Version 4.7.0 - Released: May 15, 2026 =
-* Security: Harden voucher, gift item, and modern gift card payment flows so public success URLs can no longer mark unpaid orders as paid without verified payment capture.
-* Security: Add per-order protected `orderkey` validation to payment success and cancel flows, bind PayPal completion to the correct internal order, and block arbitrary public order cancellation.
-* Fix: Clean up orphaned voucher orders, activities, and generated files when PayPal, Stripe, or Sofort initialization fails instead of leaving unpaid records behind.
-* Fix: Correct gift card checkout nonce validation, modern gift card PayPal return handling, and several PHP warnings/deprecated notices in the `[wpgv_giftcard]` purchase flow.
-* Fix: Restrict `check_send_mail` updates to the current order only and prevent duplicate mail-processing side effects on unrelated voucher rows.
-* Improvement: Extend `Create Plugin's Default Pages` to include Stripe Payment Success and Voucher Balance Check pages, reuse existing published pages when available, and avoid duplicate page creation.
-* Fix: Limit plugin admin assets/scripts to plugin-specific admin screens to avoid interfering with the WordPress page editor.
-
-= Version 4.6.9 - Released: May 07, 2026 =
-* Fix: Align the `[wpgv_giftitems]` PDF preview/save flow with `[wpgv_giftvoucher]` so when `Can customers choose voucher styles?` is set to `No`, item PDFs always use standard style `0` with `style1_image` instead of reading the JSON-encoded `voucher_style` setting.
-
-= Version 4.6.8 - Released: April 30, 2026 =
-* Update: Migrate the full server-side PDF generation pipeline from FPDF to Dompdf for standard vouchers, gift items, WooCommerce voucher products, customer receipts, and modern gift card PDF creation/regeneration.
-* Update: Replace legacy coordinate-based PDF drawing with centralized Dompdf helpers and HTML/CSS templates, including Code128 SVG barcode rendering, UTF-8 output with `DejaVu Sans`, and managed Dompdf runtime directories inside `voucherpdfuploads`.
-* Update: Improve PDF preview and regeneration by rendering standard voucher/item previews through Dompdf, storing voucher template/style context for later reuse, and regenerating standard PDFs with their saved style while keeping receipt regeneration in sync.
-* Fix: Make the plugin upgrade routine idempotent so updates no longer trigger duplicate-column database errors on existing installs.
-* Fix: Correct legacy schema upgrade handling for footer email/settings columns on older databases during plugin updates.
-* Fix: Guard legacy schema checks when plugin tables are missing so interrupted installs/updates do not trigger extra database warnings.
-
-= Version 4.6.7 - Released: April 30, 2026 =
-* Fix PHPCS EscapeOutput warnings in FPDF library
-
-= Version 4.6.6 - Released: April 15, 2026 =
-* Fix: Resolve Plugin Check i18n error `WordPress.WP.I18n.NonSingularStringLiteralText` in modern PDF admin regeneration by removing dynamic strings from translation calls and using sanitized JSON labels.
-* Fix: Prevent admin warning `Attempt to read property "image_style" on null` in voucher details with null-safe template/image handling (compatible with WordPress 6.9.4 and PHP > 8.2.0).
-* Security/Standards: Add missing direct file access protection (`if ( ! defined( 'ABSPATH' ) ) { exit; }`) to all flagged plugin files in `include/`, `languages/`, `library/fpdf/`, and `library/tfpdf/`.
-* Fix: Resolve Stripe Payment Success Page deprecated notices on WordPress 6.9.4 and PHP > 8.2.0 by applying compatibility updates in bundled `vendor/stripe/stripe-php` sources.
-* Update: Upgrade PayPal SDK dependencies to `paypal/paypal-checkout-sdk` 1.0.2 and `paypal/paypalhttp` 1.0.1 (composer metadata/lock refreshed).
-* Fix: Resolve PayPal success-page deprecated warning `Creation of dynamic property ...::$curlCls` on PHP > 8.2.0 by declaring `curlCls` in `vendor/paypal/paypalhttp/lib/PayPalHttp/HttpClient.php`.
-
-= Version 4.6.5 - Released: March 24, 2026 =
-* Feature: Add admin PDF regeneration support in Free plugin for both modern (Konva) and standard (style1) vouchers.
-* fix: address deprecated warnings in gift-voucher admin menu (View Voucher Details) while keeping view-detail action functional on WP 6.9.4.
-
-= Version 4.6.4 - Released: February 05, 2026 =
-* Fix: Prevent WooCommerce email preview fatal. Ensure payment-complete filter returns original status for empty $order_id and validate WC_Order before calling methods to avoid preview crashes. (Files: include/redeem-voucher.php)
-* Fix: Do not force Stripe-paid orders to 'processing' for digital/download-only orders. Only set 'processing' when incoming status is 'completed' and the order requires shipping. (Files: include/redeem-voucher.php)
-* Fix/Improvement: Add diagnostics and robustness for Stripe order status and email handling — added temporary logs (WPGV_STATUS_DEBUG, wpgv_log_order_status_change), input guards and fallback for admin mail helper to prevent undefined function errors and PHP warnings. (Files: include/redeem-voucher.php, classes/wpgv-gift-voucher-cart-process.php, gift-voucher.php)
-* Fix: Load plugin translations on `init` and defer plugin file includes to prevent WordPress 6.7+ `_load_textdomain_just_in_time` notice. (Files: gift-voucher.php, admin.php, front.php)
-* Fix: Ensure post types/taxonomies are registered immediately if `voucher_posttype.php` is included late to avoid "Invalid post type." in admin. (Files: gift-voucher.php, include/voucher_posttype.php)
-* Fix: Remove unnecessary `wpdb->prepare()` usage without placeholders to prevent `wpdb::prepare()` notices. (Files: classes/template.php)
-* Fix: Add missing `_wpgv_nonce` hidden input to the Gift Voucher product tab so product updates without price no longer trigger "Invalid request." (Files: include/wpgv-product-settings.php, admin/wpgv-gift-voucher-admin.php)
-* Fix: Avoid warnings in `[wpgv_giftcard]` shortcode when taxonomy terms are returned as arrays; handle both term objects and arrays and escape output. (Files: giftcard.php)
-
-= Version 4.6.3 - Released: January 02, 2026 =
-* Fix: Secure database query in `classes/voucher.php::record_count()` by building the full SQL and using `$wpdb->prepare()` with bound parameters to avoid unescaped DB parameters.
-* Fix: Add direct file access protection to `templates/wpgv_item_pdf.php`, `templates/wpgv_voucher_pdf.php`, and `templates/pdfstyles/receipt.php`, `templates/pdfstyles/style1.php`, `templates/pdfstyles/style2.php`, `templates/pdfstyles/style3.php` by checking `if ( ! defined( 'ABSPATH' ) ) exit;` to prevent direct access.
-
-= Version 4.6.2 - Released: December 06, 2025 =
-* Improvement: Unicode and special character support improved for all user input fields and currency symbols in PDF exports and admin UI.
-* Fix: Currency symbols (€, £, Kč, ₱, ¥, etc.) now display correctly in voucher PDFs and admin voucher lists regardless of language or encoding.
-* Improvement: Added transliteration and symbol mapping for unsupported Unicode characters in FPDF output.
-* Update: All PDF templates now use `wpgv_text_to_pdf_safe()` for safe text rendering.
-* Fix: Voucher Value in admin list now respects the currency symbol set in plugin settings.
-* Update: Updated documentation and code comments for currency and encoding handling.
-
-= Version 4.6.1 - Released: December 05, 2025 =
-* Fix: Escape supported-formats output in `include/voucher_metabox.php` so translatable text is escaped at output and the WordPress.Security.EscapeOutput.OutputNotEscaped warning is resolved.
-* Fix: Escape translatable output and UI strings in voucher_settings.php (replaced raw __() usage with esc_html__() where appropriate and ensured submit_button text is escaped) to satisfy WP output-escaping guidance.
-* Improvement: Restrict image upload for voucher templates to JPG and PNG only (admin side). Added client-side validation to block non-JPG/PNG files in the media selector and show an alert if an invalid file is chosen. Updated UI note to clarify supported formats.
-
-= Version 4.6.0 - Released: November 24, 2025 =
-* Fix: Personal Message and user input fields now support emoji and special characters in PDF exports.
-* Improvement: Removed iconv conversion in `wpgv_em()` to preserve UTF-8 input.
-* Improvement: Added `wpgv_text_to_pdf_safe()` to safely handle user text for PDF output, stripping or replacing unsupported characters where necessary for FPDF.
-* Update: Replaced `wpgv_em()` with `wpgv_text_to_pdf_safe()` for user input fields (Personal Message, Your Name, Recipient Name, Email) in all PDF templates.
-* Fix: Prevent saving unsupported image types for voucher "Image - Style". The admin-side meta now validates images and only accepts JPG/JPEG and PNG; unsupported selections are cleared on save.
-* Fix: Admin notice added to inform the user when an unsupported image format (e.g. WEBP, SVG) was selected and not saved.
-* Improvement: Added client-side validation to the Item Details media selector to block non-JPG/PNG files at selection time (improves UX and prevents ambiguous preview errors).
-* Update: Item Details labels now include a short note: "Supported formats: JPG, PNG only." to guide administrators.
-* Fix: Prevent duplicate orders by disabling the Pay Now button and all controls inside `#voucher-multistep-form` during submission; controls are re-enabled only on AJAX error.
-* Improvement: Added client-side guard to ignore repeated clicks on Pay Now to avoid multiple order creation. Files changed: `assets/js/voucher-script.js`
-
-= Version 4.5.9 - Released: November 12, 2025 =
-* Fix: The plugin generated 192 characters of unexpected output during activation. If you notice "headers already sent" messages, problems with syndication feeds or other issues, try deactivating or removing this plugin.
-
-= Version 4.5.8 - Released: October 08, 2025 =
-* Feature: Add Quotes suggestions for Personal Message (frontend & backend).
-
-= Version 4.5.7 - Released: September 08 2025
-* Fix: Replace strip_tags() with wp_strip_all_tags() in wpgv_price_format() function for WordPress coding standards compliance
-
-= Version 4.5.6 - Released: July 21 2025
-* Feature: Merge Gift Card input into WooCommerce coupon field
-
-= Version 4.5.5 - Released: June 05 2025
-* Feature: Added number format selection option (comma or dot separated).
-* Fix unexpected output during plugin activation warning.
-* Fix invalid argument supplied for foreach() warning in class-nag.php on line 108.
-* Change "personalize" to "personalise" for English (UK) localization.
-
-= Version 4.5.4 - Released: May 23 2025
-* Add nonce verification to form processing for security.
-* Escape translatable output properly.
-* Add __("Search", 'gift-voucher') for translation support
-
-= Version 4.5.3 - Released: May 05 2025
-* Fix incorrect usage of esc_html_ in submit button templates.
-* Improve security with nonce validation for preview-related actions.
-* Sanitize and validate user input parameters for voucher
-
-= Version 4.5.2 - Released: March 27 2025
-* Fix undefined function error for esc_html_ in new voucher template
-* Fix issue where portrait (vertical) gift card templates were not displaying correctly
-
-= Version 4.5.1 - Released: March 19 2025
-* Fixed "Invalid request" error when the admin clicks the "Send Mail" button in the voucher area.
-* Fixed the display issue of the "Remaining Balance" on the checkout page when a user applies a voucher.
-
-= Version 4.5.0 - Released: February 26 2025
-* Addressed a security vulnerability (CVE-2024-13520) by adding proper capability checks and nonce verification for voucher price, date, and note update functions.
-* Updated the following files to ensure secure database interactions:
-  - `wpgv-gift-voucher-cart-process.php` (Lines: 444-446, 473)
-  - `voucher.php` (Lines: 171, 178, 203, 210-212)
-  - `admin.php` (Lines: 123, 141)
 
 = Earlier versions =
 * The full history back to 1.0.0 is in changelog.txt, included with the plugin.

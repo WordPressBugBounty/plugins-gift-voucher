@@ -98,7 +98,7 @@ jQuery(document).ready(function ($) {
     $('.wpgv-according-category:not(:first-child)').addClass('catclose');
     $('.wpgv-giftitem-wrapper .wpgv_preview-box:not(:nth-child(2))').addClass('mailhidden');
     $('.wpgv-according-category:not(:first-child) .wpgv-items').slideUp();
-    $('.wpgv-according-title').click(function () {
+    $('.wpgv-according-title').on('click', function () {
         var $catid = $(this).data('cat-id');
         $.ajax({
             url: frontend_ajax_object.ajaxurl,
@@ -113,7 +113,7 @@ jQuery(document).ready(function ($) {
         $('#itemcat' + $catid).removeClass('catclose');
         $('#itemcat' + $catid).find('.wpgv-items').slideDown();
     });
-    $('.wpgv-buy button').click(function () {
+    $('.wpgv-buy button').on('click', function () {
         var $itemid = $(this).data('item-id')
         $catid = $(this).data('cat-id'),
             $itemprice = $(this).data('item-price');
@@ -149,7 +149,7 @@ jQuery(document).ready(function ($) {
             }
         });
     });
-    $('.next-button').click(function (e) {
+    $('.next-button').on('click', function (e) {
         var $nextwrap = $(this).data('next'),
             $result = wpgv_validateitemform($nextwrap);
         if (!$result) exit();
@@ -160,7 +160,7 @@ jQuery(document).ready(function ($) {
             $('#wpgv-giftitems-' + $nextwrap).fadeIn();
         }, 500);
     });
-    $('.back-button').click(function (e) {
+    $('.back-button').on('click', function (e) {
         var $prevwrap = $(this).data('prev');
         $itemform.addClass('loading');
         $itemswrap.fadeOut();
@@ -182,7 +182,7 @@ jQuery(document).ready(function ($) {
         var dInput = this.value;
         $(".personalMessageCard").val(dInput);
     });
-    $('.buying-options div').click(function (e) {
+    $('.buying-options div').on('click', function (e) {
         $('.buying-options div').removeClass('selected');
         $(this).addClass('selected');
         $buying_for.val($(this).data('value'));
@@ -205,7 +205,7 @@ jQuery(document).ready(function ($) {
         $('.nameFormRight').css('opacity', 1);
         $shipping_email.closest('.wpgv-form-fields').removeClass('mailhidden');
     }
-    $('.shipping-options div').click(function (e) {
+    $('.shipping-options div').on('click', function (e) {
         $('.shipping-options div').removeClass('selected');
         $(this).addClass('selected');
         $shipping.val($(this).data('value'));
@@ -246,7 +246,7 @@ jQuery(document).ready(function ($) {
         }
     });
 
-    $('input[name="shipping_method"]').change(function () {
+    $('input[name="shipping_method"]').on('change', function () {
         var $shippingprice = $(this).closest('label').data('value');
         var $totalprice = (parseFloat($itempricespan.html()) + parseFloat($shippingprice) + parseFloat($website_commission_price.data('price'))).toFixed(2);
         $shippingpricespan.html($shippingprice);
@@ -265,7 +265,7 @@ jQuery(document).ready(function ($) {
         $('.wpgvstyle' + (parseInt($(this).val()) + 1)).removeClass('mailhidden');
     });
 
-    $('#itempreview').click(function () {
+    $('#itempreview').on('click', function () {
         var $url = $(this).data('url'),
             $urlstring = wpgv_formdata();
         window.open($url + $urlstring, '_blank');
@@ -309,7 +309,7 @@ jQuery(document).ready(function ($) {
         });
     }
 
-    $('#paynowbtn').click(function () {
+    $('#paynowbtn').on('click', function () {
         if (this.disabled) { // locked after a failed payment, see wpgvSendItemOrder()
             return false;
         }
