@@ -3,7 +3,7 @@ Contributors: codemenschen
 Tags: gift cards, gift vouchers, gift certificates, woocommerce gift card, voucher
 Requires at least: 5.3
 Tested up to: 7.2
-Stable tag: 4.9.7
+Stable tag: 4.9.8
 Requires PHP: 5.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -131,6 +131,14 @@ If you have ideas for the plugin, please [write to us](https://wp-sofa.chat/ "Co
 8. Settings, with one click to set up the pages and sample content.
 
 == Changelog ==
+
+= Version 4.9.8 - Released: November 27, 2026 =
+* Tweak: The Gift Card form loads the Poppins font from the plugin instead of Google Fonts, so buyers' browsers no longer contact Google. The cards look the same.
+* Tweak: The forms no longer load PayPal's JavaScript SDK, which the plugin never used. In test mode it showed an error in the browser console. PayPal payments work as before.
+* Fix: Removed two PHP warnings on WooCommerce orders that issue gift vouchers ("Undefined variable $return" and "Attempt to read property email on array").
+* Fix: A WooCommerce order without a gift voucher product no longer sends again the emails (with PDFs) of the gift vouchers bought through the plugin's own forms when it is completed.
+* Fix: Removed an "Array to string conversion" PHP warning from the plugin's admin notice.
+* Fix: Removed a PHP 8.1 deprecation notice from the voucher and item preview pages, and a PHP warning from Stripe payments on the Gift Items form. Same behaviour.
 
 = Version 4.9.7 - Released: November 26, 2026 =
 * Security: The stock voucher templates for PDFs are now loaded from the plugin's own file storage. The old storage location could be changed by others. Your vouchers look the same and no settings need to change.

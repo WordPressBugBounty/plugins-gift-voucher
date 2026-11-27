@@ -34,7 +34,6 @@ function wpgv_voucher_template_shortcode()
     wp_enqueue_script('wpgv-jspdf-js');
     wp_enqueue_script('wpgv-jquery-validate');
     wp_enqueue_script('wpgv-jquery-steps');
-    wp_enqueue_script('wpgv-paypal-js');
     wp_enqueue_script('wpgv-slick-script');
     wp_enqueue_script('wpgv-voucher-template-script');
     // step voucher template

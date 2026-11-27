@@ -115,7 +115,9 @@ class WPGIFT_Nag
 
 		$array_params = array();
 		foreach ($params as $key => $value) {
-			$sanitize_value = esc_html($value);
+			// A bracketed parameter (e.g. template_id[]=5) parses to an array. esc_html() cast it to
+			// the string 'Array' with an "Array to string conversion" warning; keep that value, drop the warning.
+			$sanitize_value = is_array($value) ? 'Array' : esc_html($value);
 			$array_params[esc_html($key)] = $sanitize_value;
 		}
 		return $array_params;

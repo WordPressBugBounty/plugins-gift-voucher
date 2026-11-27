@@ -416,7 +416,9 @@ function wpgv__doajax_item_pdf_save_func()
 				}
 
 				$stripesuccesspageurl = get_option('wpgv_stripesuccesspage');
-				$stripeemail = ($email) ? $email : $shipping_email;
+				// $email is never set in this handler, so the old ($email) ? $email : $shipping_email
+				// always gave $shipping_email and logged "Undefined variable $email".
+				$stripeemail = $shipping_email;
 				wp_send_json_success(array('message' => "Stripe valid.", 'approve_link' => $session->url));
 			} catch (Exception $ex) {
 				wpgv_mark_voucher_order_pending($lastid);

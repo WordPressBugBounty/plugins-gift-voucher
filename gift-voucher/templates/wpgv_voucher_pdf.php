@@ -18,7 +18,9 @@ if ($action === 'preview' && wp_verify_nonce($nonce, 'voucher_form_verify')) {
 	wp_die(esc_html__('Security check failed', 'gift-voucher'));
 }
 
-$get = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING) ?: [];
+// Same values as filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING), without the PHP 8.1 deprecation.
+$get = filter_input_array(INPUT_GET, FILTER_UNSAFE_RAW);
+$get = $get ? array_map('wpgv_legacy_sanitize_string', $get) : [];
 
 $template  = !empty($get['template'])   ? sanitize_text_field(base64_decode(wp_unslash($get['template']))) : '';
 $buyingfor = !empty($get['buying_for']) ? sanitize_text_field(base64_decode(wp_unslash($get['buying_for']))) : '';

@@ -220,6 +220,9 @@ function wc_wpgv_voucher_pdf_save_func($value, $for, $from, $email, $shipping_em
     $buyerto = $voucher_options->from_name . '<' . $voucher_options->email . '>';
     $mail_sent = wp_mail($buyerto, $buyersub, $buyermsg, $headers, $attachments);
 
+    // Appended to below but never set: PHP 8 warned "Undefined variable $return"
+    // on every WooCommerce voucher order. The string is not returned or shown.
+    $return = '';
     if ($mail_sent == true) {
         $successpagemessage = get_option('wpgv_successpagemessage') ? get_option('wpgv_successpagemessage') : 'We have got your order! <br>E-Mail Sent Successfully to %s';
         $return .= '<div class="success">' . sprintf(stripslashes($successpagemessage), $voucher_options->email) . '</div>';

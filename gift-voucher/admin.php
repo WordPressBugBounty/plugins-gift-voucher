@@ -154,7 +154,7 @@ class WPGiftVoucherAdminPages
 			'ajaxurl' => admin_url('admin-ajax.php'),
 			'redeemNonce' => wp_create_nonce('wpgv_redeem_voucher'),
 			// Loaded only when a gift card PDF is regenerated, so the admin screens fetch nothing from outside.
-			'cardFontCss' => WPGIFT__PLUGIN_URL . '/assets/css/voucher-template-fonts.css',
+			'cardFontCss' => WPGIFT__PLUGIN_URL . '/assets/css/voucher-template-fonts.css?ver=' . WPGIFT_VERSION,
 			'messages' => array(
 				'invalidAmount' => __('Please enter a valid voucher amount.', 'gift-voucher'),
 				'requestFailed' => __('Request failed. Please try again.', 'gift-voucher'),

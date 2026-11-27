@@ -20,7 +20,9 @@ if ($action === 'preview' && wp_verify_nonce($nonce, 'wpgv_giftitems_form_verify
 
 
 
-$get = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING) ?: [];
+// Same values as filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING), without the PHP 8.1 deprecation.
+$get = filter_input_array(INPUT_GET, FILTER_UNSAFE_RAW);
+$get = $get ? array_map('wpgv_legacy_sanitize_string', $get) : [];
 $catid = !empty($get['catid']) ? sanitize_text_field(base64_decode(wp_unslash($get['catid']))) : '';
 $itemid    = !empty($get['itemid']) ? sanitize_text_field(base64_decode(wp_unslash($get['itemid']))) : '';
 $buyingfor = !empty($get['buyingfor']) ? sanitize_text_field(base64_decode(wp_unslash($get['buyingfor']))) : '';

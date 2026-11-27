@@ -6,7 +6,7 @@
  * Plugin URI: https://wp-giftcard.com/
  * Author: Codemenschen GmbH
  * Author URI: https://www.codemenschen.at/
- * Version: 4.9.7
+ * Version: 4.9.8
  * Text Domain: gift-voucher
  * Domain Path: /languages
  * License: GNU General Public License v2.0 or later
@@ -22,7 +22,7 @@
 
 if (!defined('ABSPATH')) exit;  // Exit if accessed directly
 
-define('WPGIFT_VERSION', '4.9.7');
+define('WPGIFT_VERSION', '4.9.8');
 define('WPGIFT__MINIMUM_WP_VERSION', '5.3');
 define('WPGIFT__PLUGIN_DIR', untrailingslashit(plugin_dir_path(__FILE__)));
 define('WPGIFT__PLUGIN_URL', untrailingslashit(plugins_url(basename(plugin_dir_path(__FILE__)), basename(__FILE__))));
@@ -445,6 +445,27 @@ function wpgv_stripe_set_api($secret_key)
  * @param int|string $voucher_id Voucher order the session was created for.
  * @return string Message for wp_send_json_error().
  */
+/**
+ * What FILTER_SANITIZE_STRING did (deprecated since PHP 8.1), for the voucher preview pages:
+ * quotes become &#39; and &#34;, then tags are stripped, with "<" followed by white space
+ * also starting a tag. Arrays are handled element by element, other types give false.
+ *
+ * @param mixed $value Raw request value.
+ * @return mixed
+ */
+function wpgv_legacy_sanitize_string($value)
+{
+  if (is_array($value)) {
+    return array_map('wpgv_legacy_sanitize_string', $value);
+  }
+  if (!is_string($value)) {
+    return false;
+  }
+  $value = str_replace(array("'", '"'), array('&#39;', '&#34;'), $value);
+  $value = preg_replace('/<(?=\s)/', '<_', $value);
+  return strip_tags($value); // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags -- same engine as FILTER_SANITIZE_STRING; wp_strip_all_tags() also trims and drops script bodies.
+}
+
 function wpgv_stripe_session_error_message($ex, $voucher_id = '')
 {
   $generic = 'Stripe session creation failed.';
@@ -1086,9 +1107,6 @@ function wpgv_settings_page_link($links)
 function wpgv_front_enqueue()
 {
 
-  global $wpdb;
-  $setting_options = $wpdb->get_row("SELECT * FROM `{$wpdb->prefix}giftvouchers_setting` WHERE id = 1");
-
 
   $translations = array(
     'ajaxurl' => admin_url('admin-ajax.php'),
@@ -1123,7 +1141,7 @@ function wpgv_front_enqueue()
   wp_register_style('wpgv-item-style',  WPGIFT__PLUGIN_URL . '/assets/css/item-style.css', array(), WPGIFT_VERSION);
   wp_register_style('wpgv-slick-css',  WPGIFT__PLUGIN_URL . '/assets/css/slick.css');
   wp_register_style('wpgv-fontawesome-css',  WPGIFT__PLUGIN_URL . '/assets/css/font-awesome.min.css');
-  wp_register_style('wpgv-voucher-template-fonts-css',  WPGIFT__PLUGIN_URL . '/assets/css/voucher-template-fonts.css');
+  wp_register_style('wpgv-voucher-template-fonts-css',  WPGIFT__PLUGIN_URL . '/assets/css/voucher-template-fonts.css', array(), WPGIFT_VERSION);
   wp_register_style('wpgv-voucher-template-style-css',  WPGIFT__PLUGIN_URL . '/assets/css/voucher-template-style.css');
   wp_register_script('wpgv-konva-min-js', WPGIFT__PLUGIN_URL . '/assets/js/konva.min.js', array('jquery'), '1.17.0', true);
   wp_register_script('wpgv-jspdf-js', WPGIFT__PLUGIN_URL . '/assets/js/jspdf.debug.js', array('jquery'), '1.5.3', true);
@@ -1135,12 +1153,6 @@ function wpgv_front_enqueue()
   wp_register_script('wpgv-voucher-product', WPGIFT__PLUGIN_URL  . '/assets/js/wpgv-voucher-product.js', array('jquery'), WPGIFT_VERSION, true);
   wp_register_script('wpgv-slick-script', WPGIFT__PLUGIN_URL  . '/assets/js/slick.min.js', array('jquery'), WPGIFT_VERSION, true);
   wp_register_script('wpgv-voucher-template-script', WPGIFT__PLUGIN_URL  . '/assets/js/voucher-template-script.js', array('jquery'), WPGIFT_VERSION, true);
-  if ($setting_options->test_mode) {
-    wp_register_script('wpgv-paypal-js', 'https://www.paypal.com/sdk/js?client-id=sb&currency=' . $setting_options->currency_code, array('jquery'), '5.0.0', true);
-  } else {
-    $wpgv_paypal_client_id = get_option('wpgv_paypal_client_id') ? get_option('wpgv_paypal_client_id') : '';
-    wp_register_script('wpgv-paypal-js', 'https://www.paypal.com/sdk/js?client-id=' . $wpgv_paypal_client_id . '&currency=' . $setting_options->currency_code, array('jquery'), '5.0.0', true);
-  }
   if (wpgv_is_woocommerce_enable()) {
     $check_plugin = new WPGV_Check_Plugin_Active();
     if ($check_plugin->wpgv_check_woo_active()) {

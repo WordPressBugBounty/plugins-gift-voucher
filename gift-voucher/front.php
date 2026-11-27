@@ -63,7 +63,6 @@ function wpgv_voucher_shortcode()
 
     wp_enqueue_script('wpgv-jquery-validate');
     wp_enqueue_script('wpgv-jquery-steps');
-    wp_enqueue_script('wpgv-paypal-js');
     wp_enqueue_script('wpgv-voucher-script');
     $wpgv_termstext = get_option('wpgv_termstext') ? get_option('wpgv_termstext') : 'I hereby accept the terms and conditions, the revocation of the privacy policy and confirm that all information is correct.';
 

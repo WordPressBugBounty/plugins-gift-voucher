@@ -484,6 +484,12 @@ if (!class_exists('wpgv-')) :
                 }
             }
 
+            // Fix 18: only a Gift Voucher line sets $wvgc_order_id. Without one, the query below
+            // used order_id = 0 - every voucher ordered through the plugin's own forms - and mailed
+            // them all again (to the WooCommerce customer when the order form setting is off).
+            if (!isset($wvgc_order_id)) {
+                return;
+            }
 
             global $wpdb;
             $setting_options = $wpdb->get_row($wpdb->prepare("SELECT * FROM `" . esc_sql($wpdb->prefix . 'giftvouchers_setting') . "` WHERE id = %d", 1));
@@ -587,7 +593,9 @@ if (!class_exists('wpgv-')) :
             // Send mail enter checkout woocommerce
             if ($mail_sent == true) {
                 $successpagemessage = get_option('wpgv_successpagemessage') ? get_option('wpgv_successpagemessage') : 'We have got your order! <br>E-Mail Sent Successfully to %s';
-                $return .= '<div class="success">' . sprintf(stripslashes($successpagemessage), $voucher_options_results->email) . '</div>';
+                // $voucher_options_results is the array of rows, so ->email on it only
+                // warned and gave ''. Use the row the loop above mailed last.
+                $return .= '<div class="success">' . sprintf(stripslashes($successpagemessage), $voucher_options->email) . '</div>';
 
                 if (isset($_GET['per_invoice']) && $_GET['per_invoice'] == 1) {
                     $return .= $setting_options->bank_info;

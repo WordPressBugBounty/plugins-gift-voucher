@@ -35,7 +35,6 @@ function wpgv_giftitems_shortcode($atts = '')
     wp_enqueue_style('wpgv-item-style');
     wp_enqueue_script('wpgv-jquery-validate');
     wp_enqueue_script('wpgv-item-script');
-    wp_enqueue_script('wpgv-paypal-js');
 
     $setting_options = $wpdb->get_row("SELECT * FROM $setting_table WHERE id = 1");
     $nonce = wp_create_nonce('wpgv_giftitems_form_verify');
